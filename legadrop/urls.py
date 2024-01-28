@@ -27,17 +27,20 @@ from cases.urls import router as cases
 
 
 schema_view = get_schema_view(
-   openapi.Info(
-      title="Snippets API",
-      default_version='v1',
-   ),
-   public=True,
+    openapi.Info(
+        title="Snippets API",
+        default_version="v1",
+    ),
+    public=True,
 )
 
 
 urlpatterns = [
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path(
+        "swagger/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
     path("admin/", admin.site.urls),
-    path('', include(cases.urls))
+    path("", include(cases.urls)),
 ]
-

@@ -6,7 +6,7 @@ from utils import id_generator
 
 class RarityCategory(models.Model):
     rarity_id = models.CharField(
-        default=id_generator(), max_length=9, editable=False, unique=True
+        default=id_generator, max_length=9, editable=False, unique=True
     )
     name = models.CharField(verbose_name="Название", max_length=256)
     category_percent = models.FloatField(default=1, null=False)
@@ -21,7 +21,7 @@ class RarityCategory(models.Model):
 
 class Item(models.Model):
     item_id = models.CharField(
-        default=id_generator(), max_length=9, editable=False, unique=True
+        default=id_generator, max_length=9, editable=False, unique=True
     )
     name = models.CharField(verbose_name="Название", max_length=256)
     price = models.FloatField(verbose_name="Стоимость", default=0, null=False)
@@ -54,7 +54,7 @@ class Item(models.Model):
 
 class Category(models.Model):
     category_id = models.CharField(
-        default=id_generator(), max_length=9, editable=False, unique=True
+        default=id_generator, max_length=9, editable=False, unique=True
     )
     name = models.CharField(verbose_name="Название", max_length=256)
 
@@ -75,7 +75,7 @@ class ConditionCase(models.Model):
     )
     name = models.CharField(max_length=256)
     condition_id = models.CharField(
-        default=id_generator(), max_length=9, editable=False, unique=True
+        default=id_generator, max_length=9, editable=False, unique=True
     )
     type = models.CharField(max_length=128, choices=CONDITION_TYPES_CHOICES)
     price = models.FloatField(verbose_name="Сумма внесения", null=True)
@@ -92,7 +92,7 @@ class ConditionCase(models.Model):
 
 class Case(models.Model):
     case_id = models.CharField(
-        default=id_generator(), max_length=9, editable=False, unique=True
+        default=id_generator, max_length=9, editable=False, unique=True
     )
     name = models.CharField(verbose_name="Название", max_length=256)
     # translit_name = todo
@@ -125,7 +125,7 @@ class Case(models.Model):
 
 class OpenedCases(models.Model):
     history_id = models.CharField(
-        default=id_generator(), max_length=9, editable=False, unique=True
+        default=id_generator, max_length=9, editable=False, unique=True
     )
     open_date = models.DateField("Дата открытия кейса", auto_now_add=True)
     case = models.ForeignKey(

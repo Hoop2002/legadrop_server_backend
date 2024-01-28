@@ -6,7 +6,7 @@ from cases import views
 
 router = routers.DefaultRouter()
 
-router.register(viewset=views.CasesViewSet, prefix='cases')
+router.register(viewset=views.CasesViewSet, prefix="cases")
 
 # urlpatterns = [
 #     path('cases', views.CasesViewSet, name='cases_view')
