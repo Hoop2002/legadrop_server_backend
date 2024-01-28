@@ -1,0 +1,7 @@
+django==4.2.9
+psycopg2-binary==2.9.9
+django-environ==0.*
+pillow==10.2.0
+djangorestframework==3.14.0
+black==24.1.1
+drf-yasg==1.21.7
