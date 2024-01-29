@@ -9,6 +9,6 @@ class CasesViewSet(ModelViewSet):
     queryset = Case.objects
 
     def list(self, request, *args, **kwargs):
-        q = self.get_queryset()
+        q = Case.objects.all()
         ser = self.get_serializer(q)
         return Response(ser.data)

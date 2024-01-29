@@ -5,7 +5,4 @@ from cases.models import Case
 class CasesSerializer(ModelSerializer):
     class Meta:
         model = Case
-        fields = (
-            "id",
-            "name",
-        )
+        fields = ("id", "name", "price")
