@@ -97,7 +97,9 @@ class Case(models.Model):
     name = models.CharField(verbose_name="Название", max_length=256)
     # translit_name = todo
     active = models.BooleanField(verbose_name="Активен", default=True)
-    image = models.ImageField(upload_to=generate_upload_path, verbose_name="Картинка", null=True)
+    image = models.ImageField(
+        upload_to=generate_upload_path, verbose_name="Картинка", null=True
+    )
     price = models.FloatField(verbose_name="Стоимость", default=0)
     case_free = models.BooleanField(verbose_name="Кейс бесплатный", default=False)
     category = models.ForeignKey(
