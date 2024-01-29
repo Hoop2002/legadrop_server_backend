@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-from utils import id_generator
+from utils import id_generator, generate_upload_path
 
 
 class RarityCategory(models.Model):
@@ -31,7 +31,7 @@ class Item(models.Model):
     sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
     # active = models.BooleanField(default=True) todo добавляем в кейс
     color = models.CharField(verbose_name="Цвет", max_length=128)
-    image = models.ImageField(verbose_name="Картинка")
+    image = models.ImageField(upload_to=generate_upload_path, verbose_name="Картинка")
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     step_down_factor = models.FloatField(verbose_name="Понижающий фактор", default=1)
     rarity_category = models.ForeignKey(
@@ -97,7 +97,9 @@ class Case(models.Model):
     name = models.CharField(verbose_name="Название", max_length=256)
     # translit_name = todo
     active = models.BooleanField(verbose_name="Активен", default=True)
-    image = models.ImageField(verbose_name="Картинка", null=True)
+    image = models.ImageField(
+        upload_to=generate_upload_path, verbose_name="Картинка", null=True
+    )
     price = models.FloatField(verbose_name="Стоимость", default=0)
     case_free = models.BooleanField(verbose_name="Кейс бесплатный", default=False)
     category = models.ForeignKey(
