@@ -15,11 +15,19 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         super().validate(attrs)
-        password1 = attrs["password1"]
-        password2 = attrs["password2"]
+        password1 = attrs.get("password1")
+        password2 = attrs.get("password2")
         if password1 != password2:
             raise serializers.ValidationError({"password": "Пароли не совпадают"})
-        _user = User.objects.filter(username=attrs["username"]).exists()
+        _auth_user = None
+        if self.context["request"]:
+            _auth_user = self.context["request"].user
+        _user = (
+            User.objects.filter(username=attrs["username"])
+            .exclude(id=_auth_user.id if _auth_user else None)
+            .exists()
+        )
+
         if _user:
             raise serializers.ValidationError(
                 {"username": "Пользователь с таким логином уже зарегистрирован"}
@@ -36,11 +44,8 @@ class UserSerializer(UserCreateSerializer):
     password1 = serializers.CharField(required=False, write_only=True)
     password2 = serializers.CharField(required=False, write_only=True)
 
-    def validate(self, attrs):
-        try:
-            super().validate(attrs)
-        except serializers.ValidationError as err:
-            print(err)
+    def update(self, instance, validated_data):
+        return instance
 
 
 class UserProfileCreateSerializer(serializers.ModelSerializer):
@@ -76,10 +81,29 @@ class UserSignInSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    user = UserSerializer(required=False)
     image = Base64ImageField(required=False, max_length=None, use_url=True)
-    verified = serializers.BooleanField(read_only=True)
+
+    def update(self, instance, validated_data):
+        user_data = {}
+        if "user" in validated_data:
+            user_data = validated_data.pop("user")
+        if "password1" in user_data:
+            password = user_data.pop("password1")
+            user_data.pop("password2")
+            instance.user.set_password(password)
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        for key, value in user_data.items():
+            setattr(instance.user, key, value)
+
+        instance.user.save()
+        instance.save()
+
+        return instance
 
     class Meta:
         model = UserProfile
         fields = ("user", "image", "locale", "verified")
+        read_only_fields = ("verified",)
