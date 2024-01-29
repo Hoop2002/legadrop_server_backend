@@ -1,5 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from cases.serializers import CasesSerializer, ItemListSerializer
 from cases.models import Case, Item
 
@@ -17,6 +18,7 @@ class CasesViewSet(ModelViewSet):
 class ItemsViewSet(ModelViewSet):
     serializer_class = ItemListSerializer
     queryset = Item.objects
+    permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
