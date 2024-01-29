@@ -26,7 +26,9 @@ class AuthViewSet(ModelViewSet):
     def sign_up(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            return Response("test")
+            user = serializer.save()
+            response = self.get_serializer(user)
+            return Response(response.data, status=status.HTTP_201_CREATED)
         else:
             return Response(
                 serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY

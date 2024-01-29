@@ -1,43 +1,55 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import UserProfile
 
 
 class UserSignUpSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     username = serializers.CharField()
+    password1 = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True)
     email = serializers.EmailField()
-    password1 = serializers.CharField()
-    password2 = serializers.CharField()
 
     def validate(self, attrs):
         super().validate(attrs)
-        password1 = attrs['password1']
-        password2 = attrs['password2']
+        password1 = attrs["password1"]
+        password2 = attrs["password2"]
         if password1 != password2:
-            raise serializers.ValidationError({'password': 'Пароли не совпадают'})
+            raise serializers.ValidationError({"password": "Пароли не совпадают"})
+        _user = User.objects.filter(username=attrs["username"]).exists()
+        if _user:
+            raise serializers.ValidationError(
+                {"username": "Пользователь с таким логином уже зарегистрирован"}
+            )
         return attrs
 
     class Meta:
         model = User
-        fields = ("username", 'password1', 'password2', "email")
+        fields = ("id", "username", "password1", "password2", "email")
 
 
 class UserProfileSignUpSerializer(serializers.ModelSerializer):
     user = UserSignUpSerializer()
-    image = serializers.CharField()
+    token = serializers.SerializerMethodField(read_only=True)
 
-    def validate(self, attrs):
-        super().validate(attrs)
-        username = attrs['user']['username']
-        return attrs
+    @staticmethod
+    def get_token(instance):
+        return str(AccessToken.for_user(instance.user))
 
     def create(self, validated_data):
-        pass
+        validated_data["user"].pop("password1")
+        password = validated_data["user"].pop("password2")
+        validated_data["user"]["password"] = password
+        user = User.objects.create(**validated_data["user"])
+        validated_data["user"] = user
+        profile = UserProfile.objects.create(**validated_data)
+        return profile
 
     class Meta:
         model = UserProfile
-        fields = ("user", "image")
+        fields = ("user", "token", "locale")
 
 
 class UserSignInSerializer(serializers.ModelSerializer):
