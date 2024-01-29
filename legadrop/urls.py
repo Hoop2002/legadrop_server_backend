@@ -37,10 +37,6 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
     path("admin/", admin.site.urls),
-
-
     path("", include("cases.urls")),
     path("", include(("users.urls", "users"), namespace="instance_name")),
-
 ]
-
