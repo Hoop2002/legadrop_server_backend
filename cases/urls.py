@@ -8,6 +8,4 @@ router = routers.DefaultRouter()
 
 # router.register(viewset=views.CasesViewSet, prefix="cases")
 
-urlpatterns = [
-    path('', views.CasesViewSet.as_view({'get': 'list'}))
-]
+urlpatterns = [path("", views.CasesViewSet.as_view({"get": "list"}))]
