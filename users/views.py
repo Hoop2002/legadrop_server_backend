@@ -8,7 +8,11 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 
 from users.models import UserProfile
-from users.serializers import UserProfileSignUpSerializer, UserSignInSerializer
+from users.serializers import (
+    UserProfileCreateSerializer,
+    UserSignInSerializer,
+    UserProfileSerializer,
+)
 
 
 @extend_schema(tags=["main"])
@@ -18,7 +22,7 @@ class AuthViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         serializers = {
-            "sign_up": UserProfileSignUpSerializer,
+            "sign_up": UserProfileCreateSerializer,
             "sign_in": UserSignInSerializer,
         }
         return serializers.get(self.action)
@@ -48,3 +52,19 @@ class AuthViewSet(ModelViewSet):
             " к регистру."
         )
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(tags=["user"])
+class UserProfileViewSet(ModelViewSet):
+    queryset = UserProfile.objects
+    serializer_class = UserProfileSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        serializer = self.get_serializer(request.user.profile)
+        return Response(serializer.data)
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(request.data)
+        if serializer.is_valid():
+            print(serializer.data)
+        return Response("test")

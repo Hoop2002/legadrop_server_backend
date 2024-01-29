@@ -3,9 +3,10 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import UserProfile
+from utils import Base64ImageField
 
 
-class UserSignUpSerializer(serializers.ModelSerializer):
+class UserCreateSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     username = serializers.CharField()
     password1 = serializers.CharField(write_only=True)
@@ -30,8 +31,20 @@ class UserSignUpSerializer(serializers.ModelSerializer):
         fields = ("id", "username", "password1", "password2", "email")
 
 
-class UserProfileSignUpSerializer(serializers.ModelSerializer):
-    user = UserSignUpSerializer()
+class UserSerializer(UserCreateSerializer):
+    username = serializers.CharField(required=False)
+    password1 = serializers.CharField(required=False, write_only=True)
+    password2 = serializers.CharField(required=False, write_only=True)
+
+    def validate(self, attrs):
+        try:
+            super().validate(attrs)
+        except serializers.ValidationError as err:
+            print(err)
+
+
+class UserProfileCreateSerializer(serializers.ModelSerializer):
+    user = UserCreateSerializer()
     token = serializers.SerializerMethodField(read_only=True)
 
     @staticmethod
@@ -43,6 +56,8 @@ class UserProfileSignUpSerializer(serializers.ModelSerializer):
         password = validated_data["user"].pop("password2")
         validated_data["user"]["password"] = password
         user = User.objects.create(**validated_data["user"])
+        user.set_password(password)
+        user.save()
         validated_data["user"] = user
         profile = UserProfile.objects.create(**validated_data)
         return profile
@@ -58,3 +73,13 @@ class UserSignInSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("username", "password")
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    image = Base64ImageField(required=False, max_length=None, use_url=True)
+    verified = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = UserProfile
+        fields = ("user", "image", "locale", "verified")
