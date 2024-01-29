@@ -9,5 +9,6 @@ router = routers.DefaultRouter()
 # router.register(viewset=views.CasesViewSet, prefix="cases")
 
 urlpatterns = [
-    path('', views.CasesViewSet.as_view({'get': 'list'}))
+    path("cases", views.CasesViewSet.as_view({"get": "list"})),
+    path("shop/items", views.ItemsViewSet.as_view({"get": "list"})),
 ]

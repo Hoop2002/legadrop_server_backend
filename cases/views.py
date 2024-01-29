@@ -1,7 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
-from cases.serializers import CasesSerializer
-from cases.models import Case
+from cases.serializers import CasesSerializer, ItemListSerializer
+from cases.models import Case, Item
 
 
 class CasesViewSet(ModelViewSet):
@@ -9,6 +9,16 @@ class CasesViewSet(ModelViewSet):
     queryset = Case.objects
 
     def list(self, request, *args, **kwargs):
-        q = self.get_queryset()
-        ser = self.get_serializer(q)
-        return Response(ser.data)
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class ItemsViewSet(ModelViewSet):
+    serializer_class = ItemListSerializer
+    queryset = Item.objects
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
