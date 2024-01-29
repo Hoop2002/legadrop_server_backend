@@ -5,10 +5,7 @@ from cases.models import Case, Item
 class CasesSerializer(ModelSerializer):
     class Meta:
         model = Case
-        fields = (
-            "id",
-            "name",
-        )
+        fields = ("id", "name", "price")
 
 
 class ItemListSerializer(ModelSerializer):

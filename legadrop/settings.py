@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "cases",
     "users",
+    "payments",
 ]
 
 MIDDLEWARE = [
