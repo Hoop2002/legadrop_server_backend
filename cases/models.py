@@ -112,7 +112,7 @@ class Case(models.Model):
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     items = models.ManyToManyField(verbose_name="Предметы в кейсе", to="Item")
     conditions = models.ManyToManyField(
-        verbose_name="Условия открытия кейса", to=ConditionCase, null=True, blank=True
+        verbose_name="Условия открытия кейса", to=ConditionCase
     )
 
     def __str__(self):
@@ -152,3 +152,23 @@ class OpenedCases(models.Model):
     class Meta:
         verbose_name = "Открытый кейс"
         verbose_name_plural = "Открытые кейсы"
+
+
+class UserItems(models.Model):
+    active = models.BooleanField(verbose_name="Есть на аккаунте", default=True)
+    user = models.ForeignKey(
+        verbose_name="Пользователь",
+        to=User,
+        related_name="items",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    item = models.ForeignKey(
+        verbose_name="Приз",
+        to=Item,
+        related_name="user_items",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
