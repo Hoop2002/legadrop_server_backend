@@ -1,13 +1,12 @@
-from django.contrib.auth import authenticate, login
-
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import AccessToken, Token
 
 from users.models import UserProfile
 
 
 class UserSignUpSerializer(serializers.ModelSerializer):
+    username = serializers.CharField()
+    email = serializers.EmailField()
 
     class Meta:
         model = User
@@ -15,7 +14,8 @@ class UserSignUpSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSignUpSerializer(serializers.ModelSerializer):
-    user = UserSignUpSerializer
+    user = UserSignUpSerializer()
+    image = serializers.ImageField(required=False)
 
     class Meta:
         model = UserProfile

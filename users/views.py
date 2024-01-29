@@ -1,6 +1,9 @@
 from django.contrib.auth import authenticate, login
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.permissions import AllowAny
+from rest_framework import status
+from drf_spectacular.utils import extend_schema
 
 from rest_framework.response import Response
 
@@ -8,8 +11,10 @@ from users.models import UserProfile
 from users.serializers import UserProfileSignUpSerializer, UserSignInSerializer
 
 
+@extend_schema(tags=["main"])
 class AuthViewSet(ModelViewSet):
     queryset = UserProfile.objects
+    permission_classes = [AllowAny]
 
     def get_serializer_class(self):
         serializers = {
@@ -19,7 +24,13 @@ class AuthViewSet(ModelViewSet):
         return serializers.get(self.action)
 
     def sign_up(self, request, *args, **kwargs):
-        pass
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            return Response("test")
+        else:
+            return Response(
+                serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY
+            )
 
     def sign_in(self, request, *args, **kwargs):
         username = self.request.data.get("username")
@@ -34,4 +45,4 @@ class AuthViewSet(ModelViewSet):
             " пароль учётной записи. Оба поля могут быть чувствительны"
             " к регистру."
         )
-        return Response({"message": message})
+        return Response(message, status=status.HTTP_400_BAD_REQUEST)
