@@ -43,5 +43,6 @@ urlpatterns = [
     ),
     path("admin/", admin.site.urls),
     path("cases/", include("cases.urls")),
+    path("payments/", include("payments.urls"))
     # path("", include(cases.urls)),
 ]
