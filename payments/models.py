@@ -81,12 +81,20 @@ class PromoCode(models.Model):
     )
     to_date = models.DateTimeField(verbose_name="Действует до", null=True, blank=True)
 
+    def __str__(self):
+        return f"{self.name}_{self.code_data}"
+
+    class Meta:
+        verbose_name = "Промокод"
+        verbose_name_plural = "Промокоды"
+
 
 class Calc(models.Model):
     calc_id = models.CharField(
         default=id_generator, unique=True, max_length=9, editable=False
     )
-    summ = models.FloatField(verbose_name="Сумма начисления", null=False)
+    debit = models.FloatField(verbose_name="Приход", null=False, default=0)
+    credit = models.FloatField(verbose_name="Расход", null=False, default=0)
     order = models.ForeignKey(
         verbose_name="Оплата",
         to=PaymentOrder,
@@ -118,3 +126,7 @@ class Calc(models.Model):
         verbose_name="Дата создания", auto_now_add=True
     )
     update_date = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
+
+    class Meta:
+        verbose_name = "Начисление"
+        verbose_name_plural = "Начисления"

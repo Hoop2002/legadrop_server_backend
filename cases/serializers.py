@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from cases.models import Case, Item, RarityCategory, UserItems
+from cases.models import Case, Item, RarityCategory
+from users.models import UserItems
+from payments.models import Calc
 
 
 class CasesSerializer(serializers.ModelSerializer):
@@ -26,7 +28,11 @@ class ItemListSerializer(serializers.ModelSerializer):
 
 
 class UserItemSerializer(serializers.ModelSerializer):
-    # todo при create делать начисление пользователю
+
+    def create(self, validated_data):
+        user_item = super().create(validated_data)
+        Calc.objects.create(user_id=user_item.user_id)
+        return user_item
 
     class Meta:
         model = UserItems
