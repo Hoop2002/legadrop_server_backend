@@ -1,3 +1,4 @@
+from django.conf import settings
 import time
 import hmac
 import hashlib
@@ -6,11 +7,11 @@ import json
 import requests
 
 
-class ApiMoogold:
-    def __init__(self, secret_key: str, parner_id: str, category: str):
-        self.SECRET_KEY = secret_key
-        self.PARTNER_ID = parner_id
-        self.CATEGORY = category
+class MoogoldApi:
+    def __init__(self):
+        self.SECRETKEY = settings.GATEWAYS_SETTINGS["MOOGOLD_SECRET_KEY"]
+        self.PARTNER_ID = settings.GATEWAYS_SETTINGS["MOOGOLD_PARTNER_ID"]
+        self.CATEGORY = settings.GATEWAYS_SETTINGS["GENSHIN_CATEGORY"]
 
     def buy_moogold_item(self, product_id, quantity, server, uid):
         order = {
