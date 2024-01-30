@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils.functional import cached_property
 from cases.models import Item
 from utils.functions import generate_upload_name
 
@@ -7,7 +8,10 @@ from utils.functions import generate_upload_name
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     image = models.ImageField(
-        upload_to=generate_upload_name, verbose_name="Фотография пользователя"
+        upload_to=generate_upload_name,
+        verbose_name="Фотография пользователя",
+        null=True,
+        blank=True,
     )
     locale = models.CharField(verbose_name="Локаль", max_length=8, default="ru")
     verified = models.BooleanField(verbose_name="Верифицирован", default=False)
@@ -15,11 +19,12 @@ class UserProfile(models.Model):
         verbose_name="Индивидуальный процент", default=1
     )
 
-    @property
+    @cached_property
     def balance(self) -> float:
-        # todo сделать расчёт баланса
-        self.user.calc.aggregate()
-        return 0
+        balance = self.user.calc.aggregate(models.Sum("balance"))["balance__sum"]
+        if balance is None:
+            return 0
+        return balance
 
     def __str__(self):
         return self.user.username

@@ -103,5 +103,5 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ("user", "image", "locale", "verified")
-        read_only_fields = ("verified",)
+        fields = ("user", "image", "balance", "locale", "verified")
+        read_only_fields = ("verified", "balance")
