@@ -1,6 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+
 from cases.serializers import CasesSerializer, ItemListSerializer
 from cases.models import Case, Item
 
@@ -10,17 +10,18 @@ class CasesViewSet(ModelViewSet):
     queryset = Case.objects
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        cases = self.paginate_queryset(self.get_queryset().all())
+        serializer = self.get_serializer(cases, many=True)
+        result = self.get_paginated_response(serializer.data)
+        return result
 
 
 class ItemsViewSet(ModelViewSet):
     serializer_class = ItemListSerializer
     queryset = Item.objects
-    permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        items = self.paginate_queryset(self.get_queryset().all())
+        serializer = self.get_serializer(items, many=True)
+        result = self.get_paginated_response(serializer.data)
+        return result
