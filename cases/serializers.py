@@ -32,11 +32,13 @@ class UserItemSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         super(UserItemSerializer, self).validate(attrs)
-        if attrs['item']:
-            price = attrs['item'].price
-            balance = attrs['user'].profile.balance
+        if attrs["item"]:
+            price = attrs["item"].price
+            balance = attrs["user"].profile.balance
             if price > balance:
-                raise serializers.ValidationError(detail="Недостаточно средств", code=status.HTTP_406_NOT_ACCEPTABLE)
+                raise serializers.ValidationError(
+                    detail="Недостаточно средств", code=status.HTTP_406_NOT_ACCEPTABLE
+                )
         return attrs
 
     def create(self, validated_data):

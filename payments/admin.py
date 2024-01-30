@@ -9,14 +9,14 @@ admin.site.register(PaymentOrder)
 
 @admin.register(Calc)
 class CalcAdmin(admin.ModelAdmin):
-    list_display = ('calc_id', 'user_link', 'debit', 'credit', 'creation_date')
-    list_display_links = ('calc_id', 'user_link')
-    readonly_fields = ('creation_date', 'update_date')
+    list_display = ("calc_id", "user_link", "debit", "credit", "creation_date")
+    list_display_links = ("calc_id", "user_link")
+    readonly_fields = ("creation_date", "update_date")
 
     fieldsets = (
-        ('Связи', {'fields': ('user', 'promo_code', 'order')}),
-        ('Деньги', {'fields': ('debit', 'credit', 'balance')}),
-        (None, {'fields': ('creation_date', 'update_date')})
+        ("Связи", {"fields": ("user", "promo_code", "order")}),
+        ("Деньги", {"fields": ("debit", "credit", "balance")}),
+        (None, {"fields": ("creation_date", "update_date")}),
     )
 
     def user_link(self, instance):
@@ -28,4 +28,3 @@ class CalcAdmin(admin.ModelAdmin):
         )
 
     user_link.short_description = "Пользователь"
-
