@@ -31,7 +31,13 @@ class UserItemSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user_item = super().create(validated_data)
-        Calc.objects.create(user_id=user_item.user_id)
+        # todo исправить начисление
+        # Calc.objects.create(
+        #     user_id=user_item.user_id,
+        #     credit=user_item.item.price_in_rubles
+        #     * -1,  # Умножаем на -1, потому что это не расход
+        #     debit=user_item.item.price_in_rubles,
+        # )
         return user_item
 
     class Meta:

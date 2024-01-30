@@ -90,11 +90,31 @@ class PromoCode(models.Model):
 
 
 class Calc(models.Model):
+    """
+    Модель начислений.
+    debit -- поступление денег на сервис, не зависит откуда идут поступления, пополнение баланса или возврат средст
+    credit -- Расход средств сервиса, когда делаем возврат пользователю или закупаем предметы
+    balance -- Используется для расчёта начислений пользователя, как начальный баланс
+    + balance -- пополнение баланса
+    - balance -- списание с баланса
+
+    Использование сочетания credit, debit и balance, при наличии credit и debit, они должны быть с разным знаком
+
+    Описание структуры работы:
+        - Пополнение баланса пользователем: credit + (наши нереализованные деньги) debit 0, balance + (учёт пользовательского баланса);
+        - Покупка кейса: balance - (списание у пользователя стоимости кейса), debit = стоимость кейса - стоимость предмета выпавшего из кейса, credit debit * -1;
+        - Покупка предмета пользователем: balance - (списание у пользователя стоимости), debit = стоимость продажи предмета пользователю - закупочная стоимость. credit = debit * -1;
+        - Вывод предмета пользователем с аккаунта: credit = закупочная стоимость предмета, debit = 0;
+    """
+
     calc_id = models.CharField(
         default=id_generator, unique=True, max_length=9, editable=False
     )
     debit = models.FloatField(verbose_name="Приход", null=False, default=0)
     credit = models.FloatField(verbose_name="Расход", null=False, default=0)
+    balance = models.FloatField(
+        verbose_name="Пользовательский баланс", null=False, default=0
+    )
     order = models.ForeignKey(
         verbose_name="Оплата",
         to=PaymentOrder,
