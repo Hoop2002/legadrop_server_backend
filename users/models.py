@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from cases.models import Item
 from utils.functions import generate_upload_name
 
 
@@ -16,3 +17,28 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+class UserItems(models.Model):
+    active = models.BooleanField(verbose_name="Есть на аккаунте", default=True)
+    user = models.ForeignKey(
+        verbose_name="Пользователь",
+        to=User,
+        related_name="items",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    item = models.ForeignKey(
+        verbose_name="Предмет",
+        to=Item,
+        related_name="user_items",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = "Предмет пользователя"
+        verbose_name_plural = "Предметы пользователей"
+
