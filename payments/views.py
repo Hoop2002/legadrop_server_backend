@@ -20,6 +20,8 @@ class UserPaymentOrderViewSet(ModelViewSet):
         serializer = self.get_serializer(result, many=True)
         return Response(serializer.data)
 
+    def create(self, request, *args, **kwargs):
+        pass
 
 class AdminPaymentOrderViewSet(ModelViewSet):
     serializer_class = AdminPaymentOrderSerializer
