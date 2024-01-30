@@ -3,7 +3,7 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import utils.id_generator
+import utils.functions.id_generator
 
 
 class Migration(migrations.Migration):
@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             model_name="case",
             name="case_id",
             field=models.CharField(
-                default=utils.id_generator,
+                default=utils.functions.id_generator,
                 editable=False,
                 max_length=9,
                 unique=True,
@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
             model_name="category",
             name="category_id",
             field=models.CharField(
-                default=utils.id_generator,
+                default=utils.functions.id_generator,
                 editable=False,
                 max_length=9,
                 unique=True,
@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
             model_name="conditioncase",
             name="condition_id",
             field=models.CharField(
-                default=utils.id_generator,
+                default=utils.functions.id_generator,
                 editable=False,
                 max_length=9,
                 unique=True,
@@ -58,7 +58,7 @@ class Migration(migrations.Migration):
             model_name="item",
             name="item_id",
             field=models.CharField(
-                default=utils.id_generator,
+                default=utils.functions.id_generator,
                 editable=False,
                 max_length=9,
                 unique=True,
@@ -81,7 +81,7 @@ class Migration(migrations.Migration):
             model_name="openedcases",
             name="history_id",
             field=models.CharField(
-                default=utils.id_generator,
+                default=utils.functions.id_generator,
                 editable=False,
                 max_length=9,
                 unique=True,
@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
             model_name="raritycategory",
             name="rarity_id",
             field=models.CharField(
-                default=utils.id_generator,
+                default=utils.functions.id_generator,
                 editable=False,
                 max_length=9,
                 unique=True,

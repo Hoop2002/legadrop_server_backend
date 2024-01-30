@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import UserProfile
-from utils import Base64ImageField
+from utils.fields import Base64ImageField
 
 
 class UserCreateSerializer(serializers.ModelSerializer):

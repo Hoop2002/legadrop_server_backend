@@ -20,11 +20,13 @@ class CasesViewSet(ModelViewSet):
 
 class ShopItemsViewSet(ModelViewSet):
     serializer_class = ItemListSerializer
-    queryset = Item.objects
+    queryset = Item.objects.filter(sale=True)
     permission_classes = [AllowAny]
+    lookup_field = "item_id"
 
-    def list(self, request, *args, **kwargs):
-        items = self.paginate_queryset(self.get_queryset().filter(sale=True))
-        serializer = self.get_serializer(items, many=True)
-        result = self.get_paginated_response(serializer.data)
-        return result
+    def get_serializer_class(self):
+        serializers = {
+            "list": ItemListSerializer,
+            "retrieve": ItemListSerializer,
+        }
+        return serializers[self.action]

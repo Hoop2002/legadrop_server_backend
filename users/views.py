@@ -25,7 +25,7 @@ class AuthViewSet(ModelViewSet):
             "sign_up": UserProfileCreateSerializer,
             "sign_in": UserSignInSerializer,
         }
-        return serializers.get(self.action)
+        return serializers[self.action]
 
     def sign_up(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
