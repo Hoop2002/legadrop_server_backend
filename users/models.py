@@ -15,6 +15,12 @@ class UserProfile(models.Model):
         verbose_name="Индивидуальный процент", default=1
     )
 
+    @property
+    def balance(self) -> float:
+        # todo сделать расчёт баланса
+        self.user.calc.aggregate()
+        return 0
+
     def __str__(self):
         return self.user.username
 
