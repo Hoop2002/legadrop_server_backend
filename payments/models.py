@@ -82,11 +82,11 @@ class PromoCode(models.Model):
     to_date = models.DateTimeField(verbose_name="Действует до", null=True, blank=True)
 
     def __str__(self):
-        return f'{self.name}_{self.code_data}'
+        return f"{self.name}_{self.code_data}"
 
     class Meta:
-        verbose_name = 'Промокод'
-        verbose_name_plural = 'Промокоды'
+        verbose_name = "Промокод"
+        verbose_name_plural = "Промокоды"
 
 
 class Calc(models.Model):
@@ -128,5 +128,5 @@ class Calc(models.Model):
     update_date = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
 
     class Meta:
-        verbose_name = 'Начисление'
-        verbose_name_plural = 'Начисления'
+        verbose_name = "Начисление"
+        verbose_name_plural = "Начисления"

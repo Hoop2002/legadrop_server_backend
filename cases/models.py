@@ -154,5 +154,3 @@ class OpenedCases(models.Model):
     class Meta:
         verbose_name = "Открытый кейс"
         verbose_name_plural = "Открытые кейсы"
-
-
