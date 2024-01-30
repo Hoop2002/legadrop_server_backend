@@ -7,7 +7,7 @@ import hashlib
 class LavaApi:
     def __init__(self):
         from django.conf import settings
-        
+
         self.URL = "https://api.lava.ru"
         self.SECRETKEY = settings.GATEWAYS_SETTINGS["LAVA_SECRET_KEY"]
         self.SHOP_ID = settings.GATEWAYS_SETTINGS["LAVA_SHOP_ID"]
