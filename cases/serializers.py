@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from cases.models import Case, Item, RarityCategory
+from cases.models import Case, Item, RarityCategory, UserItems
 
 
 class CasesSerializer(serializers.ModelSerializer):
@@ -23,3 +23,12 @@ class ItemListSerializer(serializers.ModelSerializer):
         model = Item
         fields = ("item_id", "name", "price", "image", "rarity_category")
         read_only_fields = ("item_id", "name", "price", "image", "rarity_category")
+
+
+class UserItemSerializer(serializers.ModelSerializer):
+    # todo при create делать начисление пользователю
+
+    class Meta:
+        model = UserItems
+        fields = ("user", "item", "id")
+        read_only_fields = ("id",)
