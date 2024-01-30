@@ -64,7 +64,10 @@ class UserProfileViewSet(ModelViewSet):
         return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
-        serializer = self.get_serializer(request.data)
+        _instance = self.queryset.get(id=request.user.profile.id)
+        serializer = self.get_serializer(_instance, data=request.data)
         if serializer.is_valid():
-            print(serializer.data)
-        return Response("test")
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+        return Response("something wrong", status=status.HTTP_400_BAD_REQUEST)
