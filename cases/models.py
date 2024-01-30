@@ -174,3 +174,7 @@ class UserItems(models.Model):
         null=True,
         blank=True,
     )
+
+    class Meta:
+        verbose_name = "Предмет пользователя"
+        verbose_name_plural = "Предметы пользователей"

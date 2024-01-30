@@ -9,4 +9,7 @@ urlpatterns = [
     path(
         "shop/items/<str:item_id>", views.ShopItemsViewSet.as_view({"get": "retrieve"})
     ),
+    path(
+        "shop/buy/<str:item_id>", views.ShopItemsViewSet.as_view({"post": "buy_item"})
+    ),
 ]
