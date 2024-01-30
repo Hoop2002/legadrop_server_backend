@@ -1,5 +1,3 @@
-from aiohttp import ClientSession
-
 import time
 import hmac
 import hashlib
