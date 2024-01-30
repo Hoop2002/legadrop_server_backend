@@ -1,6 +1,7 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 
-from utils.functions import payment_order_id_generator
+from utils.functions import payment_order_id_generator, id_generator
 
 from django.contrib.auth.models import User
 
@@ -59,3 +60,61 @@ class PaymentOrder(models.Model):
     class Meta:
         verbose_name = "Пополнение"
         verbose_name_plural = "Пополнения"
+
+
+class PromoCode(models.Model):
+    BALANCE = "balance"
+    BONUS = "bonus"
+    PROMO_TYPES = ((BALANCE, "На баланс"), (BONUS, "Бонус к пополнению"))
+    code_data = models.CharField(default=id_generator, unique=True, max_length=128)
+    name = models.CharField(max_length=256, null=False)
+    type = models.CharField(max_length=64, choices=PROMO_TYPES, null=False)
+    summ = models.FloatField(verbose_name="Баланс", null=True, blank=True)
+    percent = models.IntegerField(
+        verbose_name="Процент",
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
+    limit_activations = models.IntegerField(
+        verbose_name="Лимит активаций", null=True, blank=True
+    )
+    to_date = models.DateTimeField(verbose_name="Действует до", null=True, blank=True)
+
+
+class Calc(models.Model):
+    calc_id = models.CharField(
+        default=id_generator, unique=True, max_length=9, editable=False
+    )
+    summ = models.FloatField(verbose_name="Сумма начисления", null=False)
+    order = models.ForeignKey(
+        verbose_name="Оплата",
+        to=PaymentOrder,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="calc",
+    )
+    user = models.ForeignKey(
+        verbose_name="Пользователь",
+        to=User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="calc",
+        related_query_name="calcs",
+    )
+    promo_code = models.ForeignKey(
+        verbose_name="Промокод",
+        to=PromoCode,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="calc",
+        related_query_name="calcs",
+    )
+
+    creation_date = models.DateTimeField(
+        verbose_name="Дата создания", auto_now_add=True
+    )
+    update_date = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
