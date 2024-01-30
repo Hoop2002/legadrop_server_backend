@@ -25,7 +25,12 @@ class UserPaymentOrderViewSet(ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
+        
+        validated_data = serializer.data
+        validated_data.update({"user": request.user.id})
+        
+        serializer.create(validated_data)
+        
         return Response(serializer.data, status=201)
 
     def update(self, request, *args, **kwargs):
