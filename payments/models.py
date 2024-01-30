@@ -1,6 +1,6 @@
 from django.db import models
 
-from utils import payment_order_id_generator
+from utils.functions import payment_order_id_generator
 
 from django.contrib.auth.models import User
 
