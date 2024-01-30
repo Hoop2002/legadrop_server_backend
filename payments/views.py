@@ -6,22 +6,31 @@ from payments.models import PaymentOrder
 from payments.serializers import UserPaymentOrderSerializer, AdminPaymentOrderSerializer
 
 
+
 class UserPaymentOrderViewSet(ModelViewSet):
     serializer_class = UserPaymentOrderSerializer
     queryset = PaymentOrder.objects
     pagination_class = LimitOffsetPagination
 
     def list(self, request, *args, **kwargs):
-        paginator = LimitOffsetPagination()
-
         payments = request.user.user_payments_orders.all()
-        result = paginator.paginate_queryset(payments, request)
-
+        result = self.paginate_queryset(payments, request)
         serializer = self.get_serializer(result, many=True)
         return Response(serializer.data)
 
+    def retrieve(self, request, order_id, *args, **kwargs):
+        payment = PaymentOrder.objects.filter(order_id=order_id).first()
+        serializer = self.get_serializer(payment)
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
-        pass
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+            
+        return Response(serializer.data, status=201)
+
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
 
 
 class AdminPaymentOrderViewSet(ModelViewSet):

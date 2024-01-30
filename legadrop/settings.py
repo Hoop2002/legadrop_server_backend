@@ -165,3 +165,11 @@ MEDIA_ROOT = BASE_DIR / "www/media"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+GATEWAYS_SETTINGS = {
+    "MOOGOLD_SECRET_KEY": env("MOOGOLD_SECRET_KEY"),
+    "MOOGOLD_PARTNER_ID": env("MOOGOLD_PARTNER_ID"),
+    "GENSHIN_CATEGORY": env("GENSHIN_CATEGORY"),
+    "LAVA_SECRET_KEY": env("LAVA_SECRET_KEY"),
+    "LAVA_SHOP_ID": env("LAVA_SHOP_ID"),
+}

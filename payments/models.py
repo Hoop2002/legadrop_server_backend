@@ -49,6 +49,8 @@ class PaymentOrder(models.Model):
     )
     status_lava_num = models.IntegerField(default=1)
     email = models.EmailField(default="test@example.com")
+    genshin_uid = models.CharField(max_length=16, null=True)
+
     active = models.BooleanField(default=True)
 
     def __str__(self):
