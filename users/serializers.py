@@ -43,9 +43,7 @@ class UserSerializer(UserCreateSerializer):
     username = serializers.CharField(required=False)
     password1 = serializers.CharField(required=False, write_only=True)
     password2 = serializers.CharField(required=False, write_only=True)
-
-    def update(self, instance, validated_data):
-        return instance
+    email = serializers.EmailField(required=False)
 
 
 class UserProfileCreateSerializer(serializers.ModelSerializer):
