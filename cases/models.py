@@ -25,8 +25,8 @@ class Item(models.Model):
     )
     name = models.CharField(verbose_name="Название", max_length=256)
     price = models.FloatField(verbose_name="Стоимость", default=0, null=False)
-    price_in_rubles = models.FloatField(
-        verbose_name="Стоимость в рублях", default=0, null=False
+    purchase_price = models.FloatField(
+        verbose_name="Закупочная цена", default=0, null=False
     )
     sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
     # active = models.BooleanField(default=True) todo добавляем в кейс
