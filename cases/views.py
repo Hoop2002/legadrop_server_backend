@@ -38,7 +38,6 @@ class ShopItemsViewSet(ModelViewSet):
         item = self.get_object()
         user = self.request.user
         serializer = self.get_serializer(data={"item": item.id, "user": user.id})
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(ItemListSerializer(item).data)
-        return Response(serializer.errors)
