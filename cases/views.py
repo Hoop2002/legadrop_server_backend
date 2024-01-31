@@ -9,14 +9,8 @@ from cases.models import Case, Item
 
 class CasesViewSet(ModelViewSet):
     serializer_class = CasesSerializer
-    queryset = Case.objects
+    queryset = Case.objects.filter(active=True)
     permission_classes = [AllowAny]
-
-    def list(self, request, *args, **kwargs):
-        cases = self.paginate_queryset(self.get_queryset().all())
-        serializer = self.get_serializer(cases, many=True)
-        result = self.get_paginated_response(serializer.data)
-        return result
 
 
 class ShopItemsViewSet(ModelViewSet):
@@ -38,7 +32,6 @@ class ShopItemsViewSet(ModelViewSet):
         item = self.get_object()
         user = self.request.user
         serializer = self.get_serializer(data={"item": item.id, "user": user.id})
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(ItemListSerializer(item).data)
-        return Response(serializer.errors)

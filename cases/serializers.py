@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework import status
 from cases.models import Case, Item, RarityCategory
 from users.models import UserItems
 from payments.models import Calc
@@ -29,15 +30,25 @@ class ItemListSerializer(serializers.ModelSerializer):
 
 class UserItemSerializer(serializers.ModelSerializer):
 
+    def validate(self, attrs):
+        super(UserItemSerializer, self).validate(attrs)
+        if attrs["item"]:
+            price = attrs["item"].price
+            balance = attrs["user"].profile.balance
+            if price > balance:
+                raise serializers.ValidationError(
+                    detail="Недостаточно средств", code=status.HTTP_406_NOT_ACCEPTABLE
+                )
+        return attrs
+
     def create(self, validated_data):
         user_item = super().create(validated_data)
-        # todo исправить начисление
-        # Calc.objects.create(
-        #     user_id=user_item.user_id,
-        #     credit=user_item.item.price_in_rubles
-        #     * -1,  # Умножаем на -1, потому что это не расход
-        #     debit=user_item.item.price_in_rubles,
-        # )
+        Calc.objects.create(
+            user_id=user_item.user_id,
+            balance=-user_item.item.price,
+            debit=user_item.item.price - user_item.item.purchase_price,
+            credit=-(user_item.item.price - user_item.item.purchase_price),
+        )
         return user_item
 
     class Meta:

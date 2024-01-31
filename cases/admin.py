@@ -25,6 +25,7 @@ class CasesInline(admin.TabularInline):
 class ItemAdmin(admin.ModelAdmin):
     list_display = ("name", "item_id", "price", "sale", "created_at")
     list_editable = ("sale", "price")
+    list_filter = ("sale", "created_at")
     fieldsets = (
         (
             None,
