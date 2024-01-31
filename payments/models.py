@@ -94,7 +94,7 @@ class PromoCode(models.Model):
     removed = models.BooleanField(verbose_name="Удалено", default=False)
 
     def activate_promo(self, user: User) -> (str, bool):
-        time = timezone.localdate()
+        time = timezone.localtime()
         if not self.active or (self.to_date and self.to_date >= time):
             return "Промокод не действителен", False
         _activated = ActivatedPromo.objects.filter(user=user, promo=self).count()
