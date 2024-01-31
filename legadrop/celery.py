@@ -1,4 +1,4 @@
-from celery import Celery
+from celery import Celery, shared_task
 from django.conf import settings
 import os
 
@@ -12,6 +12,6 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 
-@app.task(bind=True, ignore_result=True)
-def debug_task(self):
-    print(f"Request: {self.request!r}")
+@shared_task
+def debug_task():
+    print(f"debug test")
