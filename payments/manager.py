@@ -28,7 +28,7 @@ class PaymentManager:
                 else ["card", "sbp", "qiwi"]
             ),
             "orderId": order_id,
-            #"shopId": settings.GATEWAYS_SETTINGS["LAVA_SHOP_ID"],
+            # "shopId": settings.GATEWAYS_SETTINGS["LAVA_SHOP_ID"],
             "successUrl": settings.BASE_URL + settings.BACK_URL_LAVA + str(order_id),
             "sum": round(float(vals["sum"]), 2),
         }
@@ -53,7 +53,7 @@ class PaymentManager:
             status_lava_num=res["status"],
             include_service_lava=", ".join(res["include_service"]),
             active=True,
-            sum=vals["sum"]
+            sum=vals["sum"],
         )
 
         return payment_order

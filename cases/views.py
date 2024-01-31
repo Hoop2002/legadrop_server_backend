@@ -1,3 +1,4 @@
+from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser
@@ -50,5 +51,30 @@ class ItemAdminViewSet(ModelViewSet):
     http_method_names = ["get", "post", "delete", "put"]
 
     def get_serializer_class(self):
-        serializer = {"list": ItemListSerializer, "retrieve": ItemsAdminSerializer}
+        serializer = {
+            "list": ItemListSerializer,
+            "retrieve": ItemsAdminSerializer,
+            "update": ItemsAdminSerializer,
+            "create": ItemsAdminSerializer,
+        }
         return serializer[self.action]
+
+    @extend_schema(
+        description=(
+            "Ни одно поле для этого запроса не является обязательным, можно отправить хоть пустой"
+            "объект, тогда ничего не будет обновлено. Но если поле отправляется, то его надо заполнить"
+        )
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(request=None)
+    def destroy(self, request, *args, **kwargs):
+        count = (
+            self.get_queryset()
+            .filter(item_id=self.kwargs["item_id"], removed=False)
+            .update(removed=True)
+        )
+        if count < 0:
+            return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(status=status.HTTP_404_NOT_FOUND)

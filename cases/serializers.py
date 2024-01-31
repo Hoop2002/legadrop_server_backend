@@ -14,10 +14,11 @@ class CasesSerializer(serializers.ModelSerializer):
 
 
 class RarityCategorySerializer(serializers.ModelSerializer):
+
     class Meta:
         model = RarityCategory
         fields = ("rarity_id", "name")
-        read_only_fields = ("rarity_id", "name")
+        read_only_fields = ("name", "rarity_id")
 
 
 class ItemListSerializer(serializers.ModelSerializer):
@@ -60,9 +61,23 @@ class UserItemSerializer(serializers.ModelSerializer):
 
 
 class ItemsAdminSerializer(serializers.ModelSerializer):
-    image = Base64ImageField(required=False, max_length=None, use_url=True)
-    rarity_category = RarityCategorySerializer()
-    created_at = serializers.DateTimeField(read_only=True)
+    price = serializers.FloatField(required=True)
+    purchase_price = serializers.FloatField(required=True)
+    image = Base64ImageField(
+        required=False, max_length=None, use_url=True, allow_null=True
+    )
+    rarity_category = RarityCategorySerializer(read_only=True)
+    color = serializers.CharField(max_length=128, allow_blank=True)
+    rarity_category_id = serializers.CharField(max_length=9, write_only=True)
+    step_down_factor = serializers.FloatField(default=1, required=False)
+
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get("request")
+        if request and getattr(request, "method", None) == "PUT":
+            for field in fields:
+                fields[field].required = False
+        return fields
 
     class Meta:
         model = Item
@@ -72,6 +87,8 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
             "name",
             "price",
             "purchase_price",
+            "sale_price",
+            "percent_price",
             "sale",
             "color",
             "image",
@@ -79,9 +96,7 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
             "updated_at",
             "step_down_factor",
             "rarity_category",
+            "rarity_category_id",
         )
-        read_only_fields = (
-            "id",
-            "created_at",
-            "updated_at",
-        )
+        read_only_fields = ("id", "created_at", "updated_at", "rarity_category")
+        write_only_fields = ("rarity_category_id",)
