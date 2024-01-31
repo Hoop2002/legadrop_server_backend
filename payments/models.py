@@ -26,7 +26,7 @@ class PaymentOrder(models.Model):
     )
 
     order_id = models.CharField(max_length=128, default=payment_order_id_generator)
-    sum = models.DecimalField(default=0.0, decimal_places=2, max_digits=17)
+    sum = models.DecimalField(default=0.0, decimal_places=2, max_digits=20)
     type_payments = models.CharField(max_length=64, choices=PAYMENT_TYPES_CHOICES)
 
     lava_id = models.CharField(max_length=256, null=True)
@@ -50,7 +50,6 @@ class PaymentOrder(models.Model):
     )
     status_lava_num = models.IntegerField(default=1)
     email = models.EmailField(default="test@example.com")
-    genshin_uid = models.CharField(max_length=16, null=True)
 
     active = models.BooleanField(default=True)
 
