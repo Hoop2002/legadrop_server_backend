@@ -83,7 +83,9 @@ class UserItemsListView(ListAPIView):
 
     def list(self, request, *args, **kwargs):
         items = Item.objects.filter(
-            id__in=self.get_queryset().filter(user=request.user).values_list("item", flat=True)
+            id__in=self.get_queryset()
+            .filter(user=request.user)
+            .values_list("item", flat=True)
         )
         items = self.paginate_queryset(items)
         serializer = self.get_serializer(items, many=True)
