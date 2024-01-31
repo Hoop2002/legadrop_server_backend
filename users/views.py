@@ -1,18 +1,22 @@
 from django.contrib.auth import authenticate, login
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.generics import ListAPIView
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.permissions import AllowAny
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 
 from rest_framework.response import Response
 
-from users.models import UserProfile
+from users.models import UserProfile, UserItems
 from users.serializers import (
     UserProfileCreateSerializer,
     UserSignInSerializer,
     UserProfileSerializer,
 )
+from cases.models import Item
+from cases.serializers import ItemListSerializer
 
 
 @extend_schema(tags=["main"])
@@ -71,3 +75,17 @@ class UserProfileViewSet(ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
         return Response("something wrong", status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserItemsListView(ListAPIView):
+    queryset = UserItems.objects
+    serializer_class = ItemListSerializer
+
+    def list(self, request, *args, **kwargs):
+        items = Item.objects.filter(
+            id__in=self.get_queryset().filter(user=request.user).values_list("item", flat=True)
+        )
+        items = self.paginate_queryset(items)
+        serializer = self.get_serializer(items, many=True)
+        response = self.get_paginated_response(serializer.data)
+        return response
