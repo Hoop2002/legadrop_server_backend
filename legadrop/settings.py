@@ -32,7 +32,6 @@ DEBUG = env("DEBUG", default=True)
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -42,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_celery_beat",
     "rest_framework",
     "drf_spectacular",
     "drf_spectacular_sidecar",
@@ -119,6 +119,12 @@ DATABASES = {
     }
 }
 
+CELERY_BROKER_URL = env("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND")
+CELERY_TIMEZONE = "Europe/Moscow"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -173,3 +179,6 @@ GATEWAYS_SETTINGS = {
     "LAVA_SECRET_KEY": env("LAVA_SECRET_KEY"),
     "LAVA_SHOP_ID": env("LAVA_SHOP_ID"),
 }
+
+BASE_URL = env("BASE_URL_APP")
+BACK_URL_LAVA = env("BACK_URL_LAVA")
