@@ -30,7 +30,11 @@ class Item(models.Model):
         verbose_name="Закупочная цена", default=0, null=False
     )
     sale_price = models.FloatField(verbose_name="Цена продажи", default=0)
-    percent_price = models.FloatField(verbose_name='Процент от начальной цены при продаже', default=0, validators=[MinValueValidator(0)])
+    percent_price = models.FloatField(
+        verbose_name="Процент от начальной цены при продаже",
+        default=0,
+        validators=[MinValueValidator(0)],
+    )
     sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
     # active = models.BooleanField(default=True)  # todo добавляем в кейс
     color = models.CharField(verbose_name="Цвет", max_length=128)

@@ -12,14 +12,10 @@ class PaymentManager:
     def _create_lava_payment_order(self, vals: dict) -> PaymentOrder:
         order_id = payment_order_id_generator()
         payment_order = PaymentOrder.objects.create(
-            order_id=order_id,
-            type_payments=vals["type_payments"],
-            email=vals["email"]
+            order_id=order_id, type_payments=vals["type_payments"], email=vals["email"]
         )
 
-        lava_order = {
-
-        }
+        lava_order = {}
 
         return payment_order
 

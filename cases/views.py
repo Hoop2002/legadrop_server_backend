@@ -3,7 +3,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser
 from drf_spectacular.utils import extend_schema
 
-from cases.serializers import CasesSerializer, ItemListSerializer, UserItemSerializer, ItemsAdminSerializer
+from cases.serializers import (
+    CasesSerializer,
+    ItemListSerializer,
+    UserItemSerializer,
+    ItemsAdminSerializer,
+)
 from cases.models import Case, Item
 
 
@@ -37,16 +42,13 @@ class ShopItemsViewSet(ModelViewSet):
             return Response(ItemListSerializer(item).data)
 
 
-@extend_schema(tags=['admin'])
+@extend_schema(tags=["admin"])
 class ItemAdminViewSet(ModelViewSet):
     queryset = Item.objects.filter(removed=False)
     permission_classes = [IsAdminUser]
     lookup_field = "item_id"
-    http_method_names = ['get', 'post', 'delete', 'put']
+    http_method_names = ["get", "post", "delete", "put"]
 
     def get_serializer_class(self):
-        serializer = {
-            'list': ItemListSerializer,
-            'retrieve': ItemsAdminSerializer
-        }
+        serializer = {"list": ItemListSerializer, "retrieve": ItemsAdminSerializer}
         return serializer[self.action]
