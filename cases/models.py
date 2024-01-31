@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -28,11 +29,18 @@ class Item(models.Model):
     purchase_price = models.FloatField(
         verbose_name="Закупочная цена", default=0, null=False
     )
+    sale_price = models.FloatField(verbose_name="Цена продажи", default=0)
+    percent_price = models.FloatField(
+        verbose_name="Процент от начальной цены при продаже",
+        default=0,
+        validators=[MinValueValidator(0)],
+    )
     sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
-    # active = models.BooleanField(default=True) todo добавляем в кейс
+    # active = models.BooleanField(default=True)  # todo добавляем в кейс
     color = models.CharField(verbose_name="Цвет", max_length=128)
     image = models.ImageField(upload_to=generate_upload_name, verbose_name="Картинка")
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
     step_down_factor = models.FloatField(verbose_name="Понижающий фактор", default=1)
     rarity_category = models.ForeignKey(
         verbose_name="Категория уникальности",
@@ -43,6 +51,7 @@ class Item(models.Model):
         null=True,
         blank=True,
     )
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
 
     def __str__(self):
         return self.name

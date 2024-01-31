@@ -5,6 +5,7 @@ import hashlib
 
 from django.conf import settings
 
+
 class LavaApi:
     def __init__(self):
 

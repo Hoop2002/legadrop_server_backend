@@ -51,7 +51,7 @@ class UserProfileCreateSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField(read_only=True)
 
     @staticmethod
-    def get_token(instance):
+    def get_token(instance) -> str:
         return str(AccessToken.for_user(instance.user))
 
     def create(self, validated_data):
