@@ -32,6 +32,12 @@ DEBUG = env("DEBUG", default=True)
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 
+CELERY_BROKER_URL = env("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND")
+CELERY_TIMEZONE = "Europe/Moscow"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
 
 # Application definition
 
@@ -42,6 +48,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_celery_beat",
     "rest_framework",
     "drf_spectacular",
     "drf_spectacular_sidecar",
