@@ -35,7 +35,6 @@ class PaymentManager:
 
         result = self.lava._create_order(data=data)
         status_lava = result.get("status", False)
-        print(result)
         if status_lava != status.HTTP_200_OK:
             raise APIException(detail="Внутренняя ошибка сервера! Попробуйте позже...")
 
