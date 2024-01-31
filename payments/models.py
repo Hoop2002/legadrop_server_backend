@@ -1,9 +1,8 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth.models import User
 
 from utils.functions import payment_order_id_generator, id_generator
-
-from django.contrib.auth.models import User
 
 
 class PaymentOrder(models.Model):
@@ -65,9 +64,11 @@ class PromoCode(models.Model):
     BALANCE = "balance"
     BONUS = "bonus"
     PROMO_TYPES = ((BALANCE, "На баланс"), (BONUS, "Бонус к пополнению"))
+
     code_data = models.CharField(default=id_generator, unique=True, max_length=128)
     name = models.CharField(max_length=256, null=False)
     type = models.CharField(max_length=64, choices=PROMO_TYPES, null=False)
+    active = models.BooleanField(verbose_name="Активен", default=True)
     summ = models.FloatField(verbose_name="Баланс", null=True, blank=True)
     percent = models.IntegerField(
         verbose_name="Процент",
@@ -79,6 +80,9 @@ class PromoCode(models.Model):
         verbose_name="Лимит активаций", null=True, blank=True
     )
     to_date = models.DateTimeField(verbose_name="Действует до", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
 
     def __str__(self):
         return f"{self.name}_{self.code_data}"
@@ -103,7 +107,9 @@ class Calc(models.Model):
         - Пополнение баланса пользователем: credit + (наши нереализованные деньги) debit 0, balance + (учёт пользовательского баланса);
         - Покупка кейса: balance - (списание у пользователя стоимости кейса), debit = стоимость кейса - закупочная стоимость предмета выпавшего из кейса, credit = debit * -1;
         - Покупка предмета пользователем: balance - (списание у пользователя стоимости), debit = стоимость продажи предмета пользователю - закупочная стоимость. credit = debit * -1;
-        - Вывод предмета пользователем с аккаунта: credit 0, debit = 0, потому что credit и так есть в остатке, делать ли запись? ;
+        - Вывод предмета пользователем с аккаунта: credit 0, debit = 0, потому что credit и так есть в остатке, делать ли запись?;
+        - Продажа предмета пользователем сервису: credit = (стоимость предмета * на коэф) - стоимость закупки, debit = credit * -1;
+        ИЛИ если указана прямая стоимость продажи, то credit = (стоимость предмета - (стоимость предмета - стоимость продажи)) - стоимость закупки, debit = credit * -1;
     """
 
     calc_id = models.CharField(

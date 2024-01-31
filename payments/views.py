@@ -1,9 +1,18 @@
+from drf_spectacular.utils import extend_schema
+
+from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
-from payments.models import PaymentOrder
-from payments.serializers import UserPaymentOrderSerializer, AdminPaymentOrderSerializer
+from rest_framework.permissions import IsAdminUser
+
+from payments.models import PaymentOrder, PromoCode
+from payments.serializers import (
+    UserPaymentOrderSerializer,
+    AdminPaymentOrderSerializer,
+    AdminPromoCodeSerializer,
+    AdminListPromoSerializer,
+)
 
 
 class UserPaymentOrderViewSet(ModelViewSet):
@@ -35,3 +44,36 @@ class UserPaymentOrderViewSet(ModelViewSet):
 class AdminPaymentOrderViewSet(ModelViewSet):
     serializer_class = AdminPaymentOrderSerializer
     queryset = PaymentOrder.objects
+
+
+@extend_schema(tags=["admin/promo"])
+class AdminPromoCodeViewSet(ModelViewSet):
+    queryset = PromoCode.objects.filter(removed=False)
+    serializer_class = AdminPromoCodeSerializer
+    permission_classes = [IsAdminUser]
+    http_method_names = ["get", "post", "delete", "put"]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return AdminListPromoSerializer
+        return AdminPromoCodeSerializer
+
+    @extend_schema(
+        description=(
+            "Ни одно поле для этого запроса не является обязательным, можно отправить хоть пустой"
+            "объект, тогда ничего не будет обновлено. Но если поле отправляется, то его надо заполнить"
+        )
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(request=None)
+    def destroy(self, request, *args, **kwargs):
+        count = (
+            self.get_queryset()
+            .filter(id=self.kwargs["pk"], removed=False)
+            .update(removed=True)
+        )
+        if count < 0:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_404_NOT_FOUND)

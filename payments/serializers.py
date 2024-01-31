@@ -1,10 +1,11 @@
-from rest_framework.serializers import ModelSerializer, ChoiceField
-from payments.models import PaymentOrder
+from rest_framework import serializers
+
+from payments.models import PaymentOrder, PromoCode
 from payments.manager import PaymentManager
 
 
-class UserPaymentOrderSerializer(ModelSerializer):
-    type_payments = ChoiceField(choices=PaymentOrder.PAYMENT_TYPES_CHOICES)
+class UserPaymentOrderSerializer(serializers.ModelSerializer):
+    type_payments = serializers.ChoiceField(choices=PaymentOrder.PAYMENT_TYPES_CHOICES)
 
     class Meta:
         model = PaymentOrder
@@ -29,7 +30,49 @@ class UserPaymentOrderSerializer(ModelSerializer):
         return order
 
 
-class AdminPaymentOrderSerializer(ModelSerializer):
+class AdminPaymentOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentOrder
         fields = "__all__"
+
+
+class AdminListPromoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PromoCode
+        fields = ("id", "name", "type", "code_data")
+
+
+class AdminPromoCodeSerializer(AdminListPromoSerializer):
+    type = serializers.ChoiceField(choices=PromoCode.PROMO_TYPES)
+    percent = serializers.IntegerField(
+        min_value=0, max_value=100, required=False, default=0
+    )
+    summ = serializers.FloatField(required=False)
+    to_date = serializers.DateTimeField(required=False)
+    limit_activations = serializers.IntegerField(required=False)
+    code_data = serializers.CharField(max_length=128, required=False)
+
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get("request")
+        if request and getattr(request, "method", None) == "PUT":
+            for field in fields:
+                fields[field].required = False
+        return fields
+
+    class Meta:
+        model = PromoCode
+        fields = (
+            "id",
+            "name",
+            "type",
+            "code_data",
+            "active",
+            "summ",
+            "percent",
+            "limit_activations",
+            "to_date",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
