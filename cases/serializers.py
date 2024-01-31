@@ -4,6 +4,8 @@ from cases.models import Case, Item, RarityCategory
 from users.models import UserItems
 from payments.models import Calc
 
+from utils.fields import Base64ImageField
+
 
 class CasesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -55,3 +57,31 @@ class UserItemSerializer(serializers.ModelSerializer):
         model = UserItems
         fields = ("user", "item", "id")
         read_only_fields = ("id",)
+
+
+class ItemsAdminSerializer(serializers.ModelSerializer):
+    image = Base64ImageField(required=False, max_length=None, use_url=True)
+    rarity_category = RarityCategorySerializer()
+    created_at = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = Item
+        fields = (
+            "id",
+            "item_id",
+            "name",
+            "price",
+            "purchase_price",
+            "sale",
+            "color",
+            "image",
+            "created_at",
+            "updated_at",
+            "step_down_factor",
+            "rarity_category",
+        )
+        read_only_fields = (
+            "id",
+            "created_at",
+            "updated_at",
+        )
