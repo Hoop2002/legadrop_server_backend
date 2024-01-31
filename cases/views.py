@@ -43,7 +43,7 @@ class ShopItemsViewSet(ModelViewSet):
             return Response(ItemListSerializer(item).data)
 
 
-@extend_schema(tags=["admin"])
+@extend_schema(tags=["admin/items"])
 class ItemAdminViewSet(ModelViewSet):
     queryset = Item.objects.filter(removed=False)
     permission_classes = [IsAdminUser]
@@ -51,13 +51,9 @@ class ItemAdminViewSet(ModelViewSet):
     http_method_names = ["get", "post", "delete", "put"]
 
     def get_serializer_class(self):
-        serializer = {
-            "list": ItemListSerializer,
-            "retrieve": ItemsAdminSerializer,
-            "update": ItemsAdminSerializer,
-            "create": ItemsAdminSerializer,
-        }
-        return serializer[self.action]
+        if self.action == "list":
+            return ItemListSerializer
+        return ItemsAdminSerializer
 
     @extend_schema(
         description=(
@@ -68,7 +64,6 @@ class ItemAdminViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
-    @extend_schema(request=None)
     def destroy(self, request, *args, **kwargs):
         count = (
             self.get_queryset()
@@ -76,5 +71,5 @@ class ItemAdminViewSet(ModelViewSet):
             .update(removed=True)
         )
         if count < 0:
-            return Response(status=status.HTTP_202_ACCEPTED)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
