@@ -3,7 +3,6 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.generics import ListAPIView
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.permissions import AllowAny
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 
