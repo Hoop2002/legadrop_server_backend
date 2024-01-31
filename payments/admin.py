@@ -28,3 +28,19 @@ class CalcAdmin(admin.ModelAdmin):
         )
 
     user_link.short_description = "Пользователь"
+
+
+@admin.register(PromoCode)
+class PromoCodeAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "summ", "type", "created_at", "active")
+    list_display_links = ("name",)
+    list_editable = ("active",)
+    fieldsets = (
+        ("Строки", {"fields": ("name", "code_data", "type")}),
+        (
+            "Настройки",
+            {"fields": ("summ", "percent", "limit_activations", "to_date", "active")},
+        ),
+        ("Даты", {"fields": ("created_at", "updated_at")}),
+    )
+    readonly_fields = ("created_at", "updated_at")
