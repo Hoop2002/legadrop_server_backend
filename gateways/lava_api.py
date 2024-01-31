@@ -3,10 +3,10 @@ import hmac
 import json
 import hashlib
 
+from django.conf import settings
 
 class LavaApi:
     def __init__(self):
-        from django.conf import settings
 
         self.URL = "https://api.lava.ru"
         self.SECRETKEY = settings.GATEWAYS_SETTINGS["LAVA_SECRET_KEY"]
@@ -14,6 +14,7 @@ class LavaApi:
 
     def _create_order(self, data: dict, router: str = "/business/invoice/create"):
         data = self.SyncSortDict(data)
+        data.update({"shopId": self.SHOP_ID})
         json_str = json.dumps(data).encode()
 
         auth = hmac.new(
