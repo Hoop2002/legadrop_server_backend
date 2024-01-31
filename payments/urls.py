@@ -17,6 +17,7 @@ urlpatterns = [
         "payments/<str:order_id>",
         views.UserPaymentOrderViewSet.as_view({"get": "retrieve"}),
     ),
+    path("promo/activate", views.PromoViewSet.as_view({"post": "activate"})),
 ]
 
 urlpatterns += router.urls

@@ -30,6 +30,20 @@ class UserPaymentOrderSerializer(serializers.ModelSerializer):
         return order
 
 
+class ActivatePromoCodeSerializer(serializers.ModelSerializer):
+    code_data = serializers.CharField(validators=[], write_only=True)
+
+    def validate(self, attrs):
+        if "code_data" in attrs:
+            if PromoCode.objects.filter(code_data=attrs["code_data"]).exists():
+                return attrs
+        raise serializers.ValidationError("Нет такого промокода")
+
+    class Meta:
+        model = PromoCode
+        fields = ("code_data",)
+
+
 class AdminPaymentOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentOrder
@@ -51,6 +65,8 @@ class AdminPromoCodeSerializer(AdminListPromoSerializer):
     to_date = serializers.DateTimeField(required=False)
     limit_activations = serializers.IntegerField(required=False)
     code_data = serializers.CharField(max_length=128, required=False)
+    limit_for_user = serializers.IntegerField(required=False, default=1)
+    bonus_limit = serializers.IntegerField(required=False, default=1)
 
     def get_fields(self):
         fields = super().get_fields()
@@ -68,11 +84,14 @@ class AdminPromoCodeSerializer(AdminListPromoSerializer):
             "type",
             "code_data",
             "active",
+            "activations",
             "summ",
             "percent",
             "limit_activations",
+            "limit_for_user",
+            "bonus_limit",
             "to_date",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "created_at", "updated_at")
+        read_only_fields = ("id", "created_at", "updated_at", "activations")

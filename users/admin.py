@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib import admin
-from users.models import UserProfile, UserItems
+from users.models import UserProfile, UserItems, ActivatedPromo
 from django.utils.safestring import mark_safe
 from django.urls import reverse
 
@@ -35,3 +35,9 @@ class UserProfileInline(admin.TabularInline):
 class UserAdmin(BaseUserAdmin):
     list_select_related = True
     inlines = [UserProfileInline]
+
+
+@admin.register(ActivatedPromo)
+class PromoActivationsAdmin(admin.ModelAdmin):
+    list_display = ("user", "promo", "created_at")
+    readonly_fields = ("created_at",)

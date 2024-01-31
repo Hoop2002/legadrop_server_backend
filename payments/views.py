@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema
 
 from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAdminUser
@@ -12,7 +12,9 @@ from payments.serializers import (
     AdminPaymentOrderSerializer,
     AdminPromoCodeSerializer,
     AdminListPromoSerializer,
+    ActivatePromoCodeSerializer,
 )
+from utils.serializers import SuccessSerializer
 
 
 class UserPaymentOrderViewSet(ModelViewSet):
@@ -44,6 +46,23 @@ class UserPaymentOrderViewSet(ModelViewSet):
 class AdminPaymentOrderViewSet(ModelViewSet):
     serializer_class = AdminPaymentOrderSerializer
     queryset = PaymentOrder.objects
+
+
+@extend_schema(tags=["promo"])
+class PromoViewSet(GenericViewSet):
+    queryset = PromoCode.objects
+    serializer_class = ActivatePromoCodeSerializer
+    lookup_field = "code_data"
+
+    @extend_schema(responses={200: SuccessSerializer})
+    def activate(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        promo = PromoCode.objects.get(code_data=serializer.validated_data["code_data"])
+        message, success = promo.activate_promo(self.request.user)
+        if not success:
+            return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": message}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["admin/promo"])

@@ -14,7 +14,7 @@ class CalcAdmin(admin.ModelAdmin):
     readonly_fields = ("creation_date", "update_date")
 
     fieldsets = (
-        ("Связи", {"fields": ("user", "promo_code", "order")}),
+        ("Связи", {"fields": ("user", "promo_using", "order")}),
         ("Деньги", {"fields": ("debit", "credit", "balance")}),
         (None, {"fields": ("creation_date", "update_date")}),
     )
@@ -36,11 +36,21 @@ class PromoCodeAdmin(admin.ModelAdmin):
     list_display_links = ("name",)
     list_editable = ("active",)
     fieldsets = (
-        ("Строки", {"fields": ("name", "code_data", "type")}),
+        ("Основа", {"fields": ("name", "code_data", "type", "activations", "removed")}),
         (
             "Настройки",
-            {"fields": ("summ", "percent", "limit_activations", "to_date", "active")},
+            {
+                "fields": (
+                    "summ",
+                    "limit_for_user",
+                    "percent",
+                    "bonus_limit",
+                    "limit_activations",
+                    "to_date",
+                    "active",
+                )
+            },
         ),
         ("Даты", {"fields": ("created_at", "updated_at")}),
     )
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at", "activations")
