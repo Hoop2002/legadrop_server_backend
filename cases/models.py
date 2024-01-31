@@ -98,7 +98,10 @@ class Case(models.Model):
     # translit_name = todo
     active = models.BooleanField(verbose_name="Активен", default=True)
     image = models.ImageField(
-        upload_to=generate_upload_name, verbose_name="Картинка", null=True
+        upload_to=generate_upload_name,
+        verbose_name="Картинка",
+        null=True,
+        blank=True,
     )
     price = models.FloatField(verbose_name="Стоимость", default=0)
     case_free = models.BooleanField(verbose_name="Кейс бесплатный", default=False)
@@ -114,7 +117,7 @@ class Case(models.Model):
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     items = models.ManyToManyField(verbose_name="Предметы в кейсе", to="Item")
     conditions = models.ManyToManyField(
-        verbose_name="Условия открытия кейса", to=ConditionCase
+        verbose_name="Условия открытия кейса", to=ConditionCase, blank=True
     )
 
     def __str__(self):
