@@ -1,6 +1,5 @@
 from django.contrib.auth import authenticate, login
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.generics import ListAPIView
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.permissions import AllowAny
 from rest_framework import status
@@ -13,9 +12,8 @@ from users.serializers import (
     UserProfileCreateSerializer,
     UserSignInSerializer,
     UserProfileSerializer,
+    UserItemSerializer,
 )
-from cases.models import Item
-from cases.serializers import ItemListSerializer
 
 
 @extend_schema(tags=["main"])
@@ -76,17 +74,19 @@ class UserProfileViewSet(ModelViewSet):
         return Response("something wrong", status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserItemsListView(ListAPIView):
-    queryset = UserItems.objects
-    serializer_class = ItemListSerializer
+class UserItemsListView(ModelViewSet):
+    queryset = UserItems.objects.filter(active=True)
+    serializer_class = UserItemSerializer
+    http_method_names = ['get', 'delete']
 
     def list(self, request, *args, **kwargs):
-        items = Item.objects.filter(
-            id__in=self.get_queryset()
-            .filter(user=request.user)
-            .values_list("item", flat=True)
-        )
-        items = self.paginate_queryset(items)
+        items = self.paginate_queryset(self.get_queryset())
         serializer = self.get_serializer(items, many=True)
         response = self.get_paginated_response(serializer.data)
         return response
+
+    @extend_schema(request=None)
+    def destroy(self, request, *args, **kwargs):
+        user_item: UserItems = self.get_object()
+        user_item.sale_item()
+        return Response(status=status.HTTP_204_NO_CONTENT)

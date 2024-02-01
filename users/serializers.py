@@ -2,7 +2,8 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
-from users.models import UserProfile
+from users.models import UserProfile, UserItems
+from cases.serializers import RarityCategorySerializer
 from utils.fields import Base64ImageField
 
 
@@ -105,3 +106,22 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ("user", "image", "balance", "locale", "verified")
         read_only_fields = ("verified", "balance")
+
+
+class UserItemSerializer(serializers.ModelSerializer):
+    item_id = serializers.CharField(source='item.item_id')
+    name = serializers.CharField(source='item.name')
+    price = serializers.FloatField(source='item.price')
+    image = Base64ImageField(source='item.image', use_url=True, max_length=None)
+    rarity_category = RarityCategorySerializer(source='item.rarity_category')
+
+    class Meta:
+        model = UserItems
+        fields = (
+            "id",
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "rarity_category",
+        )
