@@ -14,7 +14,7 @@ class CalcAdmin(admin.ModelAdmin):
     readonly_fields = ("creation_date", "update_date")
 
     fieldsets = (
-        ("Связи", {"fields": ("user", "promo_code", "order")}),
+        ("Связи", {"fields": ("user", "promo_using", "order")}),
         ("Деньги", {"fields": ("debit", "credit", "balance")}),
         (None, {"fields": ("creation_date", "update_date")}),
     )
@@ -28,3 +28,29 @@ class CalcAdmin(admin.ModelAdmin):
         )
 
     user_link.short_description = "Пользователь"
+
+
+@admin.register(PromoCode)
+class PromoCodeAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "summ", "type", "created_at", "active")
+    list_display_links = ("name",)
+    list_editable = ("active",)
+    fieldsets = (
+        ("Основа", {"fields": ("name", "code_data", "type", "activations", "removed")}),
+        (
+            "Настройки",
+            {
+                "fields": (
+                    "summ",
+                    "limit_for_user",
+                    "percent",
+                    "bonus_limit",
+                    "limit_activations",
+                    "to_date",
+                    "active",
+                )
+            },
+        ),
+        ("Даты", {"fields": ("created_at", "updated_at")}),
+    )
+    readonly_fields = ("created_at", "updated_at", "activations")

@@ -1,9 +1,11 @@
 from django.db import models
+from django.utils import timezone
+from django.utils.functional import cached_property
 from django.core.validators import MinValueValidator, MaxValueValidator
-
-from utils.functions import payment_order_id_generator, id_generator
-
 from django.contrib.auth.models import User
+
+from users.models import ActivatedPromo
+from utils.functions import payment_order_id_generator, id_generator
 
 
 class PaymentOrder(models.Model):
@@ -65,10 +67,18 @@ class PromoCode(models.Model):
     BALANCE = "balance"
     BONUS = "bonus"
     PROMO_TYPES = ((BALANCE, "На баланс"), (BONUS, "Бонус к пополнению"))
+
     code_data = models.CharField(default=id_generator, unique=True, max_length=128)
     name = models.CharField(max_length=256, null=False)
     type = models.CharField(max_length=64, choices=PROMO_TYPES, null=False)
+    active = models.BooleanField(verbose_name="Активен", default=True)
     summ = models.FloatField(verbose_name="Баланс", null=True, blank=True)
+    limit_for_user = models.IntegerField(
+        verbose_name="Количество активации на 1 пользователя", default=1
+    )
+    bonus_limit = models.IntegerField(
+        verbose_name="Количество активаций бонуса на пользователя", default=1
+    )
     percent = models.IntegerField(
         verbose_name="Процент",
         null=True,
@@ -79,6 +89,32 @@ class PromoCode(models.Model):
         verbose_name="Лимит активаций", null=True, blank=True
     )
     to_date = models.DateTimeField(verbose_name="Действует до", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
+
+    def activate_promo(self, user: User) -> (str, bool):
+        time = timezone.localtime()
+        if not self.active or (self.to_date and self.to_date >= time):
+            return "Промокод не действителен", False
+        _activated = ActivatedPromo.objects.filter(user=user, promo=self).count()
+        if _activated >= self.limit_for_user:
+            return "Вы уже использовали этот промокод", False
+
+        calc = None
+        if self.type == self.BALANCE:
+            calc = Calc.objects.create(user=user, credit=self.summ, balance=self.summ)
+        activation = ActivatedPromo.objects.create(user=user, promo=self)
+        activation.calc_promo.add(calc)
+        activation.save()
+        return "Успешно активирован", True
+
+    @cached_property
+    def activations(self) -> int:
+        activations = ActivatedPromo.objects.filter(promo=self).count()
+        return activations
+
+    activations.short_description = "Количество активации"
 
     def __str__(self):
         return f"{self.name}_{self.code_data}"
@@ -103,7 +139,9 @@ class Calc(models.Model):
         - Пополнение баланса пользователем: credit + (наши нереализованные деньги) debit 0, balance + (учёт пользовательского баланса);
         - Покупка кейса: balance - (списание у пользователя стоимости кейса), debit = стоимость кейса - закупочная стоимость предмета выпавшего из кейса, credit = debit * -1;
         - Покупка предмета пользователем: balance - (списание у пользователя стоимости), debit = стоимость продажи предмета пользователю - закупочная стоимость. credit = debit * -1;
-        - Вывод предмета пользователем с аккаунта: credit 0, debit = 0, потому что credit и так есть в остатке, делать ли запись? ;
+        - Вывод предмета пользователем с аккаунта: credit 0, debit = 0, потому что credit и так есть в остатке, делать ли запись?;
+        - Продажа предмета пользователем сервису: credit = (стоимость предмета * на коэф) - стоимость закупки, debit = credit * -1;
+        ИЛИ если указана прямая стоимость продажи, то credit = (стоимость предмета - (стоимость предмета - стоимость продажи)) - стоимость закупки, debit = credit * -1;
     """
 
     calc_id = models.CharField(
@@ -131,15 +169,16 @@ class Calc(models.Model):
         related_name="calc",
         related_query_name="calcs",
     )
-    promo_code = models.ForeignKey(
+    promo_using = models.ForeignKey(
         verbose_name="Промокод",
-        to=PromoCode,
+        to="users.ActivatedPromo",
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        on_delete=models.SET_NULL,
-        related_name="calc",
-        related_query_name="calcs",
+        related_name="calc_promo",
     )
+
+    comment = models.TextField(verbose_name="Комментарий", blank=True, null=True)
 
     creation_date = models.DateTimeField(
         verbose_name="Дата создания", auto_now_add=True
