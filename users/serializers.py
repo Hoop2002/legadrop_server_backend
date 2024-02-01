@@ -109,11 +109,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class UserItemSerializer(serializers.ModelSerializer):
-    item_id = serializers.CharField(source='item.item_id')
-    name = serializers.CharField(source='item.name')
-    price = serializers.FloatField(source='item.price')
-    image = Base64ImageField(source='item.image', use_url=True, max_length=None)
-    rarity_category = RarityCategorySerializer(source='item.rarity_category')
+    item_id = serializers.CharField(source="item.item_id")
+    name = serializers.CharField(source="item.name")
+    price = serializers.FloatField(source="item.price")
+    image = Base64ImageField(source="item.image", use_url=True, max_length=None)
+    rarity_category = RarityCategorySerializer(source="item.rarity_category")
 
     class Meta:
         model = UserItems

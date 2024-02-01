@@ -53,18 +53,21 @@ class UserItems(models.Model):
 
     def sale_item(self):
         from payments.models import Calc
+
         item = self.item
         self.active = False
         if item.sale_price != 0:
             sale_price = item.sale_price
             credit = (item.price - (item.price - item.sale_price)) - item.purchase_price
         elif item.percent_price != 0:
-            sale_price = (item.price * item.percent_price)
+            sale_price = item.price * item.percent_price
             credit = sale_price - item.purchase_price
         else:
             sale_price = item.purchase_price
             credit = sale_price - item.purchase_price
-        Calc.objects.create(user=self.user, credit=credit, debit=credit * -1, balance=sale_price)
+        Calc.objects.create(
+            user=self.user, credit=credit, debit=credit * -1, balance=sale_price
+        )
         self.save()
         return
 

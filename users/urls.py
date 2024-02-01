@@ -10,6 +10,14 @@ urlpatterns = [
         views.UserProfileViewSet.as_view({"put": "update"}),
         name="update_user",
     ),
-    path("user/items", views.UserItemsListView.as_view({'get': 'list'}), name="user_items_list"),
-    path("user/item/sale/<int:pk>", views.UserItemsListView.as_view({'delete': 'destroy'}), name='sale_user_item')
+    path(
+        "user/items",
+        views.UserItemsListView.as_view({"get": "list"}),
+        name="user_items_list",
+    ),
+    path(
+        "user/item/sale/<int:pk>",
+        views.UserItemsListView.as_view({"delete": "destroy"}),
+        name="sale_user_item",
+    ),
 ]

@@ -77,7 +77,7 @@ class UserProfileViewSet(ModelViewSet):
 class UserItemsListView(ModelViewSet):
     queryset = UserItems.objects.filter(active=True)
     serializer_class = UserItemSerializer
-    http_method_names = ['get', 'delete']
+    http_method_names = ["get", "delete"]
 
     def list(self, request, *args, **kwargs):
         items = self.paginate_queryset(self.get_queryset())
