@@ -79,11 +79,11 @@ class PromoCode(models.Model):
     bonus_limit = models.IntegerField(
         verbose_name="Количество активаций бонуса на пользователя", default=1
     )
-    percent = models.IntegerField(
+    percent = models.FloatField(
         verbose_name="Процент",
         null=True,
         blank=True,
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        validators=[MinValueValidator(1.0), MaxValueValidator(2.0)],
     )
     limit_activations = models.IntegerField(
         verbose_name="Лимит активаций", null=True, blank=True
