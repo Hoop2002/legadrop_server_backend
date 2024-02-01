@@ -103,7 +103,9 @@ class PromoCode(models.Model):
 
         calc = None
         if self.type == self.BALANCE:
-            calc = Calc.objects.create(user=user, credit=self.summ, balance=self.summ)
+            calc = Calc.objects.create(
+                user=user, credit=self.summ, balance=self.summ, debit=-self.summ
+            )
         activation = ActivatedPromo.objects.create(user=user, promo=self)
         activation.calc_promo.add(calc)
         activation.save()
@@ -137,6 +139,8 @@ class Calc(models.Model):
 
     Описание структуры работы:
         - Пополнение баланса пользователем: credit + (наши нереализованные деньги) debit 0, balance + (учёт пользовательского баланса);
+        - Пополнение баланса с использованием промокода с бонусом к пополнению: credit = сумма пополнения * коэф пополнения, debit = (credit - сумма пополнеия) * -1, balance = credit;
+        - При пополнении баланса промокодом: credit = сумма промокода, debit = сумма промокода * -1, balance = сумма промокода;
         - Покупка кейса: balance - (списание у пользователя стоимости кейса), debit = стоимость кейса - закупочная стоимость предмета выпавшего из кейса, credit = debit * -1;
         - Покупка предмета пользователем: balance - (списание у пользователя стоимости), debit = стоимость продажи предмета пользователю - закупочная стоимость. credit = debit * -1;
         - Вывод предмета пользователем с аккаунта: credit 0, debit = 0, потому что credit и так есть в остатке, делать ли запись?;
