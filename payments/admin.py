@@ -9,7 +9,14 @@ admin.site.register(PaymentOrder)
 
 @admin.register(Calc)
 class CalcAdmin(admin.ModelAdmin):
-    list_display = ("calc_id", "user_link", "debit", "credit", "comment", "creation_date")
+    list_display = (
+        "calc_id",
+        "user_link",
+        "debit",
+        "credit",
+        "comment",
+        "creation_date",
+    )
     list_display_links = ("calc_id", "user_link")
     readonly_fields = ("creation_date", "update_date")
 

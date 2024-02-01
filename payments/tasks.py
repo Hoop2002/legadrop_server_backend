@@ -58,7 +58,7 @@ def verify_payment_order(lava=LavaApi()):
                     order.status = order.SUCCESS
                     order.save()
                 else:
-                    comment = f'Пополнение пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: LAVA'
+                    comment = f"Пополнение пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: LAVA"
 
                     credit = order.sum
                     debit = 0
