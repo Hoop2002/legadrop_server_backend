@@ -11,7 +11,7 @@ admin.site.unregister(User)
 
 @admin.register(UserItems)
 class UserItemsAdmin(admin.ModelAdmin):
-    list_display = ("id", "user_link", "item", "active")
+    list_display = ("id", "user_link", "item", "active", "withdrawn")
     list_display_links = ("id",)
     list_filter = ("user", "active", "item")
 

@@ -16,6 +16,11 @@ urlpatterns = [
         name="user_items_list",
     ),
     path(
+        "user/items/history",
+        views.UserItemsListView.as_view({"get": "items_history"}),
+        name="user_items_list",
+    ),
+    path(
         "user/item/sale/<int:pk>",
         views.UserItemsListView.as_view({"delete": "destroy"}),
         name="sale_user_item",

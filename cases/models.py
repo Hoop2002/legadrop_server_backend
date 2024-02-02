@@ -37,7 +37,7 @@ class Item(models.Model):
     )
     sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
     # active = models.BooleanField(default=True)  # todo добавляем в кейс
-    color = models.CharField(verbose_name="Цвет", max_length=128)
+    color = models.CharField(verbose_name="Цвет", max_length=128, null=True)
     image = models.ImageField(upload_to=generate_upload_name, verbose_name="Картинка")
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)

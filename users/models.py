@@ -34,6 +34,7 @@ class UserProfile(models.Model):
 class UserItems(models.Model):
     from_case = models.BooleanField(verbose_name="Выпал из кейса", default=False)
     active = models.BooleanField(verbose_name="Есть на аккаунте", default=True)
+    withdrawn = models.BooleanField(verbose_name="Выведен с аккаунта", default=False)
     user = models.ForeignKey(
         verbose_name="Пользователь",
         to=User,
@@ -50,6 +51,14 @@ class UserItems(models.Model):
         null=True,
         blank=True,
     )
+    calc = models.ForeignKey(
+        verbose_name="Начисление",
+        to="payments.Calc",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="saled_items",
+    )
 
     def sale_item(self):
         from payments.models import Calc
@@ -65,9 +74,14 @@ class UserItems(models.Model):
         else:
             sale_price = item.purchase_price
             credit = sale_price - item.purchase_price
-        Calc.objects.create(
-            user=self.user, credit=credit, debit=credit * -1, balance=sale_price
+        calc = Calc.objects.create(
+            user=self.user,
+            credit=credit,
+            debit=credit * -1,
+            balance=sale_price,
+            comment=f"Продажа пользовательского предмета {self.id}",
         )
+        self.calc = calc
         self.save()
         return
 
