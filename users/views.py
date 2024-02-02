@@ -13,6 +13,7 @@ from users.serializers import (
     UserSignInSerializer,
     UserProfileSerializer,
     UserItemSerializer,
+    HistoryItemSerializer,
 )
 
 
@@ -75,12 +76,16 @@ class UserProfileViewSet(ModelViewSet):
 
 
 class UserItemsListView(ModelViewSet):
-    queryset = UserItems.objects.filter(active=True)
-    serializer_class = UserItemSerializer
+    queryset = UserItems.objects
     http_method_names = ["get", "delete"]
 
+    def get_serializer_class(self):
+        if self.action == "items_history":
+            return HistoryItemSerializer
+        return UserItemSerializer
+
     def list(self, request, *args, **kwargs):
-        items = self.paginate_queryset(self.get_queryset())
+        items = self.paginate_queryset(self.get_queryset().filter(active=True))
         serializer = self.get_serializer(items, many=True)
         response = self.get_paginated_response(serializer.data)
         return response
@@ -90,3 +95,11 @@ class UserItemsListView(ModelViewSet):
         user_item: UserItems = self.get_object()
         user_item.sale_item()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(request=None)
+    def items_history(self, request, *args, **kwargs):
+        queryset = self.get_queryset().filter(active=False)
+        items = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(items, many=True)
+        response = self.get_paginated_response(serializer.data)
+        return response

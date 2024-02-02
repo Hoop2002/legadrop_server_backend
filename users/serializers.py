@@ -111,9 +111,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserItemSerializer(serializers.ModelSerializer):
     item_id = serializers.CharField(source="item.item_id")
     name = serializers.CharField(source="item.name")
-    price = serializers.FloatField(source="item.price")
+    price = serializers.SerializerMethodField()
     image = Base64ImageField(source="item.image", use_url=True, max_length=None)
     rarity_category = RarityCategorySerializer(source="item.rarity_category")
+
+    @staticmethod
+    def get_price(instance) -> float:
+        if instance.item.sale_price != 0:
+            sale_price = instance.item.sale_price
+        elif instance.item.percent_price != 0:
+            sale_price = instance.item.price * instance.item.percent_price
+        else:
+            sale_price = instance.item.purchase_price
+        return sale_price
 
     class Meta:
         model = UserItems
@@ -123,5 +133,37 @@ class UserItemSerializer(serializers.ModelSerializer):
             "name",
             "price",
             "image",
+            "rarity_category",
+        )
+
+
+class HistoryItemSerializer(UserItemSerializer):
+    status = serializers.SerializerMethodField(read_only=True)
+    price = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_price(instance) -> float:
+        if instance.calc:
+            return instance.calc.balance
+        return 0
+
+    @staticmethod
+    def get_status(instance) -> str:
+        if not instance.active and not instance.withdrawn:
+            return "Продан"
+        elif instance.withdrawn:
+            return "Выведен"
+        else:
+            return "На аккаунте"
+
+    class Meta:
+        model = UserItems
+        fields = (
+            "id",
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "status",
             "rarity_category",
         )
