@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     "cases",
     "users",
     "payments",
-    "outputs",
 ]
 
 MIDDLEWARE = [
