@@ -7,10 +7,25 @@ from payments.models import Calc
 from utils.fields import Base64ImageField
 
 
-class CasesSerializer(serializers.ModelSerializer):
+class ListCasesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Case
-        fields = ("id", "name", "price")
+        fields = ("id", "name", "price", "case_free")
+
+
+class AdminCasesSerializer(ListCasesSerializer):
+
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get("request")
+        if request and getattr(request, "method", None) == "PUT":
+            for field in fields:
+                fields[field].required = False
+        return fields
+
+    class Meta:
+        model = Case
+        fields = ListCasesSerializer.Meta.fields
 
 
 class RarityCategorySerializer(serializers.ModelSerializer):
