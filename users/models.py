@@ -34,6 +34,7 @@ class UserProfile(models.Model):
 class UserItems(models.Model):
     from_case = models.BooleanField(verbose_name="Выпал из кейса", default=False)
     active = models.BooleanField(verbose_name="Есть на аккаунте", default=True)
+    withdrawn = models.BooleanField(verbose_name="Выведен с аккаунта", default=False)
     user = models.ForeignKey(
         verbose_name="Пользователь",
         to=User,
