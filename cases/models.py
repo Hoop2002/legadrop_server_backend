@@ -2,7 +2,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.contrib.auth.models import User
 
-from utils.functions import id_generator, generate_upload_name
+from utils.functions import id_generator, generate_upload_name, transliterate
 
 
 class RarityCategory(models.Model):
@@ -37,7 +37,6 @@ class Item(models.Model):
     )
     sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
     # active = models.BooleanField(default=True)  # todo добавляем в кейс
-    color = models.CharField(verbose_name="Цвет", max_length=128, null=True)
     image = models.ImageField(upload_to=generate_upload_name, verbose_name="Картинка")
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
@@ -82,7 +81,7 @@ class ConditionCase(models.Model):
         (CALC, "Начисление"),
         (TIME, "Время"),
     )
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, unique=True)
     condition_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )
@@ -103,8 +102,13 @@ class Case(models.Model):
     case_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )
-    name = models.CharField(verbose_name="Название", max_length=256)
-    # translit_name = todo
+    name = models.CharField(verbose_name="Название", max_length=256, unique=True)
+    translit_name = models.CharField(
+        verbose_name="Транслитерация названия",
+        default="name",
+        editable=False,
+        unique=True,
+    )
     active = models.BooleanField(verbose_name="Активен", default=True)
     image = models.ImageField(
         upload_to=generate_upload_name,
@@ -124,10 +128,17 @@ class Case(models.Model):
         blank=True,
     )
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
     items = models.ManyToManyField(verbose_name="Предметы в кейсе", to="Item")
     conditions = models.ManyToManyField(
         verbose_name="Условия открытия кейса", to=ConditionCase, blank=True
     )
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
+
+    def save(self, *args, **kwargs):
+        if not self.removed:
+            self.translit_name = transliterate(self.name)
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
