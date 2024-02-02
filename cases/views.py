@@ -1,11 +1,12 @@
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from drf_spectacular.utils import extend_schema
 
 from cases.serializers import (
-    CasesSerializer,
+    ListCasesSerializer,
+    AdminCasesSerializer,
     ItemListSerializer,
     UserItemSerializer,
     ItemsAdminSerializer,
@@ -14,16 +15,51 @@ from cases.models import Case, Item
 
 
 class CasesViewSet(ModelViewSet):
-    serializer_class = CasesSerializer
-    queryset = Case.objects.filter(active=True)
+    serializer_class = ListCasesSerializer
+    queryset = Case.objects.filter(active=True, removed=False)
     permission_classes = [AllowAny]
+    lookup_field = "translit_name"
+
+
+class AdminCasesViewSet(ModelViewSet):
+    serializer_class = ListCasesSerializer
+    queryset = Case.objects.filter(removed=False)
+    permission_classes = [IsAdminUser]
+    lookup_field = "case_id"
+    http_method_names = ["get", "post", "delete", "put"]
+
+    @extend_schema(
+        description=(
+            "Ни одно поле для этого запроса не является обязательным, можно отправить хоть пустой"
+            "объект, тогда ничего не будет обновлено. Но если поле отправляется, то его надо заполнить"
+        )
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        count = (
+            self.get_queryset()
+            .filter(case_id=self.kwargs["case_id"], removed=False)
+            .update(removed=True, active=False)
+        )
+        if count < 0:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 class ShopItemsViewSet(ModelViewSet):
     serializer_class = ItemListSerializer
-    queryset = Item.objects.filter(sale=True)
+    queryset = Item.objects.filter(sale=True, removed=False)
     permission_classes = [AllowAny]
     lookup_field = "item_id"
+
+    def get_permissions(self):
+        if self.action == "buy_item":
+            self.permission_classes = [IsAuthenticated]
+        else:
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         serializers = {
@@ -36,6 +72,7 @@ class ShopItemsViewSet(ModelViewSet):
     @extend_schema(request=None, responses={200: ItemListSerializer})
     def buy_item(self, request, *args, **kwargs):
         item = self.get_object()
+        self.check_object_permissions(self.request, item)
         user = self.request.user
         serializer = self.get_serializer(data={"item": item.id, "user": user.id})
         if serializer.is_valid(raise_exception=True):
@@ -68,7 +105,7 @@ class ItemAdminViewSet(ModelViewSet):
         count = (
             self.get_queryset()
             .filter(item_id=self.kwargs["item_id"], removed=False)
-            .update(removed=True)
+            .update(removed=True, sale=False)
         )
         if count < 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
