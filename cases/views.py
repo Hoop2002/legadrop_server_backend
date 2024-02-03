@@ -21,12 +21,17 @@ class CasesViewSet(ModelViewSet):
     lookup_field = "translit_name"
 
 
+@extend_schema(tags=["admin/cases"])
 class AdminCasesViewSet(ModelViewSet):
-    serializer_class = ListCasesSerializer
     queryset = Case.objects.filter(removed=False)
     permission_classes = [IsAdminUser]
     lookup_field = "case_id"
     http_method_names = ["get", "post", "delete", "put"]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ListCasesSerializer
+        return AdminCasesSerializer
 
     @extend_schema(
         description=(
