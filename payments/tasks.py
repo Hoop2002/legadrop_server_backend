@@ -8,7 +8,9 @@ from gateways.lava_api import LavaApi
 @shared_task
 def deactivate_expired_promo():
     now = timezone.localtime()
-    PromoCode.objects.filter(to_date__lte=now, to_date__isnull=False).update(active=False)
+    PromoCode.objects.filter(to_date__lte=now, to_date__isnull=False).update(
+        active=False
+    )
 
 
 @shared_task
