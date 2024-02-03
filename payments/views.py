@@ -43,9 +43,13 @@ class UserPaymentOrderViewSet(ModelViewSet):
         return super().update(request, *args, **kwargs)
 
 
+@extend_schema(tags=["admin/payments"])
 class AdminPaymentOrderViewSet(ModelViewSet):
     serializer_class = AdminPaymentOrderSerializer
-    queryset = PaymentOrder.objects
+    queryset = PaymentOrder.objects.all()
+    permission_classes = [IsAdminUser]
+    lookup_field = "order_id"
+    http_method_names = ["get", "post", "delete", "put"]
 
 
 @extend_schema(tags=["promo"])
