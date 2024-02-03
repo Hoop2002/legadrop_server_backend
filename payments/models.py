@@ -189,6 +189,21 @@ class Calc(models.Model):
     )
     update_date = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
 
+    @classmethod
+    def calc_analytics(
+        cls,
+        from_date=timezone.localtime().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        ),
+        to_date=timezone.localtime().replace(
+            hour=23, minute=59, second=59, microsecond=59
+        ),
+    ) -> dict:
+        aggregated = cls.objects.filter(
+            creation_date__gte=from_date, creation_date__lte=to_date
+        ).aggregate(models.Sum("debit"), models.Sum("credit"))
+        return aggregated
+
     def __str__(self):
         return f"Начисление {self.calc_id}"
 

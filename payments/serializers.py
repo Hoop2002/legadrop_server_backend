@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from payments.models import PaymentOrder, PromoCode
+from payments.models import PaymentOrder, PromoCode, Calc
 from payments.manager import PaymentManager
 
 
@@ -95,3 +95,9 @@ class AdminPromoCodeSerializer(AdminListPromoSerializer):
             "updated_at",
         )
         read_only_fields = ("id", "created_at", "updated_at", "activations")
+
+
+class AdminAnalyticsSerializer(serializers.Serializer):
+    total_income = serializers.FloatField()
+    total_expense = serializers.FloatField()
+    profit = serializers.FloatField()
