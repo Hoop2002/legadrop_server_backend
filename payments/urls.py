@@ -8,6 +8,10 @@ router.register(
     "6383d341-4d14-4868-81ba-3c6382f2128e/promo", views.AdminPromoCodeViewSet
 )
 
+router.register(
+    "6383d341-4d14-4868-81ba-3c6382f2128e/payments", views.AdminPaymentOrderViewSet
+)
+
 urlpatterns = [
     path(
         "payments/",
