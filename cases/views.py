@@ -21,12 +21,17 @@ class CasesViewSet(ModelViewSet):
     lookup_field = "translit_name"
 
 
+@extend_schema(tags=["admin/cases"])
 class AdminCasesViewSet(ModelViewSet):
-    serializer_class = ListCasesSerializer
     queryset = Case.objects.filter(removed=False)
     permission_classes = [IsAdminUser]
     lookup_field = "case_id"
     http_method_names = ["get", "post", "delete", "put"]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ListCasesSerializer
+        return AdminCasesSerializer
 
     @extend_schema(
         description=(
@@ -43,7 +48,7 @@ class AdminCasesViewSet(ModelViewSet):
             .filter(case_id=self.kwargs["case_id"], removed=False)
             .update(removed=True, active=False)
         )
-        if count < 0:
+        if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -107,6 +112,6 @@ class ItemAdminViewSet(ModelViewSet):
             .filter(item_id=self.kwargs["item_id"], removed=False)
             .update(removed=True, sale=False)
         )
-        if count < 0:
+        if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)

@@ -1,31 +1,10 @@
 from rest_framework import serializers
 from rest_framework import status
-from cases.models import Case, Item, RarityCategory
+from cases.models import Case, Item, RarityCategory, Category, ConditionCase
 from users.models import UserItems
 from payments.models import Calc
 
 from utils.fields import Base64ImageField
-
-
-class ListCasesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Case
-        fields = ("id", "name", "price", "case_free")
-
-
-class AdminCasesSerializer(ListCasesSerializer):
-
-    def get_fields(self):
-        fields = super().get_fields()
-        request = self.context.get("request")
-        if request and getattr(request, "method", None) == "PUT":
-            for field in fields:
-                fields[field].required = False
-        return fields
-
-    class Meta:
-        model = Case
-        fields = ListCasesSerializer.Meta.fields
 
 
 class RarityCategorySerializer(serializers.ModelSerializer):
@@ -37,8 +16,9 @@ class RarityCategorySerializer(serializers.ModelSerializer):
 
 
 class ItemListSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(use_url=True)
-    rarity_category = RarityCategorySerializer()
+    item_id = serializers.CharField(max_length=9)
+    image = serializers.ImageField(use_url=True, read_only=True)
+    rarity_category = RarityCategorySerializer(read_only=True)
 
     class Meta:
         model = Item
@@ -115,3 +95,96 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "created_at", "updated_at", "rarity_category")
         write_only_fields = ("rarity_category_id",)
+
+
+class CaseCategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Category
+        fields = ("category_id", "name")
+        read_only_fields = ("name",)
+
+
+class ListCasesSerializer(serializers.ModelSerializer):
+    category = CaseCategorySerializer()
+
+    class Meta:
+        model = Case
+        fields = ("case_id", "name", "price", "translit_name", "case_free", "category")
+
+
+class ListConditionSerializer(serializers.ModelSerializer):
+    condition_id = serializers.CharField(max_length=9)
+
+    class Meta:
+        model = ConditionCase
+        fields = ("condition_id", "name", "type_condition")
+        read_only_fields = ("name", "type_condition")
+
+
+class AdminCasesSerializer(ListCasesSerializer):
+    name = serializers.CharField(max_length=256)
+    image = Base64ImageField(max_length=None, use_url=True, required=False)
+    category = CaseCategorySerializer(read_only=True)
+    category_id = serializers.CharField(max_length=9, write_only=True)
+    items = ItemListSerializer(many=True, read_only=True)
+    conditions = ListConditionSerializer(many=True, read_only=True)
+    item_ids = serializers.ListSerializer(
+        child=serializers.CharField(), write_only=True
+    )
+    condition_ids = serializers.ListSerializer(
+        child=serializers.CharField(), write_only=True, required=False
+    )
+
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get("request")
+        if request and getattr(request, "method", None) == "PUT":
+            for field in fields:
+                fields[field].required = False
+        return fields
+
+    def create(self, validated_data):
+        if "condition_ids" in validated_data:
+            condition_ids = validated_data.pop("condition_ids")
+            conditions = ConditionCase.objects.filter(condition_id__in=condition_ids)
+            validated_data["conditions"] = conditions
+
+        # item обязательные, поэтому не ставим проверку
+        item_ids = validated_data.pop("item_ids")
+        items = Item.objects.filter(item_id__in=item_ids)
+        validated_data["items"] = items
+
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if "condition_ids" in validated_data:
+            condition_ids = validated_data.pop("condition_ids")
+            conditions = ConditionCase.objects.filter(condition_id__in=condition_ids)
+            validated_data["conditions"] = conditions
+
+        if "item_ids" in validated_data:
+            item_ids = validated_data.pop("item_ids")
+            items = Item.objects.filter(item_id__in=item_ids)
+            validated_data["items"] = items
+        return super().update(instance, validated_data)
+
+    class Meta:
+        model = Case
+        fields = (
+            "case_id",
+            "name",
+            "translit_name",
+            "active",
+            "image",
+            "price",
+            "case_free",
+            "category",
+            "category_id",
+            "items",
+            "item_ids",
+            "conditions",
+            "condition_ids",
+            "created_at",
+            "updated_at",
+        )

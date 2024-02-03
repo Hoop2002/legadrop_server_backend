@@ -36,7 +36,6 @@ class Item(models.Model):
         validators=[MinValueValidator(0)],
     )
     sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
-    # active = models.BooleanField(default=True)  # todo добавляем в кейс
     image = models.ImageField(upload_to=generate_upload_name, verbose_name="Картинка")
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
@@ -85,7 +84,7 @@ class ConditionCase(models.Model):
     condition_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )
-    type = models.CharField(max_length=128, choices=CONDITION_TYPES_CHOICES)
+    type_condition = models.CharField(max_length=128, choices=CONDITION_TYPES_CHOICES)
     price = models.FloatField(verbose_name="Сумма внесения", null=True)
     time = models.TimeField(verbose_name="Время проверки")
     time_reboot = models.TimeField(verbose_name="Снова открыть кейс через")
@@ -129,7 +128,9 @@ class Case(models.Model):
     )
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
-    items = models.ManyToManyField(verbose_name="Предметы в кейсе", to="Item")
+    items = models.ManyToManyField(
+        verbose_name="Предметы в кейсе", to="Item", limit_choices_to={"removed": False}
+    )
     conditions = models.ManyToManyField(
         verbose_name="Условия открытия кейса", to=ConditionCase, blank=True
     )
