@@ -11,7 +11,11 @@ from cases.models import (
 
 admin.site.register(ConditionCase)
 admin.site.register(OpenedCases)
-admin.site.register(Category)
+
+
+@admin.register(Category)
+class AdminCategory(admin.ModelAdmin):
+    readonly_fields = ("category_id",)
 
 
 @admin.register(Case)

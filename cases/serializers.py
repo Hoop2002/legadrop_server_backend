@@ -118,17 +118,23 @@ class ListConditionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ConditionCase
-        fields = ("condition_id", "name", "type")
-        read_only_fields = ("name", "type")
+        fields = ("condition_id", "name", "type_condition")
+        read_only_fields = ("name", "type_condition")
 
 
 class AdminCasesSerializer(ListCasesSerializer):
     name = serializers.CharField(max_length=256)
-    image = Base64ImageField(max_length=None, use_url=True)
+    image = Base64ImageField(max_length=None, use_url=True, required=False)
     category = CaseCategorySerializer(read_only=True)
     category_id = serializers.CharField(max_length=9, write_only=True)
-    items = ItemListSerializer(many=True)
-    conditions = ListConditionSerializer(many=True)
+    items = ItemListSerializer(many=True, read_only=True)
+    conditions = ListConditionSerializer(many=True, read_only=True)
+    item_ids = serializers.ListSerializer(
+        child=serializers.CharField(), write_only=True
+    )
+    condition_ids = serializers.ListSerializer(
+        child=serializers.CharField(), write_only=True, required=False
+    )
 
     def get_fields(self):
         fields = super().get_fields()
@@ -139,10 +145,29 @@ class AdminCasesSerializer(ListCasesSerializer):
         return fields
 
     def create(self, validated_data):
-        pass
+        if "condition_ids" in validated_data:
+            condition_ids = validated_data.pop("condition_ids")
+            conditions = ConditionCase.objects.filter(condition_id__in=condition_ids)
+            validated_data["conditions"] = conditions
+
+        # item обязательные, поэтому не ставим проверку
+        item_ids = validated_data.pop("item_ids")
+        items = Item.objects.filter(item_id__in=item_ids)
+        validated_data["items"] = items
+
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        pass
+        if "condition_ids" in validated_data:
+            condition_ids = validated_data.pop("condition_ids")
+            conditions = ConditionCase.objects.filter(condition_id__in=condition_ids)
+            validated_data["conditions"] = conditions
+
+        if "item_ids" in validated_data:
+            item_ids = validated_data.pop("item_ids")
+            items = Item.objects.filter(item_id__in=item_ids)
+            validated_data["items"] = items
+        return super().update(instance, validated_data)
 
     class Meta:
         model = Case
@@ -157,7 +182,9 @@ class AdminCasesSerializer(ListCasesSerializer):
             "category",
             "category_id",
             "items",
+            "item_ids",
             "conditions",
+            "condition_ids",
             "created_at",
             "updated_at",
         )

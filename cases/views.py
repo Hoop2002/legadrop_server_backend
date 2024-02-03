@@ -48,7 +48,7 @@ class AdminCasesViewSet(ModelViewSet):
             .filter(case_id=self.kwargs["case_id"], removed=False)
             .update(removed=True, active=False)
         )
-        if count < 0:
+        if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -112,6 +112,6 @@ class ItemAdminViewSet(ModelViewSet):
             .filter(item_id=self.kwargs["item_id"], removed=False)
             .update(removed=True, sale=False)
         )
-        if count < 0:
+        if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
