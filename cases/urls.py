@@ -6,6 +6,10 @@ from cases import views
 
 router = routers.DefaultRouter()
 router.register(r"6383d341-4d14-4868-81ba-3c6382f2128e/items", views.ItemAdminViewSet)
+router.register(
+    r"6383d341-4d14-4868-81ba-3c6382f2128e/rarity_category",
+    views.AdminRarityCategoryViewSet,
+)
 router.register(r"6383d341-4d14-4868-81ba-3c6382f2128e/cases", views.AdminCasesViewSet)
 
 

@@ -10,8 +10,9 @@ from cases.serializers import (
     ItemListSerializer,
     UserItemSerializer,
     ItemsAdminSerializer,
+    RarityCategoryAdminSerializer,
 )
-from cases.models import Case, Item
+from cases.models import Case, Item, RarityCategory
 
 
 class CasesViewSet(ModelViewSet):
@@ -115,3 +116,11 @@ class ItemAdminViewSet(ModelViewSet):
         if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@extend_schema(tags=["admin/rarity"])
+class AdminRarityCategoryViewSet(ModelViewSet):
+    queryset = RarityCategory.objects.all()
+    serializer_class = RarityCategoryAdminSerializer
+    permission_classes = [IsAdminUser]
+    http_method_names = ["get", "post", "put", "delete"]

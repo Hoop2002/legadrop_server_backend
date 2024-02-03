@@ -49,7 +49,8 @@ class CaseAdmin(admin.ModelAdmin):
 @admin.register(RarityCategory)
 class RarityAdmin(admin.ModelAdmin):
     list_display = ("rarity_id", "name", "category_percent")
-    fields = ("rarity_id", "name", "category_percent")
+    fields = ("rarity_id", "name", "category_percent", "rarity_color")
+    readonly_fields = ("rarity_id",)
 
 
 class CasesInline(admin.TabularInline):

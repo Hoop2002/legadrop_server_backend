@@ -11,8 +11,14 @@ class RarityCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RarityCategory
-        fields = ("rarity_id", "name")
-        read_only_fields = ("name", "rarity_id")
+        fields = ("rarity_id", "name", "rarity_color")
+        read_only_fields = ("name", "rarity_id", "rarity_color")
+
+
+class RarityCategoryAdminSerializer(RarityCategorySerializer):
+    class Meta:
+        model = RarityCategory
+        fields = RarityCategorySerializer.Meta.fields
 
 
 class ItemListSerializer(serializers.ModelSerializer):
@@ -62,7 +68,6 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
         required=False, max_length=None, use_url=True, allow_null=True
     )
     rarity_category = RarityCategorySerializer(read_only=True)
-    color = serializers.CharField(max_length=128, allow_blank=True)
     rarity_category_id = serializers.CharField(max_length=9, write_only=True)
     step_down_factor = serializers.FloatField(default=1, required=False)
 
@@ -85,7 +90,6 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
             "sale_price",
             "percent_price",
             "sale",
-            "color",
             "image",
             "created_at",
             "updated_at",
