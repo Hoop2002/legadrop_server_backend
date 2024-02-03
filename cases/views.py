@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from drf_spectacular.utils import extend_schema
 
 from cases.serializers import (
+    CaseSerializer,
     ListCasesSerializer,
     AdminCasesSerializer,
     ItemListSerializer,
@@ -15,11 +16,16 @@ from cases.serializers import (
 from cases.models import Case, Item, RarityCategory
 
 
+@extend_schema(tags=["cases"])
 class CasesViewSet(ModelViewSet):
-    serializer_class = ListCasesSerializer
     queryset = Case.objects.filter(active=True, removed=False)
     permission_classes = [AllowAny]
     lookup_field = "translit_name"
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ListCasesSerializer
+        return CaseSerializer
 
 
 @extend_schema(tags=["admin/cases"])
