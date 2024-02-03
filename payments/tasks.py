@@ -39,8 +39,8 @@ def verify_payment_order(lava=LavaApi()):
                     comment = f'Пополнение с использованием промокода {activate_promo.promo.name} \
                         "{activate_promo.promo.code_data}" пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: LAVA'
 
-                    credit = order.sum * activate_promo.promo.percent
-                    debit = (credit - order.sum) * -1
+                    credit = float(order.sum) * float(activate_promo.promo.percent)
+                    debit = (credit - float(order.sum)) * -1
                     balance = credit
 
                     calc = Calc.objects.create(
@@ -51,7 +51,7 @@ def verify_payment_order(lava=LavaApi()):
                         comment=comment,
                         order=order,
                     )
-                    activate_promo.promo.add(calc)
+                    activate_promo.calc_promo.add(calc)
                     activate_promo.save()
 
                     order.active = False
@@ -60,7 +60,7 @@ def verify_payment_order(lava=LavaApi()):
                 else:
                     comment = f"Пополнение пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: LAVA"
 
-                    credit = order.sum
+                    credit = float(order.sum)
                     debit = 0
                     balance = credit
 

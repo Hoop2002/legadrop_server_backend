@@ -24,7 +24,7 @@ class UserPaymentOrderViewSet(ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         payments = request.user.user_payments_orders.all()
-        result = self.paginate_queryset(payments, request)
+        result = self.paginate_queryset(payments)
         serializer = self.get_serializer(result, many=True)
         return Response(serializer.data)
 
