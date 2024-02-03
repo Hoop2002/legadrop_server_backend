@@ -11,8 +11,14 @@ class RarityCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RarityCategory
-        fields = ("rarity_id", "name")
-        read_only_fields = ("name", "rarity_id")
+        fields = ("rarity_id", "name", "rarity_color")
+        read_only_fields = ("name", "rarity_id", "rarity_color")
+
+
+class RarityCategoryAdminSerializer(RarityCategorySerializer):
+    class Meta:
+        model = RarityCategory
+        fields = RarityCategorySerializer.Meta.fields
 
 
 class ItemListSerializer(serializers.ModelSerializer):
@@ -62,7 +68,6 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
         required=False, max_length=None, use_url=True, allow_null=True
     )
     rarity_category = RarityCategorySerializer(read_only=True)
-    color = serializers.CharField(max_length=128, allow_blank=True)
     rarity_category_id = serializers.CharField(max_length=9, write_only=True)
     step_down_factor = serializers.FloatField(default=1, required=False)
 
@@ -85,7 +90,6 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
             "sale_price",
             "percent_price",
             "sale",
-            "color",
             "image",
             "created_at",
             "updated_at",
@@ -110,7 +114,44 @@ class ListCasesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Case
-        fields = ("case_id", "name", "price", "translit_name", "case_free", "category")
+        fields = ("translit_name", "name", "price", "case_free", "image", "category")
+
+
+class ListCaseItemsSerializer(ItemListSerializer):
+    percent = serializers.SerializerMethodField()
+
+    def get_percent(self, instance) -> float:
+        count = (
+            self.context["view"]
+            .queryset.first()
+            .items.filter(rarity_category=instance.rarity_category)
+            .count()
+        )
+        item_percent = (
+            instance.rarity_category.category_percent / count
+            + instance.step_down_factor
+        )
+        return item_percent
+
+    class Meta:
+        model = Item
+        fields = ItemListSerializer.Meta.fields + ("percent",)
+
+
+class CaseSerializer(serializers.ModelSerializer):
+    items = ListCaseItemsSerializer(many=True)
+
+    class Meta:
+        model = Case
+        fields = (
+            "translit_name",
+            "name",
+            "price",
+            "case_free",
+            "image",
+            "category",
+            "items",
+        )
 
 
 class ListConditionSerializer(serializers.ModelSerializer):

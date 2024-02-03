@@ -22,6 +22,7 @@ class AdminCategory(admin.ModelAdmin):
 class CaseAdmin(admin.ModelAdmin):
     list_display = ("case_id", "name", "translit_name", "price")
     readonly_fields = ("created_at", "updated_at", "translit_name", "case_id")
+    filter_horizontal = ("items", "conditions")
     fieldsets = [
         (
             None,
@@ -49,7 +50,8 @@ class CaseAdmin(admin.ModelAdmin):
 @admin.register(RarityCategory)
 class RarityAdmin(admin.ModelAdmin):
     list_display = ("rarity_id", "name", "category_percent")
-    fields = ("rarity_id", "name", "category_percent")
+    fields = ("rarity_id", "name", "category_percent", "rarity_color")
+    readonly_fields = ("rarity_id",)
 
 
 class CasesInline(admin.TabularInline):
@@ -70,7 +72,6 @@ class ItemAdmin(admin.ModelAdmin):
                     "item_id",
                     "name",
                     "sale",
-                    "color",
                     "image",
                     "step_down_factor",
                     "rarity_category",

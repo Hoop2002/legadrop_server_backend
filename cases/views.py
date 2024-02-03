@@ -5,20 +5,27 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from drf_spectacular.utils import extend_schema
 
 from cases.serializers import (
+    CaseSerializer,
     ListCasesSerializer,
     AdminCasesSerializer,
     ItemListSerializer,
     UserItemSerializer,
     ItemsAdminSerializer,
+    RarityCategoryAdminSerializer,
 )
-from cases.models import Case, Item
+from cases.models import Case, Item, RarityCategory
 
 
+@extend_schema(tags=["cases"])
 class CasesViewSet(ModelViewSet):
-    serializer_class = ListCasesSerializer
     queryset = Case.objects.filter(active=True, removed=False)
     permission_classes = [AllowAny]
     lookup_field = "translit_name"
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ListCasesSerializer
+        return CaseSerializer
 
 
 @extend_schema(tags=["admin/cases"])
@@ -115,3 +122,11 @@ class ItemAdminViewSet(ModelViewSet):
         if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@extend_schema(tags=["admin/rarity"])
+class AdminRarityCategoryViewSet(ModelViewSet):
+    queryset = RarityCategory.objects.all()
+    serializer_class = RarityCategoryAdminSerializer
+    permission_classes = [IsAdminUser]
+    http_method_names = ["get", "post", "put", "delete"]

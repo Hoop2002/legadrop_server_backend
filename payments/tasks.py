@@ -1,7 +1,16 @@
+from celery import shared_task
+from django.utils import timezone
 from payments.models import PaymentOrder, Calc, PromoCode
 from users.models import ActivatedPromo
 from gateways.lava_api import LavaApi
-from celery import shared_task
+
+
+@shared_task
+def deactivate_expired_promo():
+    now = timezone.localtime()
+    PromoCode.objects.filter(to_date__lte=now, to_date__isnull=False).update(
+        active=False
+    )
 
 
 @shared_task

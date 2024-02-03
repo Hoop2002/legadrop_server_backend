@@ -1,5 +1,6 @@
 from django.core.validators import MinValueValidator
 from django.db import models
+from colorfield.fields import ColorField
 from django.contrib.auth.models import User
 
 from utils.functions import id_generator, generate_upload_name, transliterate
@@ -10,6 +11,7 @@ class RarityCategory(models.Model):
         default=id_generator, max_length=9, editable=False, unique=True
     )
     name = models.CharField(verbose_name="Название", max_length=256)
+    rarity_color = ColorField(default="#FF0000", verbose_name="Цвет категории")
     category_percent = models.FloatField(default=1, null=False)
 
     def __str__(self):

@@ -12,3 +12,4 @@ requests==2.31.0
 django-celery-beat==2.5.0
 celery==5.3.6
 redis==5.0.1
+django-colorfield==0.11.0
