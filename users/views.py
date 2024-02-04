@@ -14,7 +14,10 @@ from users.serializers import (
     UserProfileSerializer,
     UserItemSerializer,
     HistoryItemSerializer,
+    GetGenshinAccountSerializer,
 )
+
+from gateways.enka import get_genshin_account
 
 
 @extend_schema(tags=["main"])
@@ -103,3 +106,23 @@ class UserItemsListView(ModelViewSet):
         serializer = self.get_serializer(items, many=True)
         response = self.get_paginated_response(serializer.data)
         return response
+
+
+@extend_schema(tags=["genshin"])
+class GetGenshinAccountView(ModelViewSet):
+    http_method_names = ["post"]
+    serializer_class = GetGenshinAccountSerializer
+
+    def get_uid(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        rdata = get_genshin_account(uid=serializer.validated_data["uid"])
+
+        if not rdata:
+            return Response(
+                {"message": "Такого аккаунта не существует"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({"result": rdata}, status=status.HTTP_200_OK)
