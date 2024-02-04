@@ -13,6 +13,7 @@ from payments.serializers import (
     AdminPromoCodeSerializer,
     AdminListPromoSerializer,
     ActivatePromoCodeSerializer,
+    ApprovalOrderPaymentsSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -50,6 +51,30 @@ class AdminPaymentOrderViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     lookup_field = "order_id"
     http_method_names = ["get", "post", "delete", "put"]
+
+
+@extend_schema(tags=["admin/payments"])
+class ApprovalAdminPaymentOrderViewSet(ModelViewSet):
+    serializer_class = ApprovalOrderPaymentsSerializer
+    queryset = PaymentOrder.objects
+    permission_classes = [IsAdminUser]
+    lookup_field = "order_id"
+
+    @extend_schema(responses={200: SuccessSerializer})
+    def approval(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payment = PaymentOrder.objects.get(
+            order_id=serializer.validated_data["order_id"]
+        )
+        if not payment:
+            return Response(
+                {"message": "Такого пополнения не существует"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        message, success = payment.approval_payment_order(user=request.user)
+
+        return Response({"message": message}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["promo"])

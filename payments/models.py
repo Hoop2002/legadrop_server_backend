@@ -3,9 +3,10 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User
-
 from users.models import ActivatedPromo
 from utils.functions import payment_order_id_generator, id_generator
+
+from users.models import User, ActivatedPromo
 
 
 class PaymentOrder(models.Model):
@@ -20,11 +21,13 @@ class PaymentOrder(models.Model):
     CREATE = "create"
     EXPIRED = "expired"
     SUCCESS = "success"
+    APPROVAL = "manually approved"
 
     STATUS_TYPE_CHOICES = (
         (CREATE, "Создан"),
         (EXPIRED, "Отменен"),
         (SUCCESS, "Оплачен"),
+        (APPROVAL, "Одобрен вручную"),
     )
 
     order_id = models.CharField(max_length=128, default=payment_order_id_generator)
@@ -54,9 +57,61 @@ class PaymentOrder(models.Model):
     email = models.EmailField(default="test@example.com")
 
     active = models.BooleanField(default=True)
+    manually_approved = models.BooleanField(default=False)
 
     def __str__(self):
         return self.order_id
+
+    def approval_payment_order(self, user: User):
+        activate_promo = ActivatedPromo.objects.filter(
+            user=user, promo__type=PromoCode.BONUS, bonus_using=False
+        ).first()
+
+        if activate_promo:
+            comment = f'Пополнение с использованием промокода {activate_promo.promo.name} \
+                        "{activate_promo.promo.code_data}" пользоватeлем {user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную'
+
+            credit = float(self.sum) * float(activate_promo.promo.percent)
+            debit = (credit - float(self.sum)) * -1
+            balance = credit
+
+            calc = Calc.objects.create(
+                user=user,
+                credit=credit,
+                debit=debit,
+                balance=balance,
+                comment=comment,
+                order=self,
+            )
+            activate_promo.calc_promo.add(calc)
+            activate_promo.save()
+
+            self.active = False
+            # self.status = self.SUCCESS
+            self.manually_approved = True
+            self.save()
+        else:
+            comment = f"Пополнение пользоватeлем {user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную"
+
+            credit = float(self.sum)
+            debit = 0
+            balance = credit
+
+            calc = Calc.objects.create(
+                user=user,
+                credit=credit,
+                debit=debit,
+                balance=balance,
+                comment=comment,
+                order=self,
+            )
+
+            self.active = False
+            self.status = self.APPROVAL
+            self.manually_approved = True
+            self.save()
+        
+        return f"{self.order_id} одобрен вручную", True
 
     class Meta:
         verbose_name = "Пополнение"
