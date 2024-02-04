@@ -110,7 +110,7 @@ class PaymentOrder(models.Model):
             self.status = self.APPROVAL
             self.manually_approved = True
             self.save()
-        
+
         return f"{self.order_id} одобрен вручную", True
 
     class Meta:
