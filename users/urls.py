@@ -25,4 +25,5 @@ urlpatterns = [
         views.UserItemsListView.as_view({"delete": "destroy"}),
         name="sale_user_item",
     ),
+    path("user/genshin_uid/", views.GetGenshinAccountView.as_view({"post": "get_uid"})),
 ]

@@ -167,3 +167,7 @@ class HistoryItemSerializer(UserItemSerializer):
             "status",
             "rarity_category",
         )
+
+
+class GetGenshinAccountSerializer(serializers.Serializer):
+    uid = serializers.CharField()
