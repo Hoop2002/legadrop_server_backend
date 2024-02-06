@@ -1,3 +1,6 @@
+from django.contrib.auth.models import User
+from django.db.models import Sum
+from django.utils import timezone
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema
 
@@ -7,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAdminUser
 
+from cases.models import OpenedCases
 from payments.models import PaymentOrder, PromoCode, Calc
 from payments.serializers import (
     UserPaymentOrderSerializer,
@@ -16,6 +20,7 @@ from payments.serializers import (
     ActivatePromoCodeSerializer,
     AdminAnalyticsSerializer,
     ApprovalOrderPaymentsSerializer,
+    AdminAnalyticsCommonData,
 )
 from utils.serializers import SuccessSerializer
 
@@ -136,24 +141,52 @@ class AdminPromoCodeViewSet(ModelViewSet):
 
 
 class CalcFilter(filters.FilterSet):
-    from_date = filters.DateFilter(field_name="creation_date", lookup_expr="gte")
-    to_date = filters.DateFilter(field_name="creation_date", lookup_expr="lte")
+    from_date = filters.DateFilter(field_name="created_at", lookup_expr="gte")
+    to_date = filters.DateFilter(field_name="created_at", lookup_expr="lte")
 
 
 @extend_schema(tags=["admin/analytics"])
-# todo закончить
 class AdminAnalyticsViewSet(ModelViewSet):
-    queryset = Calc.objects
-    serializer_class = AdminAnalyticsSerializer
+    queryset = Calc.objects.filter(demo=False)
+    pagination_class = []
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = CalcFilter
+    http_method_names = ["get"]
 
+    def get_serializer_class(self):
+        serializer = {
+            "list": AdminAnalyticsSerializer,
+            "common_data": AdminAnalyticsCommonData,
+        }
+        return serializer[self.action]
+
+    @extend_schema(
+        description="Формат даты YYYY-MM-DD. По дефолту будет отдавать текущий день"
+    )
     def list(self, request, *args, **kwargs):
-        from_date = request.query_params.get("from_date")
-        to_date = request.query_params.get("to_date")
-        if from_date and to_date:
-            from_date = from_date[0]
-            to_date = to_date[0]
-            analytics = Calc.calc_analytics()
+        default_filter = dict()
+        if "from_date" not in request.query_params:
+            default_from = timezone.localdate() - timezone.timedelta(days=1)
+            default_filter["created_at__gte"] = default_from
+        if "to_date" not in request.query_params:
+            default_to = timezone.localdate()
+            default_filter["created_at__lte"] = default_to
 
-        return Response()
+        queryset = self.filter_queryset(self.get_queryset().filter(**default_filter))
+        aggregate = queryset.aggregate(Sum("credit"), Sum("debit"))
+        credit = aggregate["credit__sum"] or 0
+        debit = aggregate["debit__sum"] or 0
+        data = dict(total_expense=credit, total_income=debit, profit=debit - credit)
+
+        serializer = self.get_serializer(data)
+        return Response(serializer.data)
+
+    def common_data(self, request, *args, **kwargs):
+        opened_cases = OpenedCases.objects.filter(
+            open_date__gte=timezone.localdate()
+        ).count()
+        users_today = User.objects.filter(date_joined__gte=timezone.localdate()).count()
+        serializer = self.get_serializer(
+            {"total_open": opened_cases, "register_today": users_today}
+        )
+        return Response(serializer.data)

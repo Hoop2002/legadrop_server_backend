@@ -15,15 +15,15 @@ class CalcAdmin(admin.ModelAdmin):
         "debit",
         "credit",
         "comment",
-        "creation_date",
+        "created_at",
     )
     list_display_links = ("calc_id", "user_link")
-    readonly_fields = ("creation_date", "update_date")
+    readonly_fields = ("created_at", "updated_at")
 
     fieldsets = (
         ("Связи", {"fields": ("user", "promo_using", "order")}),
         ("Деньги", {"fields": ("debit", "credit", "balance", "comment")}),
-        (None, {"fields": ("creation_date", "update_date")}),
+        (None, {"fields": ("created_at", "updated_at", "demo")}),
     )
 
     def user_link(self, instance):
