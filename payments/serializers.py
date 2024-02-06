@@ -112,6 +112,7 @@ class AdminPromoCodeSerializer(AdminListPromoSerializer):
 
 
 class AdminAnalyticsSerializer(serializers.Serializer):
+    # todo закончить
     total_income = serializers.FloatField()
     total_expense = serializers.FloatField()
     profit = serializers.FloatField()

@@ -81,6 +81,7 @@ class PaymentOrder(models.Model):
                 debit=debit,
                 balance=balance,
                 comment=comment,
+                demo=self.user.profile.demo,
                 order=self,
             )
             activate_promo.calc_promo.add(calc)
@@ -103,6 +104,7 @@ class PaymentOrder(models.Model):
                 debit=debit,
                 balance=balance,
                 comment=comment,
+                demo=self.user.profile.demo,
                 order=self,
             )
 
@@ -159,7 +161,12 @@ class PromoCode(models.Model):
         calc = None
         if self.type == self.BALANCE:
             calc = Calc.objects.create(
-                user=user, credit=self.summ, balance=self.summ, debit=-self.summ
+                user=user,
+                credit=self.summ,
+                balance=self.summ,
+                debit=-self.summ,
+                demo=user.profile.demo,
+                comment=f"Активация промокода {self.name}",
             )
         activation = ActivatedPromo.objects.create(user=user, promo=self)
         activation.calc_promo.add(calc)
@@ -243,6 +250,7 @@ class Calc(models.Model):
         verbose_name="Дата создания", auto_now_add=True
     )
     update_date = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
+    demo = models.BooleanField(verbose_name="Демо начисление", default=False)
 
     @classmethod
     def calc_analytics(

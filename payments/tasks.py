@@ -58,6 +58,7 @@ def verify_payment_order(lava=LavaApi()):
                         debit=debit,
                         balance=balance,
                         comment=comment,
+                        demo=user.profile.demo,
                         order=order,
                     )
                     activate_promo.calc_promo.add(calc)
@@ -79,6 +80,7 @@ def verify_payment_order(lava=LavaApi()):
                         debit=debit,
                         balance=balance,
                         comment=comment,
+                        demo=user.profile.demo,
                         order=order,
                     )
 

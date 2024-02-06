@@ -140,7 +140,8 @@ class CalcFilter(filters.FilterSet):
     to_date = filters.DateFilter(field_name="creation_date", lookup_expr="lte")
 
 
-@extend_schema(tags=["analytics"])
+@extend_schema(tags=["admin/analytics"])
+# todo закончить
 class AdminAnalyticsViewSet(ModelViewSet):
     queryset = Calc.objects
     serializer_class = AdminAnalyticsSerializer
