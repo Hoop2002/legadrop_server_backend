@@ -15,6 +15,7 @@ from payments.serializers import (
     AdminListPromoSerializer,
     ActivatePromoCodeSerializer,
     AdminAnalyticsSerializer,
+    ApprovalOrderPaymentsSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -45,9 +46,43 @@ class UserPaymentOrderViewSet(ModelViewSet):
         return super().update(request, *args, **kwargs)
 
 
+@extend_schema(tags=["admin/payments"])
 class AdminPaymentOrderViewSet(ModelViewSet):
     serializer_class = AdminPaymentOrderSerializer
+    queryset = PaymentOrder.objects.all()
+    permission_classes = [IsAdminUser]
+    lookup_field = "order_id"
+    http_method_names = ["get", "post", "delete", "put"]
+
+
+@extend_schema(tags=["admin/payments"])
+class ApprovalAdminPaymentOrderViewSet(ModelViewSet):
+    serializer_class = ApprovalOrderPaymentsSerializer
     queryset = PaymentOrder.objects
+    permission_classes = [IsAdminUser]
+    lookup_field = "order_id"
+
+    @extend_schema(responses={200: SuccessSerializer})
+    def approval(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payment = PaymentOrder.objects.get(
+            order_id=serializer.validated_data["order_id"]
+        )
+        if not payment:
+            return Response(
+                {"message": "Такого пополнения не существует"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if payment.active == False:
+            return Response(
+                {"message": "Уже одобрен или отменен"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        message, success = payment.approval_payment_order()
+
+        return Response({"message": message}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["promo"])
