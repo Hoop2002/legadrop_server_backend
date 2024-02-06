@@ -3,6 +3,8 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import UserProfile, UserItems
+from payments.models import PaymentOrder, Calc
+
 from cases.serializers import RarityCategorySerializer
 from utils.fields import Base64ImageField
 
@@ -171,3 +173,86 @@ class HistoryItemSerializer(UserItemSerializer):
 
 class GetGenshinAccountSerializer(serializers.Serializer):
     uid = serializers.CharField()
+
+
+class GameHistorySerializer(serializers.ModelSerializer):
+    item = serializers.CharField(source="item.name")
+    case = serializers.CharField(source="case.name")
+
+    class Meta:
+        model = UserItems
+        fields = ("item", "case")
+
+
+class AdminUserListSerializer(serializers.ModelSerializer):
+    image = Base64ImageField(use_url=True, max_length=None)
+    all_debit = serializers.SerializerMethodField()
+    all_output = serializers.SerializerMethodField()
+    username = serializers.CharField(source="user.username")
+
+    @staticmethod
+    def get_all_output(instance) -> float:
+        # todo сделать выводы
+        return 0
+
+    @staticmethod
+    def get_all_debit(instance) -> float:
+        return instance.all_debit()
+
+    class Meta:
+        model = UserProfile
+        fields = ("image", "username", "balance", "all_debit", "all_output")
+
+
+class AdminUserSerializer(AdminUserListSerializer):
+    balance = serializers.FloatField(required=False)
+
+    def validate(self, attrs):
+        if "balance" in attrs:
+            if not self.instance.demo:
+                raise serializers.ValidationError(
+                    {"balance": "Нельзя менять баланс у обычного пользователя"}
+                )
+        return attrs
+
+    def update(self, instance, validated_data):
+        if "user" in validated_data and "username" in validated_data["user"]:
+            user = validated_data.pop("user")
+            instance.user.username = user["username"]
+            instance.user.save()
+        if "balance" in validated_data:
+            balance = validated_data.pop("balance")
+            user_balance = instance.balance
+            difference = user_balance - balance
+            Calc.objects.create(
+                user=instance.user,
+                balance=difference * -1,
+                demo=True,
+                comment=f"Начисление пользователю денег оператором {self.context['request'].user.username}",
+            )
+        return super(AdminUserSerializer, self).update(instance, validated_data)
+
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get("request")
+        if request and getattr(request, "method", None) == "PUT":
+            for field in fields:
+                fields[field].required = False
+        return fields
+
+    class Meta:
+        model = UserProfile
+        fields = AdminUserListSerializer.Meta.fields + (
+            "individual_percent",
+            "demo",
+            "verified",
+        )
+        read_only_fields = ("all_debit", "all_output")
+
+
+class AdminUserPaymentHistorySerializer(serializers.ModelSerializer):
+    status = serializers.CharField(source="get_status_display")
+
+    class Meta:
+        model = PaymentOrder
+        fields = ("sum", "manually_approved", "status", "created_at", "updated_at")

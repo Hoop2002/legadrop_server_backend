@@ -1,7 +1,9 @@
 from django.contrib.auth import authenticate, login
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 
@@ -15,7 +17,12 @@ from users.serializers import (
     UserItemSerializer,
     HistoryItemSerializer,
     GetGenshinAccountSerializer,
+    AdminUserSerializer,
+    AdminUserListSerializer,
+    GameHistorySerializer,
+    AdminUserPaymentHistorySerializer,
 )
+from payments.models import PaymentOrder
 
 from gateways.enka import get_genshin_account
 
@@ -126,3 +133,74 @@ class GetGenshinAccountView(ModelViewSet):
             )
 
         return Response({"result": rdata}, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["admin/users"])
+class AdminUsersViewSet(ModelViewSet):
+    queryset = UserProfile.objects.all()
+    permission_classes = [IsAdminUser]
+    http_method_names = ["post", "get", "put"]
+    lookup_field = "user_id"
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return AdminUserListSerializer
+        return AdminUserSerializer
+
+    @extend_schema(
+        description=(
+            "Ни одно поле для этого запроса не является обязательным, можно отправить хоть пустой"
+            "объект, тогда ничего не будет обновлено. Но если поле отправляется, то его надо заполнить"
+        )
+    )
+    def update(self, request, *args, **kwargs):
+        _instance = self.get_object()
+        serializer = self.get_serializer(_instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status.HTTP_202_ACCEPTED)
+
+
+@extend_schema(tags=["admin/users"])
+class AdminUserHistoryGamesViewSet(GenericViewSet):
+    queryset = UserItems.objects
+    permission_classes = [IsAdminUser]
+    http_method_names = ["get"]
+
+    def get_serializer_class(self):
+        if self.action == "games":
+            return GameHistorySerializer
+        return UserItemSerializer
+
+    @extend_schema(responses={200: GameHistorySerializer(many=True)})
+    @action(detail=False, pagination_class=LimitOffsetPagination)
+    def games(self, request, *args, **kwargs) -> GameHistorySerializer(many=True):
+        user_id = kwargs.get("user_id")
+        queryset = self.get_queryset().filter(user_id=user_id, from_case=True)
+        paginated = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(paginated, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    @extend_schema(responses={200: UserItemSerializer(many=True)})
+    @action(detail=False, pagination_class=LimitOffsetPagination)
+    def items(self, request, *args, **kwargs):
+        user_id = kwargs.get("user_id")
+        queryset = self.get_queryset().filter(user_id=user_id)
+        paginated = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(paginated, many=True)
+        return self.get_paginated_response(serializer.data)
+
+
+@extend_schema(tags=["admin/users"])
+class AdminUserPaymentHistoryViewSet(GenericViewSet):
+    queryset = PaymentOrder.objects
+    serializer_class = AdminUserPaymentHistorySerializer
+    permission_classes = [IsAdminUser]
+    http_method_names = ["get"]
+
+    def list(self, request, *args, **kwargs):
+        user_id = kwargs.get("user_id")
+        queryset = self.get_queryset().filter(user_id=user_id)
+        paginated = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(paginated, many=True)
+        return self.get_paginated_response(serializer.data)

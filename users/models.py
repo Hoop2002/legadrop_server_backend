@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.functional import cached_property
 
-from cases.models import Item
+from cases.models import Item, Case
 from utils.functions import generate_upload_name
 
 
@@ -19,13 +19,24 @@ class UserProfile(models.Model):
     individual_percent = models.FloatField(
         verbose_name="Индивидуальный процент", default=1
     )
+    demo = models.BooleanField(verbose_name="Демо пользователь", default=False)
 
     @cached_property
     def balance(self) -> float:
-        balance = self.user.calc.aggregate(models.Sum("balance"))["balance__sum"]
+        balance = self.user.calc.filter(demo=self.demo).aggregate(
+            models.Sum("balance")
+        )["balance__sum"]
         if balance is None:
             return 0
         return balance
+
+    def all_debit(self) -> float:
+        from payments.models import Calc, PaymentOrder
+
+        debit = PaymentOrder.objects.filter(
+            user=self.user, status__in=[PaymentOrder.SUCCESS, PaymentOrder.APPROVAL]
+        ).aggregate(models.Sum("sum"))["sum__sum"]
+        return debit or 0
 
     def __str__(self):
         return self.user.username
@@ -33,6 +44,15 @@ class UserProfile(models.Model):
 
 class UserItems(models.Model):
     from_case = models.BooleanField(verbose_name="Выпал из кейса", default=False)
+    case = models.ForeignKey(
+        verbose_name="Кейс",
+        to=Case,
+        to_field="case_id",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_items",
+    )
     active = models.BooleanField(verbose_name="Есть на аккаунте", default=True)
     withdrawn = models.BooleanField(verbose_name="Выведен с аккаунта", default=False)
     user = models.ForeignKey(

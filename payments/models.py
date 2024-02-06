@@ -58,6 +58,8 @@ class PaymentOrder(models.Model):
 
     active = models.BooleanField(default=True)
     manually_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.order_id
@@ -81,15 +83,12 @@ class PaymentOrder(models.Model):
                 debit=debit,
                 balance=balance,
                 comment=comment,
+                demo=self.user.profile.demo,
                 order=self,
             )
             activate_promo.calc_promo.add(calc)
             activate_promo.save()
 
-            self.active = False
-            # self.status = self.SUCCESS
-            self.manually_approved = True
-            self.save()
         else:
             comment = f"Пополнение пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную"
 
@@ -103,13 +102,14 @@ class PaymentOrder(models.Model):
                 debit=debit,
                 balance=balance,
                 comment=comment,
+                demo=self.user.profile.demo,
                 order=self,
             )
 
-            self.active = False
-            self.status = self.APPROVAL
-            self.manually_approved = True
-            self.save()
+        self.active = False
+        self.status = self.APPROVAL
+        self.manually_approved = True
+        self.save()
 
         return f"{self.order_id} одобрен вручную", True
 
@@ -159,7 +159,12 @@ class PromoCode(models.Model):
         calc = None
         if self.type == self.BALANCE:
             calc = Calc.objects.create(
-                user=user, credit=self.summ, balance=self.summ, debit=-self.summ
+                user=user,
+                credit=self.summ,
+                balance=self.summ,
+                debit=-self.summ,
+                demo=user.profile.demo,
+                comment=f"Активация промокода {self.name}",
             )
         activation = ActivatedPromo.objects.create(user=user, promo=self)
         activation.calc_promo.add(calc)
@@ -243,6 +248,22 @@ class Calc(models.Model):
         verbose_name="Дата создания", auto_now_add=True
     )
     update_date = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
+    demo = models.BooleanField(verbose_name="Демо начисление", default=False)
+
+    @classmethod
+    def calc_analytics(
+        cls,
+        from_date=timezone.localtime().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        ),
+        to_date=timezone.localtime().replace(
+            hour=23, minute=59, second=59, microsecond=59
+        ),
+    ) -> dict:
+        aggregated = cls.objects.filter(
+            creation_date__gte=from_date, creation_date__lte=to_date
+        ).aggregate(models.Sum("debit"), models.Sum("credit"))
+        return aggregated
 
     def __str__(self):
         return f"Начисление {self.calc_id}"

@@ -1,3 +1,4 @@
+from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema
 
 from rest_framework import status
@@ -6,13 +7,14 @@ from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAdminUser
 
-from payments.models import PaymentOrder, PromoCode
+from payments.models import PaymentOrder, PromoCode, Calc
 from payments.serializers import (
     UserPaymentOrderSerializer,
     AdminPaymentOrderSerializer,
     AdminPromoCodeSerializer,
     AdminListPromoSerializer,
     ActivatePromoCodeSerializer,
+    AdminAnalyticsSerializer,
     ApprovalOrderPaymentsSerializer,
 )
 from utils.serializers import SuccessSerializer
@@ -77,7 +79,7 @@ class ApprovalAdminPaymentOrderViewSet(ModelViewSet):
                 {"message": "Уже одобрен или отменен"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         message, success = payment.approval_payment_order()
 
         return Response({"message": message}, status=status.HTTP_200_OK)
@@ -131,3 +133,27 @@ class AdminPromoCodeViewSet(ModelViewSet):
         if count < 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class CalcFilter(filters.FilterSet):
+    from_date = filters.DateFilter(field_name="creation_date", lookup_expr="gte")
+    to_date = filters.DateFilter(field_name="creation_date", lookup_expr="lte")
+
+
+@extend_schema(tags=["admin/analytics"])
+# todo закончить
+class AdminAnalyticsViewSet(ModelViewSet):
+    queryset = Calc.objects
+    serializer_class = AdminAnalyticsSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = CalcFilter
+
+    def list(self, request, *args, **kwargs):
+        from_date = request.query_params.get("from_date")
+        to_date = request.query_params.get("to_date")
+        if from_date and to_date:
+            from_date = from_date[0]
+            to_date = to_date[0]
+            analytics = Calc.calc_analytics()
+
+        return Response()
