@@ -26,4 +26,28 @@ urlpatterns = [
         name="sale_user_item",
     ),
     path("user/genshin_uid/", views.GetGenshinAccountView.as_view({"post": "get_uid"})),
+    path(
+        "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/payments/",
+        views.AdminUserPaymentHistoryViewSet.as_view({"get": "list"}),
+    ),
+    path(
+        "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/games/",
+        views.AdminUserHistoryGamesViewSet.as_view({"get": "games"}),
+    ),
+    path(
+        "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/items/",
+        views.AdminUserHistoryGamesViewSet.as_view({"get": "items"}),
+    ),
+    path(
+        "6383d341-4d14-4868-81ba-3c6382f2128e/users/",
+        views.AdminUsersViewSet.as_view({"get": "list"}),
+    ),
+    path(
+        "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/",
+        views.AdminUsersViewSet.as_view({"get": "retrieve"}),
+    ),
+    path(
+        "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/update",
+        views.AdminUsersViewSet.as_view({"put": "update"}),
+    ),
 ]

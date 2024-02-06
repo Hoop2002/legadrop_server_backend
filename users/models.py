@@ -23,10 +23,20 @@ class UserProfile(models.Model):
 
     @cached_property
     def balance(self) -> float:
-        balance = self.user.calc.filter(demo=self.demo).aggregate(models.Sum("balance"))["balance__sum"]
+        balance = self.user.calc.filter(demo=self.demo).aggregate(
+            models.Sum("balance")
+        )["balance__sum"]
         if balance is None:
             return 0
         return balance
+
+    def all_debit(self) -> float:
+        from payments.models import Calc, PaymentOrder
+
+        debit = PaymentOrder.objects.filter(
+            user=self.user, status__in=[PaymentOrder.SUCCESS, PaymentOrder.APPROVAL]
+        ).aggregate(models.Sum("sum"))["sum__sum"]
+        return debit or 0
 
     def __str__(self):
         return self.user.username
