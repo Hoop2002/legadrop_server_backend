@@ -58,6 +58,8 @@ class PaymentOrder(models.Model):
 
     active = models.BooleanField(default=True)
     manually_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.order_id
@@ -87,10 +89,6 @@ class PaymentOrder(models.Model):
             activate_promo.calc_promo.add(calc)
             activate_promo.save()
 
-            self.active = False
-            # self.status = self.SUCCESS
-            self.manually_approved = True
-            self.save()
         else:
             comment = f"Пополнение пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную"
 
@@ -108,10 +106,10 @@ class PaymentOrder(models.Model):
                 order=self,
             )
 
-            self.active = False
-            self.status = self.APPROVAL
-            self.manually_approved = True
-            self.save()
+        self.active = False
+        self.status = self.APPROVAL
+        self.manually_approved = True
+        self.save()
 
         return f"{self.order_id} одобрен вручную", True
 
