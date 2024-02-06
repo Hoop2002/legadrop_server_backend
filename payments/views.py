@@ -72,7 +72,13 @@ class ApprovalAdminPaymentOrderViewSet(ModelViewSet):
                 {"message": "Такого пополнения не существует"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        message, success = payment.approval_payment_order(user=request.user)
+        if payment.active == False:
+            return Response(
+                {"message": "Уже одобрен или отменен"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        message, success = payment.approval_payment_order()
 
         return Response({"message": message}, status=status.HTTP_200_OK)
 
