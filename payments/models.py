@@ -62,21 +62,21 @@ class PaymentOrder(models.Model):
     def __str__(self):
         return self.order_id
 
-    def approval_payment_order(self, user: User):
+    def approval_payment_order(self):
         activate_promo = ActivatedPromo.objects.filter(
-            user=user, promo__type=PromoCode.BONUS, bonus_using=False
+            user=self.user, promo__type=PromoCode.BONUS, bonus_using=False
         ).first()
 
         if activate_promo:
             comment = f'Пополнение с использованием промокода {activate_promo.promo.name} \
-                        "{activate_promo.promo.code_data}" пользоватeлем {user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную'
+                        "{activate_promo.promo.code_data}" пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную'
 
             credit = float(self.sum) * float(activate_promo.promo.percent)
             debit = (credit - float(self.sum)) * -1
             balance = credit
 
             calc = Calc.objects.create(
-                user=user,
+                user=self.user,
                 credit=credit,
                 debit=debit,
                 balance=balance,
@@ -91,14 +91,14 @@ class PaymentOrder(models.Model):
             self.manually_approved = True
             self.save()
         else:
-            comment = f"Пополнение пользоватeлем {user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную"
+            comment = f"Пополнение пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную"
 
             credit = float(self.sum)
             debit = 0
             balance = credit
 
             calc = Calc.objects.create(
-                user=user,
+                user=self.user,
                 credit=credit,
                 debit=debit,
                 balance=balance,
