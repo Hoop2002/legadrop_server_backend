@@ -111,8 +111,18 @@ class AdminPromoCodeSerializer(AdminListPromoSerializer):
         read_only_fields = ("id", "created_at", "updated_at", "activations")
 
 
+class CalcsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Calc
+        fields = ("user_id", "debit", "credit", "created_at")
+
+
 class AdminAnalyticsSerializer(serializers.Serializer):
-    # todo закончить
     total_income = serializers.FloatField()
     total_expense = serializers.FloatField()
     profit = serializers.FloatField()
+
+
+class AdminAnalyticsCommonData(serializers.Serializer):
+    total_open = serializers.IntegerField()
+    register_today = serializers.IntegerField()
