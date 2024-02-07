@@ -1,5 +1,6 @@
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 from colorfield.fields import ColorField
 from django.contrib.auth.models import User
 
@@ -87,8 +88,8 @@ class ConditionCase(models.Model):
         default=id_generator, max_length=9, editable=False, unique=True
     )
     type_condition = models.CharField(max_length=128, choices=CONDITION_TYPES_CHOICES)
-    price = models.FloatField(verbose_name="Сумма внесения", null=True)
-    time = models.TimeField(verbose_name="Время проверки")
+    price = models.FloatField(verbose_name="Сумма внесения", null=True, blank=True)
+    time = models.TimeField(verbose_name="Глубина проверки")
     time_reboot = models.TimeField(verbose_name="Снова открыть кейс через")
 
     def __str__(self):
@@ -143,6 +144,55 @@ class Case(models.Model):
             self.translit_name = transliterate(self.name)
         return super().save(*args, **kwargs)
 
+    def check_conditions(self, user: User) -> tuple[str, bool]:
+        from payments.models import PaymentOrder
+
+        if self.conditions.exists():
+            for condition in self.conditions.iterator():
+                time = timezone.localtime() - timezone.timedelta(
+                    hours=condition.time.hour,
+                    minutes=condition.time.minute,
+                    seconds=condition.time.second,
+                )
+                reboot = timezone.localtime() - timezone.timedelta(
+                    hours=condition.time_reboot.hour,
+                    minutes=condition.time_reboot.minute,
+                    seconds=condition.time_reboot.second,
+                )
+
+                if condition.type_condition == ConditionCase.CALC:
+                    if OpenedCases.objects.filter(
+                        user=user, case=self, open_date__gte=reboot
+                    ).exists():
+                        return (
+                            f"До следующего открытия этого кейса НАДО УКАЗАТЬ ВРЕМЯ",
+                            False,
+                        )
+                    amount = (
+                        PaymentOrder.objects.filter(
+                            user=user,
+                            created_at__gte=time,
+                            status__in=(PaymentOrder.SUCCESS, PaymentOrder.APPROVAL),
+                        ).aggregate(models.Sum("sum"))["sum__sum"]
+                        or 0
+                    )
+                    if amount < condition.price:
+                        return (
+                            f"Для открытия этого кейса требуется внести {condition.price - amount}, в течении {condition.time}",
+                            False,
+                        )
+            return "", True
+
+    def open_case(self, user: User):
+        from payments.models import Calc
+
+        # todo возвращать предмет по системе шансов
+        item = self.items.first()
+        debit = self.price - item.price
+        OpenedCases.objects.create(case=self, user=user)
+        Calc.objects.create(balance=-self.price, debit=debit, credit=debit * -1)
+        return item
+
     def __str__(self):
         return self.name
 
@@ -155,7 +205,7 @@ class OpenedCases(models.Model):
     history_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )
-    open_date = models.DateField("Дата открытия кейса", auto_now_add=True)
+    open_date = models.DateTimeField("Дата открытия кейса", auto_now_add=True)
     case = models.ForeignKey(
         verbose_name="Кейс",
         to="Case",

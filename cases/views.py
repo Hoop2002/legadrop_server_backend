@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema
 
 from cases.serializers import (
@@ -21,11 +22,25 @@ class CasesViewSet(ModelViewSet):
     queryset = Case.objects.filter(active=True, removed=False)
     permission_classes = [AllowAny]
     lookup_field = "translit_name"
+    http_method_names = ["get", "post"]
 
     def get_serializer_class(self):
         if self.action == "list":
             return ListCasesSerializer
+        if self.action == "open_case":
+            return ItemListSerializer
         return CaseSerializer
+
+    @extend_schema(request=None, responses={200: ItemListSerializer})
+    @action(detail=True, permission_classes=[IsAuthenticated])
+    def open_case(self, request, *args, **kwargs):
+        case = self.get_object()
+        message, success = case.check_conditions(user=request.user)
+        if not success:
+            return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+        item = case.open_case(request.user)
+        serializer = self.get_serializer(item)
+        return Response(serializer.data)
 
 
 @extend_schema(tags=["admin/cases"])
