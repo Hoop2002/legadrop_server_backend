@@ -1,7 +1,3 @@
-from django.contrib.auth.models import User
-from django.db.models import Sum
-from django.utils import timezone
-from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema
 
 from rest_framework import status
@@ -10,17 +6,15 @@ from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAdminUser
 
-from cases.models import OpenedCases
-from payments.models import PaymentOrder, PromoCode, Calc
+
+from payments.models import PaymentOrder, PromoCode
 from payments.serializers import (
     UserPaymentOrderSerializer,
     AdminPaymentOrderSerializer,
     AdminPromoCodeSerializer,
     AdminListPromoSerializer,
     ActivatePromoCodeSerializer,
-    AdminAnalyticsSerializer,
     ApprovalOrderPaymentsSerializer,
-    AdminAnalyticsCommonData,
 )
 from utils.serializers import SuccessSerializer
 
@@ -138,94 +132,3 @@ class AdminPromoCodeViewSet(ModelViewSet):
         if count < 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
-
-
-class CalcFilter(filters.FilterSet):
-    from_date = filters.DateFilter(field_name="created_at", lookup_expr="gte")
-    to_date = filters.DateFilter(field_name="created_at", lookup_expr="lte")
-
-
-@extend_schema(tags=["admin/analytics"])
-class AdminAnalyticsViewSet(ModelViewSet):
-    queryset = PaymentOrder.objects.filter(
-        status__in=[PaymentOrder.SUCCESS, PaymentOrder.APPROVAL]
-    )
-    pagination_class = []
-    filter_backends = (filters.DjangoFilterBackend,)
-    filterset_class = CalcFilter
-    http_method_names = ["get"]
-
-    def get_serializer_class(self):
-        serializer = {
-            "list": AdminAnalyticsSerializer,
-            "common_data": AdminAnalyticsCommonData,
-        }
-        return serializer[self.action]
-
-    @extend_schema(
-        description="Формат даты YYYY-MM-DD. По дефолту будет отдавать текущий день"
-    )
-    def list(self, request, *args, **kwargs):
-        default_filter = dict()
-        default_user_filter = dict()
-        if "from_date" not in request.query_params:
-            default_from = timezone.localtime().replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
-            default_filter["created_at__gte"] = default_from
-            default_user_filter["date_joined__gte"] = default_from.isoformat()
-        else:
-            default_user_filter["date_joined__gte"] = timezone.datetime.strptime(
-                request.query_params["from_date"], "%Y-%m-%d"
-            )
-        if "to_date" not in request.query_params:
-            default_to = timezone.localtime().replace(
-                hour=23, minute=59, second=59, microsecond=50
-            )
-            default_filter["created_at__lte"] = default_to
-            default_user_filter["date_joined__lte"] = default_to.isoformat()
-        else:
-            default_user_filter["date_joined__lte"] = timezone.datetime.strptime(
-                request.query_params["from_date"], "%Y-%m-%d"
-            )
-
-        queryset = self.filter_queryset(self.get_queryset().filter(**default_filter))
-        total_income = queryset.aggregate(Sum("sum"))["sum__sum"] or 0
-        total_expense = 0  # todo добавить сумму вывода
-        count_users = User.objects.filter(
-            **default_user_filter, is_staff=False, is_superuser=False
-        ).count()
-        data = dict(
-            total_expense=total_expense,
-            total_income=total_income,
-            profit=total_income - total_expense,
-            count_users=count_users,
-        )
-
-        serializer = self.get_serializer(data)
-        return Response(serializer.data)
-
-    def common_data(self, request, *args, **kwargs):
-        opened_cases = OpenedCases.objects.filter(
-            open_date__gte=timezone.localdate()
-        ).count()
-        count_users = User.objects.filter(is_staff=False, is_superuser=False).count()
-        total_income = self.get_queryset().aggregate(Sum("sum"))["sum__sum"] or 0
-
-        if not total_income or not count_users:
-            average_income = 0
-        else:
-            average_income = total_income / count_users
-
-        total_expense = 0  # todo добавить сумму всех выводов
-        ggr = total_income - total_expense
-
-        serializer = self.get_serializer(
-            {
-                "total_open": opened_cases,
-                "online": 1,
-                "average_income": average_income,
-                "ggr": ggr,
-            }
-        )
-        return Response(serializer.data)
