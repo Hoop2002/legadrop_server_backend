@@ -8,9 +8,18 @@ from utils.fields import Base64ImageField
 
 
 class ConditionCaseSerializer(serializers.ModelSerializer):
-    type_condition = serializers.ChoiceField(choices=ConditionCase.CONDITION_TYPES_CHOICES)
-    time = serializers.TimeField(required=False, allow_null=True, default='', )
-    time_reboot = serializers.TimeField(required=False, default="24:00:00", )
+    type_condition = serializers.ChoiceField(
+        choices=ConditionCase.CONDITION_TYPES_CHOICES
+    )
+    time = serializers.TimeField(
+        required=False,
+        allow_null=True,
+        default="",
+    )
+    time_reboot = serializers.TimeField(
+        required=False,
+        default="24:00:00",
+    )
 
     def get_fields(self):
         fields = super().get_fields()
@@ -22,8 +31,15 @@ class ConditionCaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ConditionCase
-        fields = ('condition_id', 'name', 'type_condition', 'price', 'time', 'time_reboot')
-        read_only_fields = ('condition_id', )
+        fields = (
+            "condition_id",
+            "name",
+            "type_condition",
+            "price",
+            "time",
+            "time_reboot",
+        )
+        read_only_fields = ("condition_id",)
 
 
 class RarityCategorySerializer(serializers.ModelSerializer):

@@ -11,7 +11,10 @@ router.register(
     views.AdminRarityCategoryViewSet,
 )
 router.register(r"6383d341-4d14-4868-81ba-3c6382f2128e/cases", views.AdminCasesViewSet)
-router.register(r"6383d341-4d14-4868-81ba-3c6382f2128e/case_conditions", views.AdminCaseConditionsViewSet)
+router.register(
+    r"6383d341-4d14-4868-81ba-3c6382f2128e/case_conditions",
+    views.AdminCaseConditionsViewSet,
+)
 
 
 urlpatterns = [
