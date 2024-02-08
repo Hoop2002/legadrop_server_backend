@@ -79,6 +79,8 @@ class UserItems(models.Model):
         blank=True,
         related_name="saled_items",
     )
+    created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
 
     def sale_item(self):
         from payments.models import Calc

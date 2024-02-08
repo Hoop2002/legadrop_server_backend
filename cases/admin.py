@@ -10,7 +10,12 @@ from cases.models import (
 )
 
 admin.site.register(ConditionCase)
-admin.site.register(OpenedCases)
+
+
+@admin.register(OpenedCases)
+class OpenedCasesAdmin(admin.ModelAdmin):
+    list_display = ("case", "user", "open_date")
+    readonly_fields = ("open_date",)
 
 
 @admin.register(Category)

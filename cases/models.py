@@ -89,7 +89,7 @@ class ConditionCase(models.Model):
     )
     type_condition = models.CharField(max_length=128, choices=CONDITION_TYPES_CHOICES)
     price = models.FloatField(verbose_name="Сумма внесения", null=True, blank=True)
-    time = models.TimeField(verbose_name="Глубина проверки")
+    time = models.TimeField(verbose_name="Глубина проверки", null=True, blank=True)
     time_reboot = models.TimeField(verbose_name="Снова открыть кейс через")
 
     def __str__(self):
@@ -149,25 +149,28 @@ class Case(models.Model):
 
         if self.conditions.exists():
             for condition in self.conditions.iterator():
-                time = timezone.localtime() - timezone.timedelta(
+                now = timezone.localtime()
+                time = now - timezone.timedelta(
                     hours=condition.time.hour,
                     minutes=condition.time.minute,
                     seconds=condition.time.second,
                 )
-                reboot = timezone.localtime() - timezone.timedelta(
+                timedelta_reboot = timezone.timedelta(
                     hours=condition.time_reboot.hour,
                     minutes=condition.time_reboot.minute,
                     seconds=condition.time_reboot.second,
                 )
+                reboot = now - timedelta_reboot
+                opened = OpenedCases.objects.filter(
+                    user=user, case=self, open_date__gte=reboot
+                )
+                if opened.exists():
+                    return (
+                        f"До следующего открытия этого кейса {timedelta_reboot - (now - opened.last().open_date)}",
+                        False,
+                    )
 
                 if condition.type_condition == ConditionCase.CALC:
-                    if OpenedCases.objects.filter(
-                        user=user, case=self, open_date__gte=reboot
-                    ).exists():
-                        return (
-                            f"До следующего открытия этого кейса НАДО УКАЗАТЬ ВРЕМЯ",
-                            False,
-                        )
                     amount = (
                         PaymentOrder.objects.filter(
                             user=user,
@@ -176,6 +179,7 @@ class Case(models.Model):
                         ).aggregate(models.Sum("sum"))["sum__sum"]
                         or 0
                     )
+                    amount = float(amount)
                     if amount < condition.price:
                         return (
                             f"Для открытия этого кейса требуется внести {condition.price - amount}, в течении {condition.time}",
@@ -184,13 +188,26 @@ class Case(models.Model):
             return "", True
 
     def open_case(self, user: User):
+        """Метод открытия кейса
+        Условия проверки бесплатного кейса, только как защита от дурака
+        """
         from payments.models import Calc
+        from users.models import UserItems
 
         # todo возвращать предмет по системе шансов
         item = self.items.first()
-        debit = self.price - item.price
         OpenedCases.objects.create(case=self, user=user)
-        Calc.objects.create(balance=-self.price, debit=debit, credit=debit * -1)
+
+        debit = self.price - item.purchase_price
+        if not self.case_free:
+            Calc.objects.create(
+                user=user, balance=-self.price, debit=debit, credit=debit * -1
+            )
+        else:
+            Calc.objects.create(
+                user=user, debit=item.purchase_price, credit=item.purchase_price * -1
+            )
+        UserItems.objects.create(user=user, item=item, from_case=True, case=self)
         return item
 
     def __str__(self):
