@@ -89,6 +89,7 @@ class ConditionCase(models.Model):
     )
     type_condition = models.CharField(max_length=128, choices=CONDITION_TYPES_CHOICES)
     price = models.FloatField(verbose_name="Сумма внесения", null=True, blank=True)
+    # todo тайм филд предоставляет только 24 часа, надо сделать возможность больше времени
     time = models.TimeField(verbose_name="Глубина проверки", null=True, blank=True)
     time_reboot = models.TimeField(verbose_name="Снова открыть кейс через")
 

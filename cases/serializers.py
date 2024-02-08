@@ -7,6 +7,25 @@ from payments.models import Calc
 from utils.fields import Base64ImageField
 
 
+class ConditionCaseSerializer(serializers.ModelSerializer):
+    type_condition = serializers.ChoiceField(choices=ConditionCase.CONDITION_TYPES_CHOICES)
+    time = serializers.TimeField(required=False, allow_null=True, default='', )
+    time_reboot = serializers.TimeField(required=False, default="24:00:00", )
+
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get("request")
+        if request and getattr(request, "method", None) == "PUT":
+            for field in fields:
+                fields[field].required = False
+        return fields
+
+    class Meta:
+        model = ConditionCase
+        fields = ('condition_id', 'name', 'type_condition', 'price', 'time', 'time_reboot')
+        read_only_fields = ('condition_id', )
+
+
 class RarityCategorySerializer(serializers.ModelSerializer):
 
     class Meta:

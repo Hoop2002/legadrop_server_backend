@@ -13,8 +13,9 @@ from cases.serializers import (
     UserItemSerializer,
     ItemsAdminSerializer,
     RarityCategoryAdminSerializer,
+    ConditionCaseSerializer,
 )
-from cases.models import Case, Item, RarityCategory
+from cases.models import Case, Item, RarityCategory, ConditionCase
 
 
 @extend_schema(tags=["cases"])
@@ -41,6 +42,24 @@ class CasesViewSet(ModelViewSet):
         item = case.open_case(request.user)
         serializer = self.get_serializer(item)
         return Response(serializer.data)
+
+
+@extend_schema(tags=["admin/cases"])
+class AdminCaseConditionsViewSet(ModelViewSet):
+    queryset = ConditionCase.objects.all()
+    serializer_class = ConditionCaseSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = "condition_id"
+    http_method_names = ["get", "post", "delete", "put"]
+
+    @extend_schema(
+        description=(
+                "Ни одно поле для этого запроса не является обязательным, можно отправить хоть пустой"
+                "объект, тогда ничего не будет обновлено. Но если поле отправляется, то его надо заполнить"
+        )
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
 
 
 @extend_schema(tags=["admin/cases"])
