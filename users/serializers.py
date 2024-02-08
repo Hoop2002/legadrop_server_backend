@@ -201,7 +201,15 @@ class AdminUserListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ("image", "username", "balance", "all_debit", "all_output")
+        fields = (
+            "user_id",
+            "image",
+            "username",
+            "balance",
+            "winrate",
+            "all_debit",
+            "all_output",
+        )
 
 
 class AdminUserSerializer(AdminUserListSerializer):

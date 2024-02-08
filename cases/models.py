@@ -186,7 +186,7 @@ class Case(models.Model):
                             f"Для открытия этого кейса требуется внести {condition.price - amount}, в течении {condition.time}",
                             False,
                         )
-            return "", True
+        return "", True
 
     def open_case(self, user: User):
         """Метод открытия кейса
@@ -197,7 +197,8 @@ class Case(models.Model):
 
         # todo возвращать предмет по системе шансов
         item = self.items.first()
-        OpenedCases.objects.create(case=self, user=user)
+        win = item.purchase_price > self.price if not self.case_free else True
+        OpenedCases.objects.create(case=self, user=user, win=win)
 
         debit = self.price - item.purchase_price
         if not self.case_free:
@@ -241,6 +242,7 @@ class OpenedCases(models.Model):
         blank=True,
         related_name="opened_cases",
     )
+    win = models.BooleanField(verbose_name="Предмет дороже кейса", default=False)
 
     def __str__(self):
         return f"{self.user} открыл {self.case}"
