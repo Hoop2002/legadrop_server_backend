@@ -121,8 +121,11 @@ class AdminAnalyticsSerializer(serializers.Serializer):
     total_income = serializers.FloatField()
     total_expense = serializers.FloatField()
     profit = serializers.FloatField()
+    count_users = serializers.IntegerField()
 
 
 class AdminAnalyticsCommonData(serializers.Serializer):
     total_open = serializers.IntegerField()
-    register_today = serializers.IntegerField()
+    online = serializers.IntegerField()
+    average_income = serializers.FloatField()
+    ggr = serializers.FloatField()
