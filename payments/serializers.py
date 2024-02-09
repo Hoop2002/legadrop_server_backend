@@ -115,14 +115,3 @@ class CalcsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Calc
         fields = ("user_id", "debit", "credit", "created_at")
-
-
-class AdminAnalyticsSerializer(serializers.Serializer):
-    total_income = serializers.FloatField()
-    total_expense = serializers.FloatField()
-    profit = serializers.FloatField()
-
-
-class AdminAnalyticsCommonData(serializers.Serializer):
-    total_open = serializers.IntegerField()
-    register_today = serializers.IntegerField()

@@ -10,7 +10,12 @@ from cases.models import (
 )
 
 admin.site.register(ConditionCase)
-admin.site.register(OpenedCases)
+
+
+@admin.register(OpenedCases)
+class OpenedCasesAdmin(admin.ModelAdmin):
+    list_display = ("case", "user", "open_date")
+    readonly_fields = ("open_date",)
 
 
 @admin.register(Category)
@@ -64,6 +69,7 @@ class ItemAdmin(admin.ModelAdmin):
     list_display = ("name", "item_id", "price", "sale", "created_at")
     list_editable = ("sale", "price")
     list_filter = ("sale", "created_at")
+    search_fields = ("name", "item_id")
     fieldsets = (
         (
             None,

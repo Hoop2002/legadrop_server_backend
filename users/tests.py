@@ -1,3 +1,8 @@
 from django.test import TestCase
 
-# Create your tests here.
+
+class TestUserAuth(TestCase):
+    API_USER = {"username": "API_USER", "password": "API_USER"}
+
+    def setUp(self) -> None:
+        pass

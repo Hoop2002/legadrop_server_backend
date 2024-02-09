@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "drf_spectacular_sidecar",
     "rest_framework_simplejwt",
     "colorfield",
+    "core",
     "cases",
     "users",
     "payments",

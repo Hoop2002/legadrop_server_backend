@@ -1,5 +1,6 @@
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 from colorfield.fields import ColorField
 from django.contrib.auth.models import User
 
@@ -87,8 +88,9 @@ class ConditionCase(models.Model):
         default=id_generator, max_length=9, editable=False, unique=True
     )
     type_condition = models.CharField(max_length=128, choices=CONDITION_TYPES_CHOICES)
-    price = models.FloatField(verbose_name="Сумма внесения", null=True)
-    time = models.TimeField(verbose_name="Время проверки")
+    price = models.FloatField(verbose_name="Сумма внесения", null=True, blank=True)
+    # todo тайм филд предоставляет только 24 часа, надо сделать возможность больше времени
+    time = models.TimeField(verbose_name="Глубина проверки", null=True, blank=True)
     time_reboot = models.TimeField(verbose_name="Снова открыть кейс через")
 
     def __str__(self):
@@ -143,6 +145,73 @@ class Case(models.Model):
             self.translit_name = transliterate(self.name)
         return super().save(*args, **kwargs)
 
+    def check_conditions(self, user: User) -> tuple[str, bool]:
+        from payments.models import PaymentOrder
+
+        if self.conditions.exists():
+            for condition in self.conditions.iterator():
+                now = timezone.localtime()
+                time = now - timezone.timedelta(
+                    hours=condition.time.hour,
+                    minutes=condition.time.minute,
+                    seconds=condition.time.second,
+                )
+                timedelta_reboot = timezone.timedelta(
+                    hours=condition.time_reboot.hour,
+                    minutes=condition.time_reboot.minute,
+                    seconds=condition.time_reboot.second,
+                )
+                reboot = now - timedelta_reboot
+                opened = OpenedCases.objects.filter(
+                    user=user, case=self, open_date__gte=reboot
+                )
+                if opened.exists():
+                    return (
+                        f"До следующего открытия этого кейса {timedelta_reboot - (now - opened.last().open_date)}",
+                        False,
+                    )
+
+                if condition.type_condition == ConditionCase.CALC:
+                    amount = (
+                        PaymentOrder.objects.filter(
+                            user=user,
+                            created_at__gte=time,
+                            status__in=(PaymentOrder.SUCCESS, PaymentOrder.APPROVAL),
+                        ).aggregate(models.Sum("sum"))["sum__sum"]
+                        or 0
+                    )
+                    amount = float(amount)
+                    if amount < condition.price:
+                        return (
+                            f"Для открытия этого кейса требуется внести {condition.price - amount}, в течении {condition.time}",
+                            False,
+                        )
+        return "", True
+
+    def open_case(self, user: User):
+        """Метод открытия кейса
+        Условия проверки бесплатного кейса, только как защита от дурака
+        """
+        from payments.models import Calc
+        from users.models import UserItems
+
+        # todo возвращать предмет по системе шансов
+        item = self.items.first()
+        win = item.purchase_price > self.price if not self.case_free else True
+        OpenedCases.objects.create(case=self, user=user, win=win)
+
+        debit = self.price - item.purchase_price
+        if not self.case_free:
+            Calc.objects.create(
+                user=user, balance=-self.price, debit=debit, credit=debit * -1
+            )
+        else:
+            Calc.objects.create(
+                user=user, debit=item.purchase_price, credit=item.purchase_price * -1
+            )
+        UserItems.objects.create(user=user, item=item, from_case=True, case=self)
+        return item
+
     def __str__(self):
         return self.name
 
@@ -155,7 +224,7 @@ class OpenedCases(models.Model):
     history_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )
-    open_date = models.DateField("Дата открытия кейса", auto_now_add=True)
+    open_date = models.DateTimeField("Дата открытия кейса", auto_now_add=True)
     case = models.ForeignKey(
         verbose_name="Кейс",
         to="Case",
@@ -173,6 +242,7 @@ class OpenedCases(models.Model):
         blank=True,
         related_name="opened_cases",
     )
+    win = models.BooleanField(verbose_name="Предмет дороже кейса", default=False)
 
     def __str__(self):
         return f"{self.user} открыл {self.case}"

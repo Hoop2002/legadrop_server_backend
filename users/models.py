@@ -22,6 +22,15 @@ class UserProfile(models.Model):
     demo = models.BooleanField(verbose_name="Демо пользователь", default=False)
 
     @cached_property
+    def winrate(self) -> float:
+        win = self.user.opened_cases.filter(win=True).count()
+        all_opened = self.user.opened_cases.count()
+        if not all_opened:
+            return 0
+        winrate = win / all_opened
+        return winrate
+
+    @cached_property
     def balance(self) -> float:
         balance = self.user.calc.filter(demo=self.demo).aggregate(
             models.Sum("balance")
@@ -79,6 +88,8 @@ class UserItems(models.Model):
         blank=True,
         related_name="saled_items",
     )
+    created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
 
     def sale_item(self):
         from payments.models import Calc
