@@ -21,7 +21,7 @@ urlpatterns = [
     path("cases", views.CasesViewSet.as_view({"get": "list"})),
     path("case/<str:translit_name>", views.CasesViewSet.as_view({"get": "retrieve"})),
     path(
-        "case/<str:translit_name>/", views.CasesViewSet.as_view({"post": "open_case"})
+        "case/<str:translit_name>/open", views.CasesViewSet.as_view({"post": "open_case"})
     ),
     path("shop/items", views.ShopItemsViewSet.as_view({"get": "list"})),
     path(

@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema
 
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
@@ -51,29 +52,18 @@ class AdminPaymentOrderViewSet(ModelViewSet):
     queryset = PaymentOrder.objects.all()
     permission_classes = [IsAdminUser]
     lookup_field = "order_id"
-    http_method_names = ["get", "post", "delete", "put"]
+    http_method_names = ["get", "post"]
 
-
-@extend_schema(tags=["admin/payments"])
-class ApprovalAdminPaymentOrderViewSet(ModelViewSet):
-    serializer_class = ApprovalOrderPaymentsSerializer
-    queryset = PaymentOrder.objects
-    permission_classes = [IsAdminUser]
-    lookup_field = "order_id"
-
-    @extend_schema(responses={200: SuccessSerializer})
+    @extend_schema(responses={200: SuccessSerializer}, request=None)
+    @action(detail=True, methods=["post"])
     def approval(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        payment = PaymentOrder.objects.get(
-            order_id=serializer.validated_data["order_id"]
-        )
+        payment = self.get_object()
         if not payment:
             return Response(
                 {"message": "Такого пополнения не существует"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if payment.active == False:
+        if not payment.active:
             return Response(
                 {"message": "Уже одобрен или отменен"},
                 status=status.HTTP_400_BAD_REQUEST,
