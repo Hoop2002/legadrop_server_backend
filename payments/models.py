@@ -167,7 +167,7 @@ class PromoCode(models.Model):
         null=True,
         blank=True,
         related_name="promo_owner",
-        limit_choices_to={"profile__partner_percent": True},
+        limit_choices_to={"profile__partner": True},
     )
     removed = models.BooleanField(verbose_name="Удалено", default=False)
 
