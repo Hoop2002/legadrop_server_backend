@@ -7,6 +7,7 @@ from payments.models import PaymentOrder, Calc, PromoCode, Output
 admin.site.register(PaymentOrder)
 admin.site.register(Output)
 
+
 @admin.register(Calc)
 class CalcAdmin(admin.ModelAdmin):
     list_display = (
