@@ -1,5 +1,6 @@
 from itertools import combinations
 
+
 def find_combinations(target, values):
     for r in range(1, len(values) + 1):
         for combination in combinations(values, r):
@@ -7,8 +8,7 @@ def find_combinations(target, values):
                 yield combination
 
 
+# result = list(find_combinations(target_number, value_set))
 
-#result = list(find_combinations(target_number, value_set))
-
-#for combination in result:
+# for combination in result:
 #    print(combination)

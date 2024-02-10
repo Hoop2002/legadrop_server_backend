@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.functional import cached_property
 
 from cases.models import Item, Case
@@ -20,6 +21,12 @@ class UserProfile(models.Model):
         verbose_name="Индивидуальный процент", default=1
     )
     demo = models.BooleanField(verbose_name="Демо пользователь", default=False)
+    partner = models.BooleanField(verbose_name="Партнёр", default=False)
+    partner_percent = models.FloatField(
+        verbose_name="Процент с пополнений",
+        default=0.03,
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+    )
 
     @cached_property
     def winrate(self) -> float:
@@ -92,8 +99,8 @@ class UserItems(models.Model):
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
 
     output = models.ForeignKey(
-        verbose_name = 'Вывод',
-        to='payments.Output',
+        verbose_name="Вывод",
+        to="payments.Output",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
