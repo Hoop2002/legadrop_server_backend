@@ -164,7 +164,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "static"
+STATIC_ROOT = BASE_DIR / "www/static"
 # STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = "media/"
@@ -185,3 +185,8 @@ GATEWAYS_SETTINGS = {
 
 BASE_URL = env("BASE_URL_APP")
 BACK_URL_LAVA = env("BACK_URL_LAVA")
+
+
+# todo fix this shit
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000"]
