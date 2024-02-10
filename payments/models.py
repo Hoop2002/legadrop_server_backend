@@ -161,8 +161,16 @@ class PromoCode(models.Model):
     to_date = models.DateTimeField(verbose_name="Действует до", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    from_user = models.ForeignKey(
+        to=User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="promo_owner",
+        limit_choices_to={"profile__partner_percent": True},
+    )
     removed = models.BooleanField(verbose_name="Удалено", default=False)
-    
+
     def activate_promo(self, user: User) -> (str, bool):
         time = timezone.localtime()
         if not self.active or (self.to_date and self.to_date >= time):
@@ -299,7 +307,7 @@ class Output(models.Model):
 
     created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
-    
+
     approval_user = models.ForeignKey(
         verbose_name="Одобривший пользователь",
         to=User,
@@ -308,10 +316,10 @@ class Output(models.Model):
         blank=True,
         related_name="user_approval_output",
     )
-    
+
     def approval_output(self):
         pass
-    
+
     class Meta:
         verbose_name = "Вывод предмета"
         verbose_name_plural = "Выводы предметов"

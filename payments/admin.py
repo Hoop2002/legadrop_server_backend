@@ -7,20 +7,25 @@ from users.models import UserItems
 
 admin.site.register(PaymentOrder)
 
+
 class OutputInline(admin.TabularInline):
     model = UserItems
     extra = 0
 
+
 @admin.register(Output)
 class OutputAdmin(admin.ModelAdmin):
-    fields = ("output_id",
-              "type",
-              "user",
-              "comment",
-              "created_at",
-              "updated_at",)
+    fields = (
+        "output_id",
+        "type",
+        "user",
+        "comment",
+        "created_at",
+        "updated_at",
+    )
     inlines = [OutputInline]
     readonly_fields = ("output_id", "updated_at", "created_at")
+
 
 @admin.register(Calc)
 class CalcAdmin(admin.ModelAdmin):
@@ -70,6 +75,7 @@ class PromoCodeAdmin(admin.ModelAdmin):
                     "limit_activations",
                     "to_date",
                     "active",
+                    "from_user",
                 )
             },
         ),
