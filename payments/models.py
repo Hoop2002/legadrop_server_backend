@@ -66,10 +66,19 @@ class PaymentOrder(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    approval_user = models.ForeignKey(
+        verbose_name="Одобривший пользователь",
+        to=User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_approval_payments_order",
+    )
+
     def __str__(self):
         return self.order_id
 
-    def approval_payment_order(self):
+    def approval_payment_order(self, approval_user: User):
         activate_promo = ActivatedPromo.objects.filter(
             user=self.user, promo__type=PromoCode.BONUS, bonus_using=False
         ).first()
@@ -114,6 +123,7 @@ class PaymentOrder(models.Model):
         self.active = False
         self.status = self.APPROVAL
         self.manually_approved = True
+        self.approval_user = approval_user
         self.save()
 
         return f"{self.order_id} одобрен вручную", True
@@ -152,7 +162,7 @@ class PromoCode(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     removed = models.BooleanField(verbose_name="Удалено", default=False)
-
+    
     def activate_promo(self, user: User) -> (str, bool):
         time = timezone.localtime()
         if not self.active or (self.to_date and self.to_date >= time):
@@ -285,22 +295,23 @@ class Output(models.Model):
         related_name="user_outputs",
     )
 
-    items = models.ManyToManyField(
-        verbose_name="Предметы",
-        to="users.UserItems",
-        related_name="output_items",
-        blank=True,
-    )
-
     comment = models.TextField(verbose_name="Комментарий", blank=True, null=True)
 
     created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
     
+    approval_user = models.ForeignKey(
+        verbose_name="Одобривший пользователь",
+        to=User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_approval_output",
+    )
     
     def approval_output(self):
         pass
-
+    
     class Meta:
         verbose_name = "Вывод предмета"
         verbose_name_plural = "Выводы предметов"
