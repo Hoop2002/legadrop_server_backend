@@ -138,7 +138,9 @@ class PromoCode(models.Model):
     BONUS = "bonus"
     PROMO_TYPES = ((BALANCE, "На баланс"), (BONUS, "Бонус к пополнению"))
 
-    code_data = models.CharField(default=id_generator, unique=True, max_length=128)
+    code_data = models.CharField(
+        default=id_generator, unique=True, max_length=128, db_index=True
+    )
     name = models.CharField(max_length=256, null=False)
     type = models.CharField(max_length=64, choices=PROMO_TYPES, null=False)
     active = models.BooleanField(verbose_name="Активен", default=True)
