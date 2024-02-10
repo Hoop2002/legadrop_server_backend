@@ -2,10 +2,10 @@ from django.contrib import admin
 from django.utils.safestring import mark_safe
 from django.urls import reverse
 
-from payments.models import PaymentOrder, Calc, PromoCode
+from payments.models import PaymentOrder, Calc, PromoCode, Output
 
 admin.site.register(PaymentOrder)
-
+admin.site.register(Output)
 
 @admin.register(Calc)
 class CalcAdmin(admin.ModelAdmin):

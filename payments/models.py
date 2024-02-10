@@ -4,10 +4,14 @@ from django.utils.functional import cached_property
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User
 from users.models import ActivatedPromo
-from utils.functions import payment_order_id_generator, id_generator
+from utils.functions import (
+    payment_order_id_generator,
+    id_generator,
+    output_id_generator,
+)
 
 from users.models import User, ActivatedPromo
-
+from cases.models import Item
 
 class PaymentOrder(models.Model):
     UKASA = "yookassa"
@@ -254,3 +258,45 @@ class Calc(models.Model):
     class Meta:
         verbose_name = "Начисление"
         verbose_name_plural = "Начисления"
+
+
+
+class Output(models.Model):
+    MOOGOLD = "moogold"
+    TEST = "test"
+
+    OUTPUT_TYPES = ((MOOGOLD, "Вывод с платформы Moogold"), (TEST, "Тестовый вывод (не использовать!)"))
+
+    output_id = models.CharField(
+        default=output_id_generator, unique=True, max_length=32, editable=False
+    )
+
+    type = models.CharField(max_length=64, choices=OUTPUT_TYPES, null=False)
+    
+    user = models.ForeignKey(
+        verbose_name="Пользователь",
+        to=User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_outputs",
+    )
+    
+    items = models.ManyToManyField(
+        verbose_name="Предметы",
+        to=Item,
+        related_name="output_items",
+        blank=True,
+    )
+
+    comment = models.TextField(verbose_name="Комментарий", blank=True, null=True)
+
+    created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
+
+    def approval_output(self):
+        pass
+    
+    class Meta:
+        verbose_name = "Вывод предмета"
+        verbose_name_plural = "Выводы предметов"
