@@ -53,6 +53,7 @@ class Item(models.Model):
         blank=True,
     )
     removed = models.BooleanField(verbose_name="Удалено", default=False)
+    is_output = models.BooleanField(verbose_name="Выводимый/Не выводимый", default=True)
 
     def __str__(self):
         return self.name

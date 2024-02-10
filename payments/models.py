@@ -284,7 +284,7 @@ class Output(models.Model):
     
     items = models.ManyToManyField(
         verbose_name="Предметы",
-        to=Item,
+        to="users.UserItems",
         related_name="output_items",
         blank=True,
     )
@@ -293,7 +293,8 @@ class Output(models.Model):
 
     created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
-
+    
+    
     def approval_output(self):
         pass
     
