@@ -13,6 +13,7 @@ from utils.functions import (
 from users.models import User, ActivatedPromo
 from cases.models import Item
 
+
 class PaymentOrder(models.Model):
     UKASA = "yookassa"
     LAVA = "lava"
@@ -260,19 +261,21 @@ class Calc(models.Model):
         verbose_name_plural = "Начисления"
 
 
-
 class Output(models.Model):
     MOOGOLD = "moogold"
     TEST = "test"
 
-    OUTPUT_TYPES = ((MOOGOLD, "Вывод с платформы Moogold"), (TEST, "Тестовый вывод (не использовать!)"))
+    OUTPUT_TYPES = (
+        (MOOGOLD, "Вывод с платформы Moogold"),
+        (TEST, "Тестовый вывод (не использовать!)"),
+    )
 
     output_id = models.CharField(
         default=output_id_generator, unique=True, max_length=32, editable=False
     )
 
     type = models.CharField(max_length=64, choices=OUTPUT_TYPES, null=False)
-    
+
     user = models.ForeignKey(
         verbose_name="Пользователь",
         to=User,
@@ -281,7 +284,7 @@ class Output(models.Model):
         blank=True,
         related_name="user_outputs",
     )
-    
+
     items = models.ManyToManyField(
         verbose_name="Предметы",
         to=Item,
@@ -296,7 +299,7 @@ class Output(models.Model):
 
     def approval_output(self):
         pass
-    
+
     class Meta:
         verbose_name = "Вывод предмета"
         verbose_name_plural = "Выводы предметов"

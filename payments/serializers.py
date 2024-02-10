@@ -31,20 +31,6 @@ class UserPaymentOrderSerializer(serializers.ModelSerializer):
         return order
 
 
-class ApprovalOrderPaymentsSerializer(serializers.ModelSerializer):
-    order_id = serializers.CharField(validators=[], write_only=True)
-
-    def validate(self, attrs):
-        if "order_id" in attrs:
-            if PaymentOrder.objects.filter(order_id=attrs["order_id"]).exists():
-                return attrs
-        raise serializers.ValidationError("Нет такого пополнения")
-
-    class Meta:
-        model = PaymentOrder
-        fields = ("order_id",)
-
-
 class ActivatePromoCodeSerializer(serializers.ModelSerializer):
     code_data = serializers.CharField(validators=[], write_only=True)
 
