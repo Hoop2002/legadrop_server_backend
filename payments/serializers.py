@@ -17,6 +17,7 @@ class UserPaymentOrderSerializer(serializers.ModelSerializer):
             "include_service_lava",
             "lava_link",
             "status",
+            "created_at",
             "active",
         )
         read_only_fields = ("order_id", "status", "active")
