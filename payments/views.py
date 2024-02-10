@@ -57,7 +57,7 @@ class AdminPaymentOrderViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        message, success = payment.approval_payment_order()
+        message, success = payment.approval_payment_order(approval_user=request.user)
 
         return Response({"message": message}, status=status.HTTP_200_OK)
 

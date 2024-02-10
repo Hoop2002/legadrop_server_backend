@@ -91,6 +91,15 @@ class UserItems(models.Model):
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
 
+    output = models.ForeignKey(
+        verbose_name = 'Вывод',
+        to='payments.Output',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="output_items",
+    )
+
     def sale_item(self):
         from payments.models import Calc
 
