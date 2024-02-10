@@ -15,7 +15,6 @@ from payments.serializers import (
     AdminPromoCodeSerializer,
     AdminListPromoSerializer,
     ActivatePromoCodeSerializer,
-    ApprovalOrderPaymentsSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -24,26 +23,15 @@ class UserPaymentOrderViewSet(ModelViewSet):
     serializer_class = UserPaymentOrderSerializer
     queryset = PaymentOrder.objects
     pagination_class = LimitOffsetPagination
+    lookup_field = "order_id"
+    http_method_names = ["get", "post"]
 
     def list(self, request, *args, **kwargs):
         payments = request.user.user_payments_orders.all()
         result = self.paginate_queryset(payments)
         serializer = self.get_serializer(result, many=True)
-        return Response(serializer.data)
-
-    def retrieve(self, request, order_id, *args, **kwargs):
-        payment = PaymentOrder.objects.filter(order_id=order_id).first()
-        serializer = self.get_serializer(payment)
-        return Response(serializer.data)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=201)
-
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
+        response = self.get_paginated_response(serializer.data)
+        return response
 
 
 @extend_schema(tags=["admin/payments"])

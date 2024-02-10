@@ -11,16 +11,9 @@ router.register(
 router.register(
     "6383d341-4d14-4868-81ba-3c6382f2128e/payments", views.AdminPaymentOrderViewSet
 )
+router.register("payments", views.UserPaymentOrderViewSet)
 
 urlpatterns = [
-    path(
-        "payments/",
-        views.UserPaymentOrderViewSet.as_view({"get": "list", "post": "create"}),
-    ),
-    path(
-        "payments/<str:order_id>",
-        views.UserPaymentOrderViewSet.as_view({"get": "retrieve"}),
-    ),
     path("promo/activate", views.PromoViewSet.as_view({"post": "activate"})),
 ]
 
