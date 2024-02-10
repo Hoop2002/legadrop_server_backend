@@ -44,10 +44,6 @@ urlpatterns = [
     ),
     path(
         "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/",
-        views.AdminUsersViewSet.as_view({"get": "retrieve"}),
-    ),
-    path(
-        "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/update",
-        views.AdminUsersViewSet.as_view({"put": "update"}),
-    ),
+        views.AdminUsersViewSet.as_view({"get": "retrieve", 'put': 'update'}),
+    )
 ]
