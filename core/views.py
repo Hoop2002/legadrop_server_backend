@@ -3,6 +3,7 @@ from django.db.models import Sum
 from django.utils import timezone
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema
+from rest_framework import viewsets, status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -17,6 +18,7 @@ from core.serializers import (
     AdminAnalyticsSerializer,
     AdminAnalyticsCommonData,
     FooterSerializer,
+    AdminGenericSettingsSerializer,
 )
 
 
@@ -135,3 +137,21 @@ class AnalyticsFooterView(APIView):
         )
         serializer = FooterSerializer(data)
         return Response(serializer.data)
+
+
+@extend_schema(tags=["admin/generic"])
+class GenericSettingsViewSet(viewsets.ModelViewSet):
+    serializer_class = AdminGenericSettingsSerializer
+    queryset = GenericSettings.objects.all()
+    permission_classes = [IsAdminUser]
+    http_method_names = ["get", "post", "put"]
+
+    def create(self, request, *args, **kwargs):
+        if self.get_queryset().exists():
+            return Response(
+                {
+                    "message": "Уже созданы настройки ядра, теперь их можно только изменить"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().create(request, *args, **kwargs)

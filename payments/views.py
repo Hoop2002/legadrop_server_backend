@@ -67,8 +67,10 @@ class PromoViewSet(GenericViewSet):
     queryset = PromoCode.objects
     serializer_class = ActivatePromoCodeSerializer
     lookup_field = "code_data"
+    http_method_names = ["post"]
 
     @extend_schema(responses={200: SuccessSerializer})
+    @action(detail=False, methods=["post"])
     def activate(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -77,6 +79,10 @@ class PromoViewSet(GenericViewSet):
         if not success:
             return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message": message}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"])
+    def ref_redirect(self, request, *args, **kwargs):
+        pass
 
 
 @extend_schema(tags=["admin/promo"])

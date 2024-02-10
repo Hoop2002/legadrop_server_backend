@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from core.models import GenericSettings
 
 
 class AdminAnalyticsSerializer(serializers.Serializer):
@@ -21,3 +22,15 @@ class FooterSerializer(serializers.Serializer):
     users_online = serializers.IntegerField()
     total_purchase = serializers.IntegerField()
     total_outputs = serializers.IntegerField()
+
+
+class AdminGenericSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GenericSettings
+        fields = (
+            "opened_cases_buff",
+            "users_buff",
+            "online_buff",
+            "purchase_buff",
+            "output_crystal_buff",
+        )

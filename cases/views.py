@@ -99,6 +99,7 @@ class ShopItemsViewSet(ModelViewSet):
     queryset = Item.objects.filter(sale=True, removed=False)
     permission_classes = [AllowAny]
     lookup_field = "item_id"
+    http_method_names = ["get", "post"]
 
     def get_permissions(self):
         if self.action == "buy_item":
