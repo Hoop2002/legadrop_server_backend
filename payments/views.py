@@ -95,10 +95,12 @@ class PromoViewSet(GenericViewSet):
             from_user__isnull=False,
         )
         if not promo.exists():
-            return Response({"message": "Промокод не найден"}, status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"message": "Промокод не найден"}, status.HTTP_400_BAD_REQUEST
+            )
         if not request.user.is_authenticated:
-            response = HttpResponseRedirect('/sign_in')
-            response.set_cookie(key='ref', value=kwargs['code_data'], expires=3600)
+            response = HttpResponseRedirect("/sign_in")
+            response.set_cookie(key="ref", value=kwargs["code_data"], expires=3600)
             return response
         message, success = promo.first().activate_promo(self.request.user)
         if not success:

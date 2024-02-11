@@ -1,8 +1,9 @@
 from celery import shared_task
 from django.utils import timezone
-from payments.models import PaymentOrder, Calc, PromoCode
+from payments.models import PaymentOrder, Calc, PromoCode, CompositeItems
 from users.models import ActivatedPromo
 from gateways.lava_api import LavaApi
+from gateways.moogold_api import MoogoldApi
 
 
 @shared_task
@@ -87,3 +88,26 @@ def verify_payment_order(lava=LavaApi()):
                     order.active = False
                     order.status = order.SUCCESS
                     order.save()
+
+
+@shared_task
+def updating_moogold_composite_items(moogold=MoogoldApi()):
+    data = moogold.get_moogold_genshin_items()
+
+    for com_item in data["Variation"]:
+        item = CompositeItems.objects.filter(ext_id=com_item["variation_id"]).first()
+        if not item:
+            composite_item = CompositeItems.objects.create(
+                ext_id=com_item["variation_id"],
+                technical_name=com_item["variation_name"],
+                price_dollar=com_item["variation_price"],
+                service=CompositeItems.MOOGOLD,
+            )
+        else:
+            composite_item = item
+            composite_item.ext_id = com_item["variation_id"]
+            composite_item.technical_name = com_item["variation_name"]
+            composite_item.price_dollar = com_item["variation_price"]
+            composite_item.service = CompositeItems.MOOGOLD
+
+        composite_item.save()

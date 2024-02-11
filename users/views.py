@@ -48,7 +48,7 @@ class AuthViewSet(GenericViewSet):
             promo = self._check_cookies(request)
             if promo:
                 promo.activate_promo(user)
-                response.delete_cookie('ref')
+                response.delete_cookie("ref")
             return response
         else:
             return Response(
@@ -73,7 +73,7 @@ class AuthViewSet(GenericViewSet):
         response = Response(str(token))
         if promo:
             promo.activate_promo(user)
-            response.delete_cookie('ref')
+            response.delete_cookie("ref")
         return response
 
     @staticmethod
@@ -81,7 +81,9 @@ class AuthViewSet(GenericViewSet):
         cookie = request.COOKIES.get("ref")
         if not cookie:
             return None
-        promo = PromoCode.objects.filter(code_data=cookie, active=True, removed=False, from_user__isnull=False)
+        promo = PromoCode.objects.filter(
+            code_data=cookie, active=True, removed=False, from_user__isnull=False
+        )
         if not promo:
             return None
         return promo.first()
