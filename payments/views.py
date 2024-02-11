@@ -1,3 +1,4 @@
+from django.http.response import HttpResponseRedirect
 from drf_spectacular.utils import extend_schema
 
 from rest_framework import status
@@ -5,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, AllowAny
 
 
 from payments.models import PaymentOrder, PromoCode
@@ -67,7 +68,12 @@ class PromoViewSet(GenericViewSet):
     queryset = PromoCode.objects
     serializer_class = ActivatePromoCodeSerializer
     lookup_field = "code_data"
-    http_method_names = ["post"]
+    http_method_names = ["post", "get"]
+
+    def get_permissions(self):
+        if self.action == "ref_link":
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
 
     @extend_schema(responses={200: SuccessSerializer})
     @action(detail=False, methods=["post"])
@@ -80,9 +86,24 @@ class PromoViewSet(GenericViewSet):
             return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message": message}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["post"])
-    def ref_redirect(self, request, *args, **kwargs):
-        pass
+    @extend_schema(request=None, responses={302: None})
+    def ref_link(self, request, *args, **kwargs):
+        promo = self.get_queryset().filter(
+            code_data=kwargs["code_data"],
+            removed=False,
+            active=True,
+            from_user__isnull=False,
+        )
+        if not promo.exists():
+            return Response({"message": "Промокод не найден"}, status.HTTP_400_BAD_REQUEST)
+        if not request.user.is_authenticated:
+            response = HttpResponseRedirect('/sign_in')
+            response.set_cookie(key='ref', value=kwargs['code_data'], expires=3600)
+            return response
+        message, success = promo.first().activate_promo(self.request.user)
+        if not success:
+            return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": message}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["admin/promo"])

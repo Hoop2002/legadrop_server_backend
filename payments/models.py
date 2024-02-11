@@ -175,7 +175,7 @@ class PromoCode(models.Model):
 
     def activate_promo(self, user: User) -> (str, bool):
         time = timezone.localtime()
-        if not self.active or (self.to_date and self.to_date >= time):
+        if not self.active or self.removed or (self.to_date and self.to_date >= time):
             return "Промокод не действителен", False
         _activated = ActivatedPromo.objects.filter(user=user, promo=self).count()
         if _activated >= self.limit_for_user:

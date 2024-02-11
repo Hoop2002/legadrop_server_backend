@@ -25,20 +25,10 @@ router.register(
     views.AdminCaseConditionsViewSet,
     basename="admin_case_conditions",
 )
+router.register('cases', views.CasesViewSet, basename="cases")
 
 
 urlpatterns = [
-    path("cases", views.CasesViewSet.as_view({"get": "list"}), name="cases_list"),
-    path(
-        "case/<str:translit_name>",
-        views.CasesViewSet.as_view({"get": "retrieve"}),
-        name="case_detail",
-    ),
-    path(
-        "case/<str:translit_name>/open",
-        views.CasesViewSet.as_view({"post": "open_case"}),
-        name="case_open",
-    ),
     path(
         "shop/items",
         views.ShopItemsViewSet.as_view({"get": "list"}),

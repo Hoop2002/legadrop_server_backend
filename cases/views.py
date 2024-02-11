@@ -1,5 +1,5 @@
 from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.decorators import action
@@ -19,7 +19,7 @@ from cases.models import Case, Item, RarityCategory, ConditionCase
 
 
 @extend_schema(tags=["cases"])
-class CasesViewSet(ModelViewSet):
+class CasesViewSet(GenericViewSet):
     queryset = Case.objects.filter(active=True, removed=False)
     permission_classes = [AllowAny]
     lookup_field = "translit_name"
@@ -32,8 +32,26 @@ class CasesViewSet(ModelViewSet):
             return ItemListSerializer
         return CaseSerializer
 
+    def get_permissions(self):
+        if self.action == "open_case":
+            self.permission_classes = [IsAuthenticated]
+        else:
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        paginate_queryset = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(paginate_queryset, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @extend_schema(request=None, responses={200: ItemListSerializer})
-    @action(detail=True, permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=["post"])
     def open_case(self, request, *args, **kwargs):
         case = self.get_object()
         message, success = case.check_conditions(user=request.user)
