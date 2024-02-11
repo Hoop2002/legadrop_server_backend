@@ -22,13 +22,13 @@ from users.serializers import (
     GameHistorySerializer,
     AdminUserPaymentHistorySerializer,
 )
-from payments.models import PaymentOrder
+from payments.models import PaymentOrder, PromoCode
 
 from gateways.enka import get_genshin_account
 
 
 @extend_schema(tags=["main"])
-class AuthViewSet(ModelViewSet):
+class AuthViewSet(GenericViewSet):
     queryset = UserProfile.objects
     permission_classes = [AllowAny]
 
@@ -43,8 +43,13 @@ class AuthViewSet(ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            response = self.get_serializer(user)
-            return Response(response.data, status=status.HTTP_201_CREATED)
+            serializer = self.get_serializer(user)
+            response = Response(serializer.data, status=status.HTTP_201_CREATED)
+            promo = self._check_cookies(request)
+            if promo:
+                promo.activate_promo(user)
+                response.delete_cookie('ref')
+            return response
         else:
             return Response(
                 serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -54,16 +59,32 @@ class AuthViewSet(ModelViewSet):
         username = self.request.data.get("username")
         password = self.request.data.get("password")
         user = authenticate(username=username, password=password)
-        if user is not None:
-            login(request, user)
-            token = AccessToken.for_user(user)
-            return Response(str(token))
-        message = (
-            "Пожалуйста, введите корректные имя пользователя и"
-            " пароль учётной записи. Оба поля могут быть чувствительны"
-            " к регистру."
-        )
-        return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        if user is None:
+            message = (
+                "Пожалуйста, введите корректные имя пользователя и"
+                " пароль учётной записи. Оба поля могут быть чувствительны"
+                " к регистру."
+            )
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        login(request, user)
+        token = AccessToken.for_user(user)
+        promo = self._check_cookies(request)
+        response = Response(str(token))
+        if promo:
+            promo.activate_promo(user)
+            response.delete_cookie('ref')
+        return response
+
+    @staticmethod
+    def _check_cookies(request):
+        cookie = request.COOKIES.get("ref")
+        if not cookie:
+            return None
+        promo = PromoCode.objects.filter(code_data=cookie, active=True, removed=False, from_user__isnull=False)
+        if not promo:
+            return None
+        return promo.first()
 
 
 @extend_schema(tags=["user"])
