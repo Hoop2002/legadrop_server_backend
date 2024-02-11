@@ -18,7 +18,7 @@ urlpatterns = [
     path(
         "user/items/history",
         views.UserItemsListView.as_view({"get": "items_history"}),
-        name="user_items_list",
+        name="user_items_history",
     ),
     path(
         "user/item/sale/<int:pk>",
@@ -44,6 +44,6 @@ urlpatterns = [
     ),
     path(
         "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/",
-        views.AdminUsersViewSet.as_view({"get": "retrieve", 'put': 'update'}),
-    )
+        views.AdminUsersViewSet.as_view({"get": "retrieve", "put": "update"}),
+    ),
 ]
