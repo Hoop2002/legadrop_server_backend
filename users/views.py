@@ -116,7 +116,7 @@ class UserItemsListView(ModelViewSet):
 
 
 @extend_schema(tags=["genshin"])
-class GetGenshinAccountView(ModelViewSet):
+class GetGenshinAccountView(GenericViewSet):
     http_method_names = ["post"]
     serializer_class = GetGenshinAccountSerializer
 

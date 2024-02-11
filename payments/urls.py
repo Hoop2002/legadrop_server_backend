@@ -18,6 +18,12 @@ router.register(
 router.register("payments", views.UserPaymentOrderViewSet, basename="user_payments")
 router.register("promo", views.PromoViewSet, basename="user_promo")
 
-urlpatterns = []
+urlpatterns = [
+    path(
+        "ref_link/<str:code_data>",
+        views.PromoViewSet.as_view({"get": "ref_link"}),
+        name="ref_link",
+    ),
+]
 
 urlpatterns += router.urls
