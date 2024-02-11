@@ -123,3 +123,36 @@ class MoogoldApi:
         )
 
         return json.loads(response.content.decode("utf-8"))
+
+    def get_moogold_genshin_items(self):
+        path = "product/product_detail"
+        order = {"path": path, "product_id": self.CATEGORY}
+        order_json = json.dumps(order)
+        timestamp = str(int(time.time()))
+
+        string_to_sign = order_json + timestamp + path
+
+        auth = hmac.new(
+            bytes(self.SECRETKEY, "utf-8"),
+            msg=string_to_sign.encode("utf-8"),
+            digestmod=hashlib.sha256,
+        ).hexdigest()
+
+        auth_basic = base64.b64encode(
+            f"{self.PARTNER_ID}:{self.SECRET_KEY}".encode()
+        ).decode()
+
+        headers = {
+            "timestamp": timestamp,
+            "auth": auth,
+            "Authorization": "Basic " + auth_basic,
+            "Content-Type": "application/json",
+        }
+
+        response = requests.post(
+            url="https://moogold.com/wp-json/v1/api/product/product_detail",
+            data=order_json,
+            headers=headers,
+        )
+
+        return json.loads(response.content.decode("utf-8"))

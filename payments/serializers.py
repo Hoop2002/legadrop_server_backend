@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from payments.models import PaymentOrder, PromoCode, Calc
+from payments.models import PaymentOrder, PromoCode, Calc, Output
 from payments.manager import PaymentManager
 
 
@@ -102,3 +102,9 @@ class CalcsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Calc
         fields = ("user_id", "debit", "credit", "created_at")
+
+
+class UserOutputs(serializers.Serializer):
+    class Meta:
+        model = Output
+        fields = "output_id"

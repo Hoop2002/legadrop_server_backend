@@ -9,6 +9,7 @@ from utils.functions import (
     id_generator,
     output_id_generator,
 )
+from gateways.moogold_api import MoogoldApi
 
 from users.models import User, ActivatedPromo
 from cases.models import Item
@@ -127,6 +128,11 @@ class PaymentOrder(models.Model):
         self.save()
 
         return f"{self.order_id} одобрен вручную", True
+
+    def __str__(self):
+        return (
+            f"Пополение {self.order_id} на сумму {self.sum} пользователем {self.user}"
+        )
 
     class Meta:
         verbose_name = "Пополнение"
@@ -288,11 +294,30 @@ class Output(models.Model):
         (TEST, "Тестовый вывод (не использовать!)"),
     )
 
+    COMPLETED = "completed"
+    PROCCESS = "proccess"
+    INCORRECT_DETAILS = "incorrect-details"
+    RESTOCK = "restock"
+    REFUNDED = "refunded"
+
+    OUTPUT_STATUS = (
+        (COMPLETED, "Завершенный"),
+        (PROCCESS, "В процессе"),
+        (INCORRECT_DETAILS, "Некорректные данные"),
+        (RESTOCK, "Недостаточно денег на балансе"),
+        (REFUNDED, "Возврат"),
+    )
+
     output_id = models.CharField(
         default=output_id_generator, unique=True, max_length=32, editable=False
     )
 
-    type = models.CharField(max_length=64, choices=OUTPUT_TYPES, null=False)
+    type = models.CharField(
+        max_length=64, choices=OUTPUT_TYPES, null=False, default=MOOGOLD
+    )
+    status = models.CharField(
+        max_length=32, choices=OUTPUT_STATUS, null=False, default=PROCCESS
+    )
 
     user = models.ForeignKey(
         verbose_name="Пользователь",
@@ -317,9 +342,24 @@ class Output(models.Model):
         related_name="user_approval_output",
     )
 
-    def approval_output(self):
-        pass
+    def __str__(self):
+        return f"Вывод {self.output_id}"
+
+    def get_genshin_moogold_items(self, moogold: MoogoldApi):
+        return moogold.get_moogold_genshin_items()
+
+    def approval_output(self, approval_user: User):
+        if self.type == self.MOOGOLD:
+            pass
+        if self.type == self.TEST:
+            pass
 
     class Meta:
         verbose_name = "Вывод предмета"
         verbose_name_plural = "Выводы предметов"
+
+
+class CompositeItems(models.Model):
+
+    created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
