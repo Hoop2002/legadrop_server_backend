@@ -1,4 +1,4 @@
-def find_combination(target, values):
+def find_combination(target, values) -> list:
     dp = [False] * (target + 1)
     dp[0] = True
     prev = [None] * (target + 1)

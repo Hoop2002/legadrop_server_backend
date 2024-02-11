@@ -10,7 +10,7 @@ from utils.functions import (
     output_id_generator,
 )
 from gateways.moogold_api import MoogoldApi
-
+from gateways.economia_api import get_currency
 from users.models import User, ActivatedPromo
 from cases.models import Item
 
@@ -362,6 +362,53 @@ class Output(models.Model):
 
 
 class CompositeItems(models.Model):
+    MOOGOLD = "moogold"
+    TEST = "test"
 
+    SERVICE_TYPES = (
+        (MOOGOLD, "Предмет с платформы Moogold"),
+        (TEST, "Тестовый предмет (не использовать!)"),
+    )
+
+    CRYSTAL = "crystal"
+    BLESSING = "blessing"
+
+    ITEMS_TYPE = ((CRYSTAL, "Кристалл"), (BLESSING, "Благословение"))
+
+    ext_id = models.CharField(verbose_name="Внешний идентификатор", null=True)
+    technical_name = models.CharField(
+        verbose_name="Техническое название", max_length=256, null=True
+    )
+    name = models.CharField(
+        verbose_name="Внутреннее название", max_length=256, null=True
+    )
+    type = models.CharField(
+        verbose_name="Тип предмета", max_length=256, choices=ITEMS_TYPE, null=True
+    )
+    service = models.CharField(
+        verbose_name="Внешний сервис", max_length=256, choices=SERVICE_TYPES, null=True
+    )
+    composite_item_id = models.CharField(
+        verbose_name="Идентификатор",
+        default=id_generator,
+        max_length=32,
+        editable=False,
+    )
+    crystals_quantity = models.IntegerField(
+        verbose_name="Количество кристаллов", null=True, default=0
+    )
+    price_dollar = models.FloatField(verbose_name="Стоимость в долларах", default=0.0)
     created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
+
+    def __str__(self):
+        return f"Составной предмет {self.technical_name}"
+
+    @cached_property
+    def price_rub(self) -> float:
+        currency = round(float(get_currency()["USDRUB"]["code"]["high"]), 2)
+        return round(currency * self.price_dollar)
+
+    class Meta:
+        verbose_name = "Составной предмет"
+        verbose_name_plural = "Составные предметов"

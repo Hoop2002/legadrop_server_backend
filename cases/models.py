@@ -24,13 +24,28 @@ class RarityCategory(models.Model):
 
 
 class Item(models.Model):
+
+    CRYSTAL = "crystal"
+    BLESSING = "blessing"
+
+    ITEMS_TYPE = ((CRYSTAL, "Кристалл"), (BLESSING, "Благословение"))
+
     item_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )
     name = models.CharField(verbose_name="Название", max_length=256)
     price = models.FloatField(verbose_name="Стоимость", default=0, null=False)
+    type = models.CharField(
+        verbose_name="Тип предмета", max_length=32, choices=ITEMS_TYPE, null=True
+    )
+    crystals_quantity = models.IntegerField(
+        verbose_name="Количество кристаллов", null=True, default=0
+    )
     purchase_price = models.FloatField(
         verbose_name="Закупочная цена", default=0, null=False
+    )
+    is_output = models.BooleanField(
+        verbose_name="Выводимый предмет с сервиса", null=False, default=True
     )
     sale_price = models.FloatField(verbose_name="Цена продажи", default=0)
     percent_price = models.FloatField(

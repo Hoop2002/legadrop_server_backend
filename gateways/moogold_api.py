@@ -32,13 +32,13 @@ class MoogoldApi:
         string_to_sign = order_json + timestamp + path
 
         auth = hmac.new(
-            bytes(self.SECRET_KEY, "utf-8"),
+            bytes(self.SECRETKEY, "utf-8"),
             msg=string_to_sign.encode("utf-8"),
             digestmod=hashlib.sha256,
         ).hexdigest()
 
         auth_basic = base64.b64encode(
-            f"{self.PARTNER_ID}:{self.SECRET_KEY}".encode()
+            f"{self.PARTNER_ID}:{self.SECRETKEY}".encode()
         ).decode()
 
         headers = {
@@ -66,13 +66,13 @@ class MoogoldApi:
         string_to_sign = order_json + timestamp + path
 
         auth = hmac.new(
-            bytes(self.SECRET_KEY, "utf-8"),
+            bytes(self.SECRETKEY, "utf-8"),
             msg=string_to_sign.encode("utf-8"),
             digestmod=hashlib.sha256,
         ).hexdigest()
 
         auth_basic = base64.b64encode(
-            f"{self.PARTNER_ID}:{self.SECRET_KEY}".encode()
+            f"{self.PARTNER_ID}:{self.SECRETKEY}".encode()
         ).decode()
 
         headers = {
@@ -100,13 +100,13 @@ class MoogoldApi:
         string_to_sign = order_json + timestamp + path
 
         auth = hmac.new(
-            bytes(self.SECRET_KEY, "utf-8"),
+            bytes(self.SECRETKEY, "utf-8"),
             msg=string_to_sign.encode("utf-8"),
             digestmod=hashlib.sha256,
         ).hexdigest()
 
         auth_basic = base64.b64encode(
-            f"{self.PARTNER_ID}:{self.SECRET_KEY}".encode()
+            f"{self.PARTNER_ID}:{self.SECRETKEY}".encode()
         ).decode()
 
         headers = {
@@ -139,7 +139,7 @@ class MoogoldApi:
         ).hexdigest()
 
         auth_basic = base64.b64encode(
-            f"{self.PARTNER_ID}:{self.SECRET_KEY}".encode()
+            f"{self.PARTNER_ID}:{self.SECRETKEY}".encode()
         ).decode()
 
         headers = {

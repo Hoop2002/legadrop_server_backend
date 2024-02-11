@@ -25,7 +25,7 @@ router.register(
     views.AdminCaseConditionsViewSet,
     basename="admin_case_conditions",
 )
-router.register('cases', views.CasesViewSet, basename="cases")
+router.register("cases", views.CasesViewSet, basename="cases")
 
 
 urlpatterns = [
