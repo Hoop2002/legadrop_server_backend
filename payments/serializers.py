@@ -50,18 +50,22 @@ class AdminPaymentOrderSerializer(serializers.ModelSerializer):
         model = PaymentOrder
         fields = "__all__"
 
+
 class AdminListOutputSerializer(serializers.ModelSerializer):
     class Meta:
         model = Output
         fields = ("id", "output_id", "type", "status")
+
 
 class AdminOutputSerializer(AdminListOutputSerializer):
     class Meta:
         model = Output
         fields = "__all__"
 
+
 class UserListOutputSerializer(serializers.Serializer):
     pass
+
 
 class AdminListPromoSerializer(serializers.ModelSerializer):
     class Meta:

@@ -2,15 +2,19 @@ from django.contrib import admin
 from django.utils.safestring import mark_safe
 from django.urls import reverse
 
-from payments.models import PaymentOrder, Calc, PromoCode, Output, CompositeItems, PurchaseCompositeItems
+from payments.models import (
+    PaymentOrder,
+    Calc,
+    PromoCode,
+    Output,
+    CompositeItems,
+    PurchaseCompositeItems,
+)
 from users.models import UserItems
 
 admin.site.register(PaymentOrder)
 
 
-
-
-    
 @admin.register(PurchaseCompositeItems)
 class AdminPurchaseCompositeItems(admin.ModelAdmin):
     fields = (
@@ -25,6 +29,7 @@ class AdminPurchaseCompositeItems(admin.ModelAdmin):
         "removed",
     )
     readonly_fields = ("updated_at", "created_at")
+
 
 @admin.register(CompositeItems)
 class AdminCompositeItems(admin.ModelAdmin):

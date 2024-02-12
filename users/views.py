@@ -128,10 +128,16 @@ class UserItemsListView(ModelViewSet):
         user_item: UserItems = self.get_object()
 
         if user_item.withdrawal_process:
-            return Response({"message": "Предмет в процессе вывода"},status=status.HTTP_400_BAD_REQUEST) 
+            return Response(
+                {"message": "Предмет в процессе вывода"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if user_item.withdrawn:
-            return Response({"message": "Предмет выведен"},status=status.HTTP_400_BAD_REQUEST,)
+            return Response(
+                {"message": "Предмет выведен"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user_item.sale_item()
         return Response(status=status.HTTP_204_NO_CONTENT)

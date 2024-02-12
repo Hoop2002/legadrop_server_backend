@@ -17,7 +17,7 @@ from payments.serializers import (
     AdminListPromoSerializer,
     ActivatePromoCodeSerializer,
     AdminOutputSerializer,
-    AdminListOutputSerializer
+    AdminListOutputSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -166,8 +166,10 @@ class AdminOutputsViewSet(ModelViewSet):
     def approval(self, request, *args, **kwargs):
         output = self.get_object()
         if not output:
-            return Response({"message": "Такого вывода не существует"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Такого вывода не существует"}, status=status.HTTP_200_OK
+            )
 
-        #message, success = payment.approval_payment_order(approval_user=request.user)
+        # message, success = payment.approval_payment_order(approval_user=request.user)
 
         return Response({"message": ""}, status=status.HTTP_200_OK)
