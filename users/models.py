@@ -23,8 +23,8 @@ class UserProfile(models.Model):
     demo = models.BooleanField(verbose_name="Демо пользователь", default=False)
     partner_percent = models.FloatField(
         verbose_name="Процент с пополнений",
-        default=0.03,
-        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        default=1.03,
+        validators=[MinValueValidator(1), MaxValueValidator(2)],
     )
 
     @cached_property
