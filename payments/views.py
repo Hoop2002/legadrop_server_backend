@@ -9,7 +9,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAdminUser, AllowAny
 
 
-from payments.models import PaymentOrder, PromoCode
+from payments.models import PaymentOrder, PromoCode, RefLinks
 from payments.serializers import (
     UserPaymentOrderSerializer,
     AdminPaymentOrderSerializer,
@@ -70,11 +70,6 @@ class PromoViewSet(GenericViewSet):
     lookup_field = "code_data"
     http_method_names = ["post", "get"]
 
-    def get_permissions(self):
-        if self.action == "ref_link":
-            self.permission_classes = [AllowAny]
-        return super().get_permissions()
-
     @extend_schema(responses={200: SuccessSerializer})
     @action(detail=False, methods=["post"])
     def activate(self, request, *args, **kwargs):
@@ -86,22 +81,33 @@ class PromoViewSet(GenericViewSet):
             return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message": message}, status=status.HTTP_200_OK)
 
-    @extend_schema(request=None, responses={302: None})
+
+@extend_schema(tags=["referral_program"])
+class RefLinksViewSet(GenericViewSet):
+    queryset = RefLinks.objects
+    serializer_class = SuccessSerializer
+    permission_classes = [AllowAny]
+    lookup_field = "code_data"
+    http_method_names = ["get"]
+
+    @extend_schema(request=None, responses={302: None, 200: SuccessSerializer})
     def ref_link(self, request, *args, **kwargs):
-        promo = self.get_queryset().filter(
+        ref = self.get_queryset().filter(
             code_data=kwargs["code_data"],
             removed=False,
             active=True,
+            from_user__isnull=False,
         )
-        if not promo.exists():
+        if not ref.exists():
             return Response(
-                {"message": "Промокод не найден"}, status.HTTP_400_BAD_REQUEST
+                {"message": "Промокод не найден"}, status.HTTP_404_NOT_FOUND
             )
         if not request.user.is_authenticated:
             response = HttpResponseRedirect("/sign_in")
-            response.set_cookie(key="ref", value=kwargs["code_data"], expires=3600)
+            response.set_cookie(key="ref", value=kwargs["code_data"], expires=3600 * 12)
             return response
-        message, success = promo.first().activate_promo(self.request.user)
+        # http://localhost:8081/ref/test
+        message, success = ref.first().activate_link(self.request.user)
         if not success:
             return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message": message}, status=status.HTTP_200_OK)

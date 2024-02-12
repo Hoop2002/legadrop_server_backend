@@ -173,3 +173,35 @@ class ActivatedPromo(models.Model):
     class Meta:
         verbose_name = "Активированный промокод"
         verbose_name_plural = "Активированные промокоды"
+
+
+class ActivatedLinks(models.Model):
+    user = models.ForeignKey(
+        verbose_name="Пользователь",
+        to=User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    link = models.ForeignKey(
+        verbose_name="Промо",
+        to="payments.RefLinks",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    bonus_using = models.BooleanField(
+        verbose_name="Бонус к пополнению использован", default=False
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.link.active:
+            self.bonus_using = True
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Переход по реф ссылке"
+        verbose_name_plural = "Переходы по реф ссылкам"

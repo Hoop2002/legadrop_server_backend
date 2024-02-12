@@ -209,6 +209,49 @@ class PromoCode(models.Model):
         verbose_name_plural = "Промокоды"
 
 
+class RefLinks(models.Model):
+    code_data = models.CharField(
+        default=id_generator, unique=True, max_length=128, db_index=True
+    )
+    active = models.BooleanField(verbose_name="Активен", default=True)
+    from_user = models.ForeignKey(
+        verbose_name="От пользователя",
+        to="users.UserProfile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ref_links",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
+
+    @cached_property
+    def bonus(self) -> float:
+        return self.from_user.partner_percent
+
+    def activate_link(self, user: User) -> (str, bool):
+        from users.models import ActivatedLinks
+
+        if not self.active or self.removed:
+            return "Истёк срок действия акции", False
+        _activated = ActivatedLinks.objects.filter(user=user, link=self).exists()
+        if _activated:
+            return "Вы уже использовали этот бонус", False
+
+        activation = ActivatedLinks.objects.create(user=user, link=self)
+        activation.save()
+        return "Успешно активирован", True
+
+    def __str__(self):
+        return f"{self.code_data} от пользователя {self.from_user}"
+
+    class Meta:
+        verbose_name = "Реферальная ссылка"
+        verbose_name_plural = "Реферальные ссылки"
+
+
 class Calc(models.Model):
     """
     Модель начислений.
