@@ -1,7 +1,7 @@
 from celery import shared_task
 from django.utils import timezone
 from payments.models import PaymentOrder, Calc, PromoCode, CompositeItems
-from users.models import ActivatedPromo
+from users.models import ActivatedPromo, ActivatedLinks
 from gateways.lava_api import LavaApi
 from gateways.moogold_api import MoogoldApi
 
@@ -44,12 +44,20 @@ def verify_payment_order(lava=LavaApi()):
                 activate_promo = ActivatedPromo.objects.filter(
                     user=user, promo__type=PromoCode.BONUS, bonus_using=False
                 ).first()
+                activated_link = ActivatedLinks.objects.filter(
+                    user=user, bonus_using=False
+                ).first()
 
-                if activate_promo:
-                    comment = f'Пополнение с использованием промокода {activate_promo.promo.name} \
-                        "{activate_promo.promo.code_data}" пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: LAVA'
+                if activate_promo or activated_link:
+                    if activate_promo:
+                        comment = f'Пополнение с использованием промокода {activate_promo.promo.name} \
+                                   f"{activate_promo.promo.code_data}" пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: NONE\nОдобрен вручную'
+                        credit = float(order.sum) * float(activate_promo.promo.percent)
+                    else:
+                        comment = f'Пополнение с использованием реферальной ссылки {activated_link.link.code_data} \
+                                    "{activated_link.link.code_data}" пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: NONE\nОдобрен вручную'
+                        credit = float(order.sum) * float(activated_link.bonus)
 
-                    credit = float(order.sum) * float(activate_promo.promo.percent)
                     debit = (credit - float(order.sum)) * -1
                     balance = credit
 
@@ -62,8 +70,12 @@ def verify_payment_order(lava=LavaApi()):
                         demo=user.profile.demo,
                         order=order,
                     )
-                    activate_promo.calc_promo.add(calc)
-                    activate_promo.save()
+                    if activate_promo:
+                        activate_promo.calc_promo.add(calc)
+                        activate_promo.save()
+                    else:
+                        activated_link.calc_link.add(calc)
+                        activated_link.save()
 
                     order.active = False
                     order.status = order.SUCCESS

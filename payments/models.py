@@ -83,15 +83,25 @@ class PaymentOrder(models.Model):
         return self.order_id
 
     def approval_payment_order(self, approval_user: User):
+        from users.models import ActivatedLinks
+
         activate_promo = ActivatedPromo.objects.filter(
             user=self.user, promo__type=PromoCode.BONUS, bonus_using=False
         ).first()
 
-        if activate_promo:
-            comment = f'Пополнение с использованием промокода {activate_promo.promo.name} \
-                        "{activate_promo.promo.code_data}" пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную'
+        activated_link = ActivatedLinks.objects.filter(
+            user=self.user, bonus_using=False
+        ).first()
 
-            credit = float(self.sum) * float(activate_promo.promo.percent)
+        if activate_promo or activated_link:
+            if activate_promo:
+                comment = f'Пополнение с использованием промокода {activate_promo.promo.name} \
+                           f"{activate_promo.promo.code_data}" пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную'
+                credit = float(self.sum) * float(activate_promo.promo.percent)
+            else:
+                comment = f'Пополнение с использованием реферальной ссылки {activated_link.link.code_data} \
+                            "{activated_link.link.code_data}" пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную'
+                credit = float(self.sum) * float(activated_link.bonus)
             debit = (credit - float(self.sum)) * -1
             balance = credit
 
@@ -106,7 +116,6 @@ class PaymentOrder(models.Model):
             )
             activate_promo.calc_promo.add(calc)
             activate_promo.save()
-
         else:
             comment = f"Пополнение пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную"
 
@@ -173,14 +182,6 @@ class PromoCode(models.Model):
     to_date = models.DateTimeField(verbose_name="Действует до", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    from_user = models.ForeignKey(
-        to=User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="promo_owner",
-        limit_choices_to={"profile__partner": True},
-    )
     removed = models.BooleanField(verbose_name="Удалено", default=False)
 
     def activate_promo(self, user: User) -> (str, bool):
@@ -219,6 +220,49 @@ class PromoCode(models.Model):
     class Meta:
         verbose_name = "Промокод"
         verbose_name_plural = "Промокоды"
+
+
+class RefLinks(models.Model):
+    code_data = models.CharField(
+        default=id_generator, unique=True, max_length=128, db_index=True
+    )
+    active = models.BooleanField(verbose_name="Активен", default=True)
+    from_user = models.ForeignKey(
+        verbose_name="От пользователя",
+        to="users.UserProfile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ref_links",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
+
+    @cached_property
+    def bonus(self) -> float:
+        return self.from_user.partner_percent
+
+    def activate_link(self, user: User) -> (str, bool):
+        from users.models import ActivatedLinks
+
+        if not self.active or self.removed:
+            return "Истёк срок действия акции", False
+        _activated = ActivatedLinks.objects.filter(user=user, link=self).exists()
+        if _activated:
+            return "Вы уже использовали этот бонус", False
+
+        activation = ActivatedLinks.objects.create(user=user, link=self)
+        activation.save()
+        return "Успешно активирован", True
+
+    def __str__(self):
+        return f"{self.code_data} от пользователя {self.from_user}"
+
+    class Meta:
+        verbose_name = "Реферальная ссылка"
+        verbose_name_plural = "Реферальные ссылки"
 
 
 class Calc(models.Model):
@@ -275,6 +319,14 @@ class Calc(models.Model):
         null=True,
         blank=True,
         related_name="calc_promo",
+    )
+    ref_link = models.ForeignKey(
+        verbose_name="Реферальная ссылка",
+        to="users.ActivatedLinks",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="calc_link",
     )
 
     comment = models.TextField(verbose_name="Комментарий", blank=True, null=True)
