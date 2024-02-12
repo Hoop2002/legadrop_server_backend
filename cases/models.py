@@ -41,6 +41,14 @@ class Item(models.Model):
 
     ITEMS_TYPE = ((CRYSTAL, "Кристалл"), (BLESSING, "Благословение"), (GHOST_ITEM, "Призрачный пердмет"))
 
+    MOOGOLD = "moogold"
+    TEST = "test"
+
+    SERVICE_TYPES = (
+        (MOOGOLD, "Предмет с Moogold"),
+        (TEST, "Тестовый (не использовать!)"),
+    )
+
     item_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )
@@ -48,6 +56,9 @@ class Item(models.Model):
     price = models.FloatField(verbose_name="Стоимость", default=0, null=False)
     type = models.CharField(
         verbose_name="Тип предмета", max_length=32, choices=ITEMS_TYPE, null=True
+    )
+    service = models.CharField(
+        verbose_name="Тип предмета", max_length=32, choices=SERVICE_TYPES, null=True
     )
     crystals_quantity = models.IntegerField(
         verbose_name="Количество кристаллов", null=True, default=0
