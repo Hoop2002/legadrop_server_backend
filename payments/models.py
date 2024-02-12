@@ -8,6 +8,7 @@ from utils.functions import (
     payment_order_id_generator,
     id_generator,
     output_id_generator,
+    id_generator_X64
 )
 from gateways.moogold_api import MoogoldApi
 from gateways.economia_api import get_currency
@@ -74,7 +75,9 @@ class PaymentOrder(models.Model):
         null=True,
         blank=True,
         related_name="user_approval_payments_order",
-    )
+    )  
+
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
 
     def __str__(self):
         return self.order_id
@@ -143,6 +146,7 @@ class PaymentOrder(models.Model):
             f"Пополение {self.order_id} на сумму {self.sum} пользователем {self.user}"
         )
 
+    
     class Meta:
         verbose_name = "Пополнение"
         verbose_name_plural = "Пополнения"
@@ -350,16 +354,12 @@ class Output(models.Model):
 
     COMPLETED = "completed"
     PROCCESS = "proccess"
-    INCORRECT_DETAILS = "incorrect-details"
-    RESTOCK = "restock"
-    REFUNDED = "refunded"
+    TECHNICAL_ERR = "technical-error"
 
     OUTPUT_STATUS = (
         (COMPLETED, "Завершенный"),
         (PROCCESS, "В процессе"),
-        (INCORRECT_DETAILS, "Некорректные данные"),
-        (RESTOCK, "Недостаточно денег на балансе"),
-        (REFUNDED, "Возврат"),
+        (TECHNICAL_ERR, "Техническая ошибка")
     )
 
     output_id = models.CharField(
@@ -386,6 +386,7 @@ class Output(models.Model):
 
     created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
 
     approval_user = models.ForeignKey(
         verbose_name="Одобривший пользователь",
@@ -452,7 +453,8 @@ class CompositeItems(models.Model):
     price_dollar = models.FloatField(verbose_name="Стоимость в долларах", default=0.0)
     created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
-
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
+    
     def __str__(self):
         return f"Составной предмет {self.technical_name}"
 
@@ -464,3 +466,59 @@ class CompositeItems(models.Model):
     class Meta:
         verbose_name = "Составной предмет"
         verbose_name_plural = "Составные предметов"
+
+
+class PurchaseCompositeItems(models.Model):
+    MOOGOLD = "moogold"
+    TEST = "test"
+
+    PURCHASE_TYPES = (
+        (MOOGOLD, "Вывод с платформы Moogold"),
+        (TEST, "Тестовый вывод (не использовать!)"),
+    )
+
+    COMPLETED = "completed"
+    PROCCESS = "proccess"
+    INCORRECT_DETAILS = "incorrect-details"
+    RESTOCK = "restock"
+    REFUNDED = "refunded"
+
+    PURCHASE_STATUS = (
+        (COMPLETED, "Завершенный"),
+        (PROCCESS, "В процессе"),
+        (INCORRECT_DETAILS, "Некорректные данные"),
+        (RESTOCK, "Недостаточно денег на балансе"),
+        (REFUNDED, "Возврат"),
+    )
+
+    type = models.CharField(
+        max_length=64, choices=PURCHASE_TYPES, null=False, default=MOOGOLD
+    )
+    status = models.CharField(
+        max_length=32, choices=PURCHASE_STATUS, null=False, default=PROCCESS
+    )
+    
+    created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
+    
+    ext_id_order = models.CharField(verbose_name="Идентификатор во внешнем сервиса", max_length=1024)
+    name  = models.CharField(verbose_name="Наименование", max_length=1024)
+
+    pci_id = models.CharField(verbose_name="Внутренний идентификатор", max_length=70, default=id_generator_X64)
+    
+    output = models.ForeignKey(
+        verbose_name="Вывод",
+        to="payments.Output",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="purchase_ci_outputs",
+    )
+
+    def __str__(self):
+        return f"Закупка {self.pci_id} на {self.output}"
+    
+    class Meta:
+        verbose_name = "Закупка на сторонем сервисе"
+        verbose_name_plural = "Закупки на стороних сервисах"
