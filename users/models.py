@@ -21,7 +21,6 @@ class UserProfile(models.Model):
         verbose_name="Индивидуальный процент", default=1
     )
     demo = models.BooleanField(verbose_name="Демо пользователь", default=False)
-    partner = models.BooleanField(verbose_name="Партнёр", default=False)
     partner_percent = models.FloatField(
         verbose_name="Процент с пополнений",
         default=0.03,

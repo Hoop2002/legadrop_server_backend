@@ -92,7 +92,6 @@ class PromoViewSet(GenericViewSet):
             code_data=kwargs["code_data"],
             removed=False,
             active=True,
-            from_user__isnull=False,
         )
         if not promo.exists():
             return Response(

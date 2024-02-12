@@ -20,7 +20,7 @@ router.register("promo", views.PromoViewSet, basename="user_promo")
 
 urlpatterns = [
     path(
-        "ref_link/<str:code_data>",
+        "ref/<str:code_data>",
         views.PromoViewSet.as_view({"get": "ref_link"}),
         name="ref_link",
     ),

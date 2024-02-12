@@ -169,14 +169,6 @@ class PromoCode(models.Model):
     to_date = models.DateTimeField(verbose_name="Действует до", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    from_user = models.ForeignKey(
-        to=User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="promo_owner",
-        limit_choices_to={"profile__partner": True},
-    )
     removed = models.BooleanField(verbose_name="Удалено", default=False)
 
     def activate_promo(self, user: User) -> (str, bool):

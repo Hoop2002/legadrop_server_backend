@@ -93,7 +93,6 @@ class PromoCodeAdmin(admin.ModelAdmin):
                     "limit_activations",
                     "to_date",
                     "active",
-                    "from_user",
                 )
             },
         ),
