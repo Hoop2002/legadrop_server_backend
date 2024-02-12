@@ -107,7 +107,9 @@ def updating_moogold_composite_items(moogold=MoogoldApi()):
     data = moogold.get_moogold_genshin_items()
 
     for com_item in data["Variation"]:
-        item = CompositeItems.objects.filter(ext_id=com_item["variation_id"], removed=False).first()
+        item = CompositeItems.objects.filter(
+            ext_id=com_item["variation_id"], removed=False
+        ).first()
         if not item:
             composite_item = CompositeItems.objects.create(
                 ext_id=com_item["variation_id"],

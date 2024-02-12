@@ -68,8 +68,13 @@ class UserItems(models.Model):
         blank=True,
         related_name="user_items",
     )
+
     active = models.BooleanField(verbose_name="Есть на аккаунте", default=True)
     withdrawn = models.BooleanField(verbose_name="Выведен с аккаунта", default=False)
+    withdrawal_process = models.BooleanField(
+        verbose_name="Находится в процессе вывода", default=False
+    )
+
     user = models.ForeignKey(
         verbose_name="Пользователь",
         to=User,

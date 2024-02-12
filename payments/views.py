@@ -9,13 +9,15 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAdminUser, AllowAny
 
 
-from payments.models import PaymentOrder, PromoCode, RefLinks
+from payments.models import PaymentOrder, PromoCode, RefLinks, Output
 from payments.serializers import (
     UserPaymentOrderSerializer,
     AdminPaymentOrderSerializer,
     AdminPromoCodeSerializer,
     AdminListPromoSerializer,
     ActivatePromoCodeSerializer,
+    AdminOutputSerializer,
+    AdminListOutputSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -144,3 +146,30 @@ class AdminPromoCodeViewSet(ModelViewSet):
         if count < 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@extend_schema(tags=["admin/outputs"])
+class AdminOutputsViewSet(ModelViewSet):
+    queryset = Output.objects.filter(removed=False)
+    serializer_class = AdminOutputSerializer
+    permission_classes = [IsAdminUser]
+    http_method_names = ["get", "post"]
+    lookup_field = "output_id"
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return AdminListOutputSerializer
+        return AdminOutputSerializer
+
+    @extend_schema(responses={200: SuccessSerializer}, request=None)
+    @action(detail=True, methods=["post"])
+    def approval(self, request, *args, **kwargs):
+        output = self.get_object()
+        if not output:
+            return Response(
+                {"message": "Такого вывода не существует"}, status=status.HTTP_200_OK
+            )
+
+        # message, success = payment.approval_payment_order(approval_user=request.user)
+
+        return Response({"message": ""}, status=status.HTTP_200_OK)

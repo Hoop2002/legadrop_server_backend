@@ -11,6 +11,12 @@ router.register(
 )
 
 router.register(
+    "6383d341-4d14-4868-81ba-3c6382f2128e/output",
+    views.AdminOutputsViewSet,
+    basename="admin_output",
+)
+
+router.register(
     "6383d341-4d14-4868-81ba-3c6382f2128e/payments",
     views.AdminPaymentOrderViewSet,
     basename="admin_payments",

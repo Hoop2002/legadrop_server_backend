@@ -66,7 +66,16 @@ class CasesInline(admin.TabularInline):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ("name", "item_id", "price", "sale", "type", "ghost_crystals_quantity", "created_at")
+    list_display = (
+        "name",
+        "item_id",
+        "price",
+        "sale",
+        "service",
+        "type",
+        "ghost_crystals_quantity",
+        "created_at",
+    )
     list_editable = ("sale", "price")
     list_filter = ("sale", "created_at")
     search_fields = ("name", "item_id")
@@ -79,6 +88,7 @@ class ItemAdmin(admin.ModelAdmin):
                     "name",
                     "sale",
                     "type",
+                    "service",
                     "ghost_crystals_quantity",
                     "image",
                     "step_down_factor",
