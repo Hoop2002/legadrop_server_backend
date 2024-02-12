@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import UserProfile, UserItems
-from payments.models import PaymentOrder, Calc
+from payments.models import PaymentOrder, Calc, RefLinks
 
 from cases.serializers import RarityCategorySerializer
 from utils.fields import Base64ImageField
@@ -66,6 +66,7 @@ class UserProfileCreateSerializer(serializers.ModelSerializer):
         user.save()
         validated_data["user"] = user
         profile = UserProfile.objects.create(**validated_data)
+        RefLinks.objects.create(from_user=profile)
         return profile
 
     class Meta:

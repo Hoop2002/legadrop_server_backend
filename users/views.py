@@ -22,7 +22,7 @@ from users.serializers import (
     GameHistorySerializer,
     AdminUserPaymentHistorySerializer,
 )
-from payments.models import PaymentOrder, PromoCode
+from payments.models import PaymentOrder, RefLinks
 
 from gateways.enka import get_genshin_account
 
@@ -45,10 +45,10 @@ class AuthViewSet(GenericViewSet):
             user = serializer.save()
             serializer = self.get_serializer(user)
             response = Response(serializer.data, status=status.HTTP_201_CREATED)
-            promo = self._check_cookies(request)
-            if promo:
-                promo.activate_promo(user)
+            ref = self._check_cookies(request)
+            if ref:
                 response.delete_cookie("ref")
+                ref.activate_link(user)
             return response
         else:
             return Response(
@@ -69,11 +69,11 @@ class AuthViewSet(GenericViewSet):
 
         login(request, user)
         token = AccessToken.for_user(user)
-        promo = self._check_cookies(request)
+        ref = self._check_cookies(request)
         response = Response(str(token))
-        if promo:
-            promo.activate_promo(user)
-            response.delete_cookie("ref")
+        if ref:
+            ref.delete_cookie("ref")
+            ref.activate_link(user)
         return response
 
     @staticmethod
@@ -81,12 +81,12 @@ class AuthViewSet(GenericViewSet):
         cookie = request.COOKIES.get("ref")
         if not cookie:
             return None
-        promo = PromoCode.objects.filter(
+        ref = RefLinks.objects.filter(
             code_data=cookie, active=True, removed=False, from_user__isnull=False
         )
-        if not promo:
+        if not ref:
             return None
-        return promo.first()
+        return ref.first()
 
 
 @extend_schema(tags=["user"])
