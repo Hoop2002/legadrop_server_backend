@@ -25,10 +25,21 @@ class RarityCategory(models.Model):
 
 class Item(models.Model):
 
+    """
+    Модель предметов
+
+    Типы предметов:
+    1. CRYSTAL - кристаллы, основная валюта в игре Genshin Impact.
+    2. BLESSING - платная 30-ти дневная подписка внутри игры, которая при покупке дает 300 кристаллов сотворения и начисляет по 90 примогемов ежедневно в течении этих 30 дней.
+    3. GHOST_ITEM - предметы которые в нашей системе являются каким-то объектом, но на деле пользователю выводится сумма кристаллов для приобретения оного предмета внутри игры,
+       поле ghost_price является количеством кристаллов для покупки этого предмета внутри игры, и в нашей системе является количеством кристаллов.
+    """
+
     CRYSTAL = "crystal"
     BLESSING = "blessing"
+    GHOST_ITEM = "ghost_item"
 
-    ITEMS_TYPE = ((CRYSTAL, "Кристалл"), (BLESSING, "Благословение"))
+    ITEMS_TYPE = ((CRYSTAL, "Кристалл"), (BLESSING, "Благословение"), (GHOST_ITEM, "Призрачный пердмет"))
 
     item_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
@@ -40,6 +51,9 @@ class Item(models.Model):
     )
     crystals_quantity = models.IntegerField(
         verbose_name="Количество кристаллов", null=True, default=0
+    )
+    ghost_crystals_quantity = models.IntegerField(
+        verbose_name="Количество кристаллов для призрачного предмета", null=True, default=0
     )
     purchase_price = models.FloatField(
         verbose_name="Закупочная цена", default=0, null=False

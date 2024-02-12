@@ -2,11 +2,29 @@ from django.contrib import admin
 from django.utils.safestring import mark_safe
 from django.urls import reverse
 
-from payments.models import PaymentOrder, Calc, PromoCode, Output, CompositeItems
+from payments.models import PaymentOrder, Calc, PromoCode, Output, CompositeItems, PurchaseCompositeItems
 from users.models import UserItems
 
 admin.site.register(PaymentOrder)
 
+
+
+
+    
+@admin.register(PurchaseCompositeItems)
+class AdminPurchaseCompositeItems(admin.ModelAdmin):
+    fields = (
+        "pci_id",
+        "name",
+        "type",
+        "status",
+        "ext_id_order",
+        "output",
+        "created_at",
+        "updated_at",
+        "removed",
+    )
+    readonly_fields = ("updated_at", "created_at")
 
 @admin.register(CompositeItems)
 class AdminCompositeItems(admin.ModelAdmin):
@@ -20,6 +38,7 @@ class AdminCompositeItems(admin.ModelAdmin):
         "price_dollar",
         "created_at",
         "updated_at",
+        "removed",
     )
 
     readonly_fields = ("composite_item_id", "updated_at", "created_at")
@@ -40,6 +59,7 @@ class OutputAdmin(admin.ModelAdmin):
         "status",
         "created_at",
         "updated_at",
+        "removed",
     )
     inlines = [OutputInline]
     readonly_fields = ("output_id", "updated_at", "created_at")
