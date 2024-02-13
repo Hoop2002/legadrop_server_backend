@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
+from core.models import GenericSettings
 from users.models import UserProfile, UserItems
 from payments.models import PaymentOrder, Calc, RefLinks
 
@@ -105,11 +106,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         ref = instance.ref_links.last()
         if not ref:
             ref = RefLinks.objects.create(from_user=instance)
-        return (
-            self.context["request"]
-            .build_absolute_uri(f"ref/{ref.code_data}")
-            .replace("/user", "")
-        )
+        generic = GenericSettings.load()
+        domain = generic.domain_url
+        return f"https://{domain}/ref/{ref.code_data}"
 
     def update(self, instance, validated_data):
         user_data = {}
@@ -138,6 +137,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = (
             "user",
             "ref_link",
+            "total_income",
             "code_data",
             "image",
             "balance",
