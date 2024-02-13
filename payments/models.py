@@ -264,6 +264,7 @@ class RefLinks(models.Model):
         return f"{self.code_data} от пользователя {self.from_user}"
 
     class Meta:
+        ordering = ["-pk"]
         verbose_name = "Реферальная ссылка"
         verbose_name_plural = "Реферальные ссылки"
 

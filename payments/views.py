@@ -19,6 +19,7 @@ from payments.serializers import (
     ActivatePromoCodeSerializer,
     AdminOutputSerializer,
     AdminListOutputSerializer,
+    RefLinksAdminSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -154,7 +155,7 @@ class AdminPromoCodeViewSet(ModelViewSet):
             .filter(id=self.kwargs["pk"], removed=False)
             .update(removed=True)
         )
-        if count < 0:
+        if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -184,3 +185,31 @@ class AdminOutputsViewSet(ModelViewSet):
         # message, success = payment.approval_payment_order(approval_user=request.user)
 
         return Response({"message": ""}, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["admin/ref_links"])
+class AdminRefLinkViewSet(ModelViewSet):
+    queryset = RefLinks.objects.filter(removed=False)
+    serializer_class = RefLinksAdminSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = "code_data"
+    http_method_names = ["get", "put", "delete"]
+
+    @extend_schema(
+        description=(
+            "Ни одно поле для этого запроса не является обязательным, можно отправить хоть пустой"
+            "объект, тогда ничего не будет обновлено. Но если поле отправляется, то его надо заполнить"
+        )
+    )
+    def update(self, request, *args, **kwargs):
+        return super(AdminRefLinkViewSet, self).update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        count = (
+            self.get_queryset()
+            .filter(code_data=self.kwargs["code_data"], removed=False)
+            .update(removed=True, active=False)
+        )
+        if count > 0:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_404_NOT_FOUND)
