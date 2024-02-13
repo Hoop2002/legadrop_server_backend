@@ -17,4 +17,5 @@ class GenericSettingsAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        ("Базовые настройки", {"fields": ("domain_url", "redirect_domain")}),
     )
