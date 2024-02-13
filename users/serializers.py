@@ -85,6 +85,26 @@ class UserSignInSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(required=False)
     image = Base64ImageField(required=False, max_length=None, use_url=True)
+    ref_link = serializers.SerializerMethodField()
+    code_data = serializers.CharField(
+        required=False,
+        write_only=True,
+        help_text="всё, что будет сюда вписано, будет подставлено после базового урл",
+    )
+
+    def validate(self, attrs):
+        code_data = attrs.get("code_data")
+        if code_data is not None:
+            if RefLinks.objects.filter(code_data=code_data).exists():
+                raise serializers.ValidationError({'code_data': 'Такой код уже существует!'})
+        return super().validate(attrs)
+
+    def get_ref_link(self, instance) -> str:
+        ref = instance.ref_links.last()
+        if not ref:
+            ref = RefLinks.objects.create(from_user=instance)
+        return self.context["request"].build_absolute_uri(f"ref/{ref.code_data}").replace('/user', '')
+        # return self.context["request"].get_full_path()
 
     def update(self, instance, validated_data):
         user_data = {}
@@ -95,6 +115,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
             user_data.pop("password2")
             instance.user.set_password(password)
 
+        if 'code_data' in validated_data:
+            code_data = validated_data.pop("code_data")
+            RefLinks.objects.create(from_user=instance, code_data=code_data)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         for key, value in user_data.items():
@@ -107,7 +130,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ("user", "image", "balance", "locale", "verified")
+        fields = ("user", "ref_link", 'code_data', "image", "balance", "locale", "verified")
         read_only_fields = ("verified", "balance")
 
 
