@@ -1,4 +1,4 @@
-from django.http.response import HttpResponseRedirect
+from django.http.response import HttpResponseRedirect, HttpResponseBadRequest
 from drf_spectacular.utils import extend_schema
 
 from rest_framework import status
@@ -9,6 +9,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAdminUser, AllowAny
 
 
+from core.models import GenericSettings
 from payments.models import PaymentOrder, PromoCode, RefLinks, Output
 from payments.serializers import (
     UserPaymentOrderSerializer,
@@ -94,6 +95,8 @@ class RefLinksViewSet(GenericViewSet):
 
     @extend_schema(request=None, responses={302: None, 200: SuccessSerializer})
     def ref_link(self, request, *args, **kwargs):
+        generic = GenericSettings.load()
+        domain = generic.redirect_domain
         ref = self.get_queryset().filter(
             code_data=kwargs["code_data"],
             removed=False,
@@ -104,11 +107,19 @@ class RefLinksViewSet(GenericViewSet):
             return Response(
                 {"message": "Промокод не найден"}, status.HTTP_404_NOT_FOUND
             )
+
+        if self.request.get_host() != domain:
+            response = HttpResponseRedirect(
+                f"https://{domain}/ref/{kwargs['code_data']}"
+            )
+            return response
+
         if not request.user.is_authenticated:
             response = HttpResponseRedirect("/sign_in")
             response.set_cookie(key="ref", value=kwargs["code_data"], expires=3600 * 12)
             return response
-        # http://localhost:8081/ref/test
+        if request.user == ref.first().from_user.user:
+            return HttpResponseBadRequest("Попытка активировать собственную ссылку")
         message, success = ref.first().activate_link(self.request.user)
         if not success:
             return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
