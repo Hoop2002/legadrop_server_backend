@@ -56,7 +56,7 @@ def verify_payment_order(lava=LavaApi()):
                     else:
                         comment = f'Пополнение с использованием реферальной ссылки {activated_link.link.code_data} \
                                     "{activated_link.link.code_data}" пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: NONE\nОдобрен вручную'
-                        credit = float(order.sum) * float(activated_link.bonus)
+                        credit = float(order.sum) * float(activated_link.link.bonus)
 
                     debit = (credit - float(order.sum)) * -1
                     balance = credit

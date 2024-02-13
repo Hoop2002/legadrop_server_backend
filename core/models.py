@@ -7,6 +7,18 @@ class GenericSettings(models.Model):
     online_buff = models.IntegerField("Баф онлайна", default=0)
     purchase_buff = models.IntegerField("Баф покупок", default=0)
     output_crystal_buff = models.IntegerField("Баф выводов", default=0)
+    domain_url = models.CharField(
+        "Домен реферальной ссылки",
+        default="legadrop.org",
+        max_length=256,
+        help_text="Вводим только домен, без протокола. По дефолту связывается по https",
+    )
+    redirect_domain = models.CharField(
+        "Домен для переадресации",
+        default="legadrop.org",
+        max_length=256,
+        help_text="Вводим только домен, без протокола. По дефолту связывается по https",
+    )
 
     def save(self, *args, **kwargs):
         self.pk = 1

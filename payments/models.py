@@ -101,7 +101,7 @@ class PaymentOrder(models.Model):
             else:
                 comment = f'Пополнение с использованием реферальной ссылки {activated_link.link.code_data} \
                             "{activated_link.link.code_data}" пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную'
-                credit = float(self.sum) * float(activated_link.bonus)
+                credit = float(self.sum) * float(activated_link.link.bonus)
             debit = (credit - float(self.sum)) * -1
             balance = credit
 
@@ -114,8 +114,12 @@ class PaymentOrder(models.Model):
                 demo=self.user.profile.demo,
                 order=self,
             )
-            activate_promo.calc_promo.add(calc)
-            activate_promo.save()
+            if activate_promo:
+                activate_promo.calc_promo.add(calc)
+                activate_promo.save()
+            else:
+                activated_link.calc_link.add(calc)
+                activated_link.save()
         else:
             comment = f"Пополнение пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную"
 
@@ -260,6 +264,7 @@ class RefLinks(models.Model):
         return f"{self.code_data} от пользователя {self.from_user}"
 
     class Meta:
+        ordering = ["-pk"]
         verbose_name = "Реферальная ссылка"
         verbose_name_plural = "Реферальные ссылки"
 
