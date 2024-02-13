@@ -9,10 +9,27 @@ from payments.models import (
     Output,
     CompositeItems,
     PurchaseCompositeItems,
+    RefLinks,
 )
 from users.models import UserItems
 
 admin.site.register(PaymentOrder)
+
+
+@admin.register(RefLinks)
+class RefLinkAdmin(admin.ModelAdmin):
+    list_display = ("code_data", 'user_link', 'active')
+    readonly_fields = ('created_at', 'updated_at')
+
+    def user_link(self, instance):
+        return mark_safe(
+            '<a href="{}">{}</a>'.format(
+                reverse("admin:auth_user_change", args=(instance.from_user.user.pk,)),
+                instance.from_user.user.username,
+            )
+        )
+
+    user_link.short_description = "Пользователь"
 
 
 @admin.register(PurchaseCompositeItems)
