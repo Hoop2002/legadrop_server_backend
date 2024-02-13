@@ -18,8 +18,8 @@ admin.site.register(PaymentOrder)
 
 @admin.register(RefLinks)
 class RefLinkAdmin(admin.ModelAdmin):
-    list_display = ("code_data", 'user_link', 'active')
-    readonly_fields = ('created_at', 'updated_at')
+    list_display = ("code_data", "user_link", "active")
+    readonly_fields = ("created_at", "updated_at")
 
     def user_link(self, instance):
         return mark_safe(
