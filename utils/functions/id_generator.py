@@ -10,6 +10,7 @@ def id_generator():
     remaining = "".join(random.choice(alphabet) for _ in range(6))
     return first + second + third + remaining
 
+
 def id_generator_X64():
     first = random.choice(string.ascii_uppercase)
     second = random.choice(string.ascii_lowercase)

@@ -101,11 +101,9 @@ class UserProfileViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         _instance = self.queryset.get(id=request.user.profile.id)
         serializer = self.get_serializer(_instance, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-
-        return Response("something wrong", status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 
 class UserItemsListView(ModelViewSet):
@@ -126,6 +124,19 @@ class UserItemsListView(ModelViewSet):
     @extend_schema(request=None)
     def destroy(self, request, *args, **kwargs):
         user_item: UserItems = self.get_object()
+
+        if user_item.withdrawal_process:
+            return Response(
+                {"message": "Предмет в процессе вывода"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if user_item.withdrawn:
+            return Response(
+                {"message": "Предмет выведен"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user_item.sale_item()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

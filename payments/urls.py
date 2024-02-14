@@ -11,10 +11,22 @@ router.register(
 )
 
 router.register(
+    "6383d341-4d14-4868-81ba-3c6382f2128e/output",
+    views.AdminOutputsViewSet,
+    basename="admin_output",
+)
+
+router.register(
     "6383d341-4d14-4868-81ba-3c6382f2128e/payments",
     views.AdminPaymentOrderViewSet,
     basename="admin_payments",
 )
+router.register(
+    "6383d341-4d14-4868-81ba-3c6382f2128e/ref_links",
+    views.AdminRefLinkViewSet,
+    basename="ref_links_admin",
+)
+
 router.register("payments", views.UserPaymentOrderViewSet, basename="user_payments")
 router.register("promo", views.PromoViewSet, basename="user_promo")
 

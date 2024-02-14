@@ -56,7 +56,7 @@ def verify_payment_order(lava=LavaApi()):
                     else:
                         comment = f'Пополнение с использованием реферальной ссылки {activated_link.link.code_data} \
                                     "{activated_link.link.code_data}" пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: NONE\nОдобрен вручную'
-                        credit = float(order.sum) * float(activated_link.bonus)
+                        credit = float(order.sum) * float(activated_link.link.bonus)
 
                     debit = (credit - float(order.sum)) * -1
                     balance = credit
@@ -107,7 +107,9 @@ def updating_moogold_composite_items(moogold=MoogoldApi()):
     data = moogold.get_moogold_genshin_items()
 
     for com_item in data["Variation"]:
-        item = CompositeItems.objects.filter(ext_id=com_item["variation_id"], removed=False).first()
+        item = CompositeItems.objects.filter(
+            ext_id=com_item["variation_id"], removed=False
+        ).first()
         if not item:
             composite_item = CompositeItems.objects.create(
                 ext_id=com_item["variation_id"],

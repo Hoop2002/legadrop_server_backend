@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib import admin
-from users.models import UserProfile, UserItems, ActivatedPromo
+from users.models import UserProfile, UserItems, ActivatedPromo, ActivatedLinks
 from django.utils.safestring import mark_safe
 from django.urls import reverse
 
@@ -41,3 +41,9 @@ class UserAdmin(BaseUserAdmin):
 class PromoActivationsAdmin(admin.ModelAdmin):
     list_display = ("user", "promo", "created_at")
     readonly_fields = ("created_at",)
+
+
+@admin.register(ActivatedLinks)
+class ActivatedLinksAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "link", "bonus_using")
+    readonly_fields = ("created_at", "updated_at")

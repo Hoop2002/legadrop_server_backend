@@ -8,7 +8,7 @@ from utils.functions import (
     payment_order_id_generator,
     id_generator,
     output_id_generator,
-    id_generator_X64
+    id_generator_X64,
 )
 from gateways.moogold_api import MoogoldApi
 from gateways.economia_api import get_currency
@@ -75,7 +75,7 @@ class PaymentOrder(models.Model):
         null=True,
         blank=True,
         related_name="user_approval_payments_order",
-    )  
+    )
 
     removed = models.BooleanField(verbose_name="Удалено", default=False)
 
@@ -101,7 +101,7 @@ class PaymentOrder(models.Model):
             else:
                 comment = f'Пополнение с использованием реферальной ссылки {activated_link.link.code_data} \
                             "{activated_link.link.code_data}" пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную'
-                credit = float(self.sum) * float(activated_link.bonus)
+                credit = float(self.sum) * float(activated_link.link.bonus)
             debit = (credit - float(self.sum)) * -1
             balance = credit
 
@@ -114,8 +114,12 @@ class PaymentOrder(models.Model):
                 demo=self.user.profile.demo,
                 order=self,
             )
-            activate_promo.calc_promo.add(calc)
-            activate_promo.save()
+            if activate_promo:
+                activate_promo.calc_promo.add(calc)
+                activate_promo.save()
+            else:
+                activated_link.calc_link.add(calc)
+                activated_link.save()
         else:
             comment = f"Пополнение пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную"
 
@@ -146,7 +150,6 @@ class PaymentOrder(models.Model):
             f"Пополение {self.order_id} на сумму {self.sum} пользователем {self.user}"
         )
 
-    
     class Meta:
         verbose_name = "Пополнение"
         verbose_name_plural = "Пополнения"
@@ -261,6 +264,7 @@ class RefLinks(models.Model):
         return f"{self.code_data} от пользователя {self.from_user}"
 
     class Meta:
+        ordering = ["-pk"]
         verbose_name = "Реферальная ссылка"
         verbose_name_plural = "Реферальные ссылки"
 
@@ -359,7 +363,7 @@ class Output(models.Model):
     OUTPUT_STATUS = (
         (COMPLETED, "Завершенный"),
         (PROCCESS, "В процессе"),
-        (TECHNICAL_ERR, "Техническая ошибка")
+        (TECHNICAL_ERR, "Техническая ошибка"),
     )
 
     output_id = models.CharField(
@@ -454,7 +458,7 @@ class CompositeItems(models.Model):
     created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
     removed = models.BooleanField(verbose_name="Удалено", default=False)
-    
+
     def __str__(self):
         return f"Составной предмет {self.technical_name}"
 
@@ -497,16 +501,20 @@ class PurchaseCompositeItems(models.Model):
     status = models.CharField(
         max_length=32, choices=PURCHASE_STATUS, null=False, default=PROCCESS
     )
-    
+
     created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
     removed = models.BooleanField(verbose_name="Удалено", default=False)
-    
-    ext_id_order = models.CharField(verbose_name="Идентификатор во внешнем сервиса", max_length=1024)
-    name  = models.CharField(verbose_name="Наименование", max_length=1024)
 
-    pci_id = models.CharField(verbose_name="Внутренний идентификатор", max_length=70, default=id_generator_X64)
-    
+    ext_id_order = models.CharField(
+        verbose_name="Идентификатор во внешнем сервиса", max_length=1024
+    )
+    name = models.CharField(verbose_name="Наименование", max_length=1024)
+
+    pci_id = models.CharField(
+        verbose_name="Внутренний идентификатор", max_length=70, default=id_generator_X64
+    )
+
     output = models.ForeignKey(
         verbose_name="Вывод",
         to="payments.Output",
@@ -518,7 +526,7 @@ class PurchaseCompositeItems(models.Model):
 
     def __str__(self):
         return f"Закупка {self.pci_id} на {self.output}"
-    
+
     class Meta:
         verbose_name = "Закупка на сторонем сервисе"
         verbose_name_plural = "Закупки на стороних сервисах"

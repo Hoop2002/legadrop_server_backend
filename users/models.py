@@ -22,9 +22,14 @@ class UserProfile(models.Model):
     )
     demo = models.BooleanField(verbose_name="Демо пользователь", default=False)
     partner_percent = models.FloatField(
-        verbose_name="Процент с пополнений",
+        verbose_name="Бонус с реферальной ссылки",
         default=1.03,
         validators=[MinValueValidator(1), MaxValueValidator(2)],
+    )
+    partner_income = models.FloatField(
+        verbose_name="Доход с пополнения по реферальной ссылке",
+        default=0.03,
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
     )
 
     @cached_property
@@ -44,6 +49,18 @@ class UserProfile(models.Model):
         if balance is None:
             return 0
         return balance
+
+    @cached_property
+    def total_income(self) -> float:
+        links = self.ref_links.filter(active=True, removed=False)
+        activated = ActivatedLinks.objects.filter(bonus_using=True, link__in=links)
+        amounts = activated.aggregate(
+            debit=models.Sum("calc_link__debit"), credit=models.Sum("calc_link__credit")
+        )
+        service_credit = amounts["credit"] or 0
+        service_debit = amounts["debit"] or 0
+        income = (service_credit + service_debit) * self.partner_income
+        return round(float(income), 2)
 
     def all_debit(self) -> float:
         from payments.models import Calc, PaymentOrder
@@ -68,8 +85,13 @@ class UserItems(models.Model):
         blank=True,
         related_name="user_items",
     )
+
     active = models.BooleanField(verbose_name="Есть на аккаунте", default=True)
     withdrawn = models.BooleanField(verbose_name="Выведен с аккаунта", default=False)
+    withdrawal_process = models.BooleanField(
+        verbose_name="Находится в процессе вывода", default=False
+    )
+
     user = models.ForeignKey(
         verbose_name="Пользователь",
         to=User,
@@ -182,6 +204,7 @@ class ActivatedLinks(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="activated_links",
     )
     link = models.ForeignKey(
         verbose_name="Промо",
@@ -189,6 +212,7 @@ class ActivatedLinks(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="activated_links",
     )
     bonus_using = models.BooleanField(
         verbose_name="Бонус к пополнению использован", default=False
@@ -198,6 +222,8 @@ class ActivatedLinks(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.link.active:
+            self.bonus_using = True
+        if self.calc_link.exists():
             self.bonus_using = True
 
         super().save(*args, **kwargs)
