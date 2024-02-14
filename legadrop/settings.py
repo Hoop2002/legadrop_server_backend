@@ -36,6 +36,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 # Application definition
 
 INSTALLED_APPS = [
+    "channels",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -111,6 +112,8 @@ SPECTACULAR_SETTINGS = {
 
 
 WSGI_APPLICATION = "legadrop.wsgi.application"
+
+ASGI_APPLICATION = "legadrop.asgi.application"
 
 
 # Database
