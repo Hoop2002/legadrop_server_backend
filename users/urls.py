@@ -2,8 +2,12 @@ from django.urls import path
 from users import views
 
 urlpatterns = [
+    path('google', views.google_auth, name='google_auth'),
+    path('vk', views.vk_auth, name='vk_auth'),
     path("sign_in", views.AuthViewSet.as_view({"post": "sign_in"}), name="sign_in"),
     path("sign_up", views.AuthViewSet.as_view({"post": "sign_up"}), name="sign_up"),
+    path("sign_up_google", views.AuthViewSet.as_view({"post": "sign_up_google"}), name="sign_up_google"),
+    path("sign_up_vk", views.AuthViewSet.as_view({"post": "sign_up_vk"}), name="sign_up_vk"),
     path("user", views.UserProfileViewSet.as_view({"get": "retrieve"}), name="user"),
     path(
         "user/update",
