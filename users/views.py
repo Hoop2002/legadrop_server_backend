@@ -1,4 +1,8 @@
 from django.contrib.auth import authenticate, login
+from django.http import HttpResponse
+from django.shortcuts import redirect
+from social_django.utils import load_backend, load_strategy
+from django.urls import reverse
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import action
@@ -27,6 +31,22 @@ from payments.models import PaymentOrder, RefLinks
 from gateways.enka import get_genshin_account
 
 
+# todo test
+def google_auth(request):
+    return HttpResponse(f'<a href="{reverse("social:begin", args=["google-oauth2"]) }">Google</a>')
+
+
+# todo test
+def vk_auth(request):
+    from requests import post
+    request_url = reverse("social:begin", args=["vk-oauth2"])
+    print(reverse("social:begin", args=["vk-oauth2"]))
+    resp = post(f"https://{request.get_host()}{request_url}")
+    print(resp.text)
+    return HttpResponse(f'<a href="{reverse("social:begin", args=["vk-oauth2"]) }">VK</a>')
+    # return Response()
+
+
 @extend_schema(tags=["main"])
 class AuthViewSet(GenericViewSet):
     queryset = UserProfile.objects
@@ -36,6 +56,8 @@ class AuthViewSet(GenericViewSet):
         serializers = {
             "sign_up": UserProfileCreateSerializer,
             "sign_in": UserSignInSerializer,
+            "sign_up_google": UserProfileCreateSerializer,
+            "sign_up_vk": UserProfileCreateSerializer,
         }
         return serializers[self.action]
 
@@ -54,6 +76,36 @@ class AuthViewSet(GenericViewSet):
             return Response(
                 serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY
             )
+
+    @staticmethod
+    @extend_schema(request=None, responses={301: None})
+    @action(detail=False)
+    def sign_up_google(request, *args, **kwargs):
+        strategy = load_strategy(request)
+        backend = load_backend(
+            strategy=strategy,
+            name='google-oauth2',
+            redirect_uri='https://a8f0-5-167-232-2.ngrok-free.app/auth/convert-token/'
+        )
+        # url = backend.access_token_url()
+        url = backend.authorization_url()
+
+        return redirect(url)
+
+    @staticmethod
+    @extend_schema(request=None, responses={301: None})
+    @action(detail=False)
+    def sign_up_vk(request, *args, **kwargs):
+        strategy = load_strategy(request)
+        backend = load_backend(
+            strategy=strategy,
+            name='vk-oauth2',
+            redirect_uri=f'{request.get_host()}/auth/convert-token/'
+        )
+        # url = backend.access_token_url()
+        url = backend.authorization_url()
+
+        return redirect(url)
 
     def sign_in(self, request, *args, **kwargs):
         username = self.request.data.get("username")

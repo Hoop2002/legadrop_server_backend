@@ -5,7 +5,7 @@ from django.db.models.signals import post_save
 
 def create_user_profile(sender, instance, **kwargs):
     from users.models import UserProfile
-    if not instance.profile:
+    if not hasattr(instance, "profile"):
         UserProfile.objects.create(user=instance)
 
 
