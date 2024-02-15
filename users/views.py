@@ -38,13 +38,7 @@ def google_auth(request):
 
 # todo test
 def vk_auth(request):
-    from requests import post
-    request_url = reverse("social:begin", args=["vk-oauth2"])
-    print(reverse("social:begin", args=["vk-oauth2"]))
-    resp = post(f"https://{request.get_host()}{request_url}")
-    print(resp.text)
     return HttpResponse(f'<a href="{reverse("social:begin", args=["vk-oauth2"]) }">VK</a>')
-    # return Response()
 
 
 @extend_schema(tags=["main"])
