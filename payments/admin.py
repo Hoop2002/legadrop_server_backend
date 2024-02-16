@@ -70,6 +70,7 @@ class AdminPurchaseCompositeItems(admin.ModelAdmin):
         "type",
         "status",
         "ext_id_order",
+        "player_id",
         "output",
         "created_at",
         "updated_at",
@@ -85,6 +86,7 @@ class AdminCompositeItems(admin.ModelAdmin):
         "name",
         "type",
         "service",
+        "ext_id",
         "composite_item_id",
         "crystals_quantity",
         "price_dollar",
@@ -101,19 +103,26 @@ class OutputInline(admin.TabularInline):
     extra = 0
 
 
+class PurchaseCompositeItemsOutputInline(admin.TabularInline):
+    model = PurchaseCompositeItems
+    extra = 0
+
+
 @admin.register(Output)
 class OutputAdmin(admin.ModelAdmin):
     fields = (
         "output_id",
         "type",
         "user",
+        "player_id",
         "comment",
         "status",
         "created_at",
         "updated_at",
+        "active",
         "removed",
     )
-    inlines = [OutputInline]
+    inlines = [OutputInline, PurchaseCompositeItemsOutputInline]
     readonly_fields = ("output_id", "updated_at", "created_at")
 
 

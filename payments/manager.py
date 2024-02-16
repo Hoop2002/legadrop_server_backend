@@ -1,5 +1,5 @@
 from django.conf import settings
-from payments.models import PaymentOrder
+from payments.models import PaymentOrder, PurchaseCompositeItems, Output
 from gateways.lava_api import LavaApi
 from gateways.moogold_api import MoogoldApi
 from utils.functions import payment_order_id_generator
@@ -58,5 +58,33 @@ class PaymentManager:
 
         return payment_order
 
-    def _create_moogold_output(self, vals: dict):
-        pass
+    def _create_moogold_output(
+        self, output, product_id, quantity, server, uid, user_item
+    ):
+
+        moogold_order = self.moogold.buy_moogold_item(
+            product_id=product_id, quantity=quantity, server=server, uid=uid
+        )
+
+        purchase = PurchaseCompositeItems.objects.create(
+            type=PurchaseCompositeItems.MOOGOLD,
+            status=PurchaseCompositeItems.PROCCESS,
+            output=output,
+            ext_id_order=moogold_order["order_id"],
+            player_id=moogold_order["account_details"]["User ID"],
+            server=moogold_order["account_details"]["Server"],
+            user_item=user_item,
+        )
+        purchase.save()
+
+    def _enough_money_moogold_balance(self, price: float):
+        """
+        price - цена в рублях
+        метод возвращает True в случае если денег на балансе хватает
+        False в случае если денег недостаточно
+        """
+        balance = round(float(self.moogold.get_moogold_balance()["balance"]), 2)
+        if balance < price:
+            return False
+        else:
+            return True

@@ -50,8 +50,8 @@ INSTALLED_APPS = [
     "drf_spectacular_sidecar",
     "rest_framework_simplejwt",
     "social_django",
-    'oauth2_provider',
-    'drf_social_oauth2',
+    "oauth2_provider",
+    "drf_social_oauth2",
     "colorfield",
     "core",
     "cases",
@@ -67,7 +67,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "social_django.middleware.SocialAuthExceptionMiddleware"
+    "social_django.middleware.SocialAuthExceptionMiddleware",
 ]
 
 ROOT_URLCONF = "legadrop.urls"
@@ -83,8 +83,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect',
+                "social_django.context_processors.backends",
+                "social_django.context_processors.login_redirect",
             ],
         },
     },
@@ -96,7 +96,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.BasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
         "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
-        "drf_social_oauth2.authentication.SocialAuthentication"
+        "drf_social_oauth2.authentication.SocialAuthentication",
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 20,
@@ -213,18 +213,26 @@ AUTHENTICATION_BACKENDS = (
     "social_core.backends.vk.VKOAuth2",
 )
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/userinfo.profile',
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
 ]
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env("SOCIAL_AUTH_GOOGLE_OAUTH2_KEY", default="SOCIAL_AUTH_GOOGLE_OAUTH2_KEY")
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env("SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET", default="SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET")
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env(
+    "SOCIAL_AUTH_GOOGLE_OAUTH2_KEY", default="SOCIAL_AUTH_GOOGLE_OAUTH2_KEY"
+)
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env(
+    "SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET", default="SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET"
+)
 
 SOCIAL_AUTH_VK_APP_KEY = env("SOCIAL_AUTH_VK_APP_KEY", default="SOCIAL_AUTH_VK_APP_KEY")
-SOCIAL_AUTH_VK_APP_SECRET = env("SOCIAL_AUTH_VK_APP_SECRET", default="SOCIAL_AUTH_VK_APP_SECRET")
-SOCIAL_AUTH_VK_OPENAPI_APP_ID = env("SOCIAL_AUTH_VK_OPENAPI_APP_ID", default="SOCIAL_AUTH_VK_OPENAPI_APP_ID")
+SOCIAL_AUTH_VK_APP_SECRET = env(
+    "SOCIAL_AUTH_VK_APP_SECRET", default="SOCIAL_AUTH_VK_APP_SECRET"
+)
+SOCIAL_AUTH_VK_OPENAPI_APP_ID = env(
+    "SOCIAL_AUTH_VK_OPENAPI_APP_ID", default="SOCIAL_AUTH_VK_OPENAPI_APP_ID"
+)
 
 OAUTH2_PROVIDER = {
-    'ACCESS_TOKEN_EXPIRE_SECONDS': 3600 * 24 * 30,
+    "ACCESS_TOKEN_EXPIRE_SECONDS": 3600 * 24 * 30,
 }
 
 

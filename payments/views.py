@@ -181,10 +181,9 @@ class AdminOutputsViewSet(ModelViewSet):
             return Response(
                 {"message": "Такого вывода не существует"}, status=status.HTTP_200_OK
             )
+        message, success = output.approval_output(approval_user=request.user)
 
-        # message, success = payment.approval_payment_order(approval_user=request.user)
-
-        return Response({"message": ""}, status=status.HTTP_200_OK)
+        return Response({"message": message}, status=success)
 
 
 @extend_schema(tags=["admin/ref_links"])
