@@ -58,7 +58,7 @@ class AdminListOutputSerializer(serializers.ModelSerializer):
         model = Output
         fields = ("id", "output_id", "type", "status")
 
- 
+
 class AdminOutputSerializer(AdminListOutputSerializer):
     class Meta:
         model = Output
@@ -76,7 +76,6 @@ class UserListOutputSerializer(serializers.ModelSerializer):
         )
 
 
-
 class UserOutputSerializer(serializers.ModelSerializer):
     output_items = UserItemSerializer(many=True)
 
@@ -90,9 +89,9 @@ class UserOutputSerializer(serializers.ModelSerializer):
             "status",
             "created_at",
             "active",
-            "output_items"
+            "output_items",
         )
-        
+
 
 class AdminListPromoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -145,6 +144,7 @@ class CalcsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Calc
         fields = ("user_id", "debit", "credit", "created_at")
+
 
 class RefLinksAdminSerializer(serializers.ModelSerializer):
     from_user = AdminUserListSerializer(read_only=True)

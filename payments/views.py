@@ -21,7 +21,7 @@ from payments.serializers import (
     AdminListOutputSerializer,
     RefLinksAdminSerializer,
     UserListOutputSerializer,
-    UserOutputSerializer
+    UserOutputSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -230,6 +230,7 @@ class AdminRefLinkViewSet(ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
+
 @extend_schema(tags=["output"])
 class UserOutputsViewSet(ModelViewSet):
     queryset = Output.objects.filter(removed=False)
@@ -242,7 +243,7 @@ class UserOutputsViewSet(ModelViewSet):
         if self.action == "list":
             return UserListOutputSerializer
         return UserOutputSerializer
-    
+
     def list(self, request, *args, **kwargs):
         outputs = request.user.user_outputs.filter(removed=False).all()
         result = self.paginate_queryset(outputs)
