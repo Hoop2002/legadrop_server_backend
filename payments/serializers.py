@@ -3,7 +3,7 @@ from rest_framework import serializers
 from payments.models import PaymentOrder, PromoCode, Calc, Output, RefLinks
 from payments.manager import PaymentManager
 
-from users.serializers import AdminUserListSerializer
+from users.serializers import AdminUserListSerializer, UserItemSerializer
 
 
 class UserPaymentOrderSerializer(serializers.ModelSerializer):
@@ -65,8 +65,32 @@ class AdminOutputSerializer(AdminListOutputSerializer):
         fields = "__all__"
 
 
-class UserListOutputSerializer(serializers.Serializer):
-    pass
+class UserListOutputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Output
+        fields = (
+            "id",
+            "output_id",
+            "status",
+            "created_at",
+        )
+
+
+class UserOutputSerializer(serializers.ModelSerializer):
+    output_items = UserItemSerializer(many=True)
+
+    class Meta:
+        model = Output
+        fields = (
+            "id",
+            "output_id",
+            "player_id",
+            "comment",
+            "status",
+            "created_at",
+            "active",
+            "output_items",
+        )
 
 
 class AdminListPromoSerializer(serializers.ModelSerializer):
@@ -120,12 +144,6 @@ class CalcsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Calc
         fields = ("user_id", "debit", "credit", "created_at")
-
-
-class UserOutputs(serializers.Serializer):
-    class Meta:
-        model = Output
-        fields = "output_id"
 
 
 class RefLinksAdminSerializer(serializers.ModelSerializer):

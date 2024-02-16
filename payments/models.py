@@ -407,6 +407,15 @@ class Output(models.Model):
 
     active = models.BooleanField(verbose_name="Активный", default=True)
 
+    remove_user = models.ForeignKey(
+        verbose_name="Удаливший пользователь",
+        to=User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_remove_outputs",
+    )
+
     def __str__(self):
         return f"Вывод {self.output_id}"
 
@@ -537,6 +546,13 @@ class Output(models.Model):
                     com_item = crystal_composite.filter(crystals_quantity=com).get()
                     price += com_item.price_dollar
         return price
+
+    def remove(self, user_remove: User):
+        self.removed = True
+        self.remove_user = user_remove
+        self.active = False
+        self.save()
+        return f"{self.output_id} удален пользователем {self.remove_user}", 200
 
     class Meta:
         verbose_name = "Вывод предмета"

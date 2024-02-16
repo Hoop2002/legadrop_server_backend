@@ -20,6 +20,8 @@ from payments.serializers import (
     AdminOutputSerializer,
     AdminListOutputSerializer,
     RefLinksAdminSerializer,
+    UserListOutputSerializer,
+    UserOutputSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -179,9 +181,24 @@ class AdminOutputsViewSet(ModelViewSet):
         output = self.get_object()
         if not output:
             return Response(
-                {"message": "Такого вывода не существует"}, status=status.HTTP_200_OK
+                {"message": "Такого вывода не существует"},
+                status=status.HTTP_404_NOT_FOUND,
             )
         message, success = output.approval_output(approval_user=request.user)
+
+        return Response({"message": message}, status=success)
+
+    @extend_schema(responses={200: SuccessSerializer}, request=None)
+    @action(detail=True, methods=["post"])
+    def remove(self, request, *args, **kwargs):
+        output = self.get_object()
+        if not output:
+            return Response(
+                {"message": "Такого вывода не существует"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        message, success = output.remove(user_remove=request.user)
 
         return Response({"message": message}, status=success)
 
@@ -212,3 +229,24 @@ class AdminRefLinkViewSet(ModelViewSet):
         if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@extend_schema(tags=["output"])
+class UserOutputsViewSet(ModelViewSet):
+    queryset = Output.objects.filter(removed=False)
+    serializer_class = UserOutputSerializer
+    http_method_names = ["get", "post"]
+    lookup_field = "output_id"
+    pagination_class = LimitOffsetPagination
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return UserListOutputSerializer
+        return UserOutputSerializer
+
+    def list(self, request, *args, **kwargs):
+        outputs = request.user.user_outputs.filter(removed=False).all()
+        result = self.paginate_queryset(outputs)
+        serializer = self.get_serializer(result, many=True)
+        response = self.get_paginated_response(serializer.data)
+        return response

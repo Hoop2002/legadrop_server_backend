@@ -28,6 +28,7 @@ router.register(
 )
 
 router.register("payments", views.UserPaymentOrderViewSet, basename="user_payments")
+router.register("outputs", views.UserOutputsViewSet, basename="user_outputs")
 router.register("promo", views.PromoViewSet, basename="user_promo")
 
 urlpatterns = [
