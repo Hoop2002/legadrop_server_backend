@@ -206,6 +206,7 @@ SOCIAL_AUTH_REQUIRE_POST = True
 LOGIN_REDIRECT_URL = "/cases"
 ACTIVATE_JWT = True
 AUTHENTICATION_BACKENDS = (
+    "social_core.backends.google.GoogleOAuth2",
     "django.contrib.auth.backends.ModelBackend",
     "drf_social_oauth2.backends.DjangoOAuth2",
     "social_core.backends.google.GoogleOAuth2",

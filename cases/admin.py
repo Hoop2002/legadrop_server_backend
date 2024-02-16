@@ -73,7 +73,8 @@ class ItemAdmin(admin.ModelAdmin):
         "sale",
         "service",
         "type",
-        "ghost_crystals_quantity",
+        "crystals_quantity",
+        "is_output",
         "created_at",
     )
     list_editable = ("sale", "price")
@@ -89,10 +90,11 @@ class ItemAdmin(admin.ModelAdmin):
                     "sale",
                     "type",
                     "service",
-                    "ghost_crystals_quantity",
                     "image",
                     "step_down_factor",
                     "rarity_category",
+                    "crystals_quantity",
+                    "is_output",
                     "created_at",
                     "removed",
                 )

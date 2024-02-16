@@ -9,8 +9,8 @@ from utils.functions import (
     id_generator,
     output_id_generator,
     id_generator_X64,
+    get_genshin_server,
 )
-from gateways.moogold_api import MoogoldApi
 from gateways.economia_api import get_currency
 from users.models import User, ActivatedPromo
 from cases.models import Item
@@ -377,6 +377,10 @@ class Output(models.Model):
         max_length=32, choices=OUTPUT_STATUS, null=False, default=PROCCESS
     )
 
+    player_id = models.CharField(
+        verbose_name="Идентификатор аккаунта вывода", max_length=512, null=True
+    )
+
     user = models.ForeignKey(
         verbose_name="Пользователь",
         to=User,
@@ -401,17 +405,138 @@ class Output(models.Model):
         related_name="user_approval_output",
     )
 
+    active = models.BooleanField(verbose_name="Активный", default=True)
+
     def __str__(self):
         return f"Вывод {self.output_id}"
 
-    def get_genshin_moogold_items(self, moogold: MoogoldApi):
-        return moogold.get_moogold_genshin_items()
-
     def approval_output(self, approval_user: User):
-        if self.type == self.MOOGOLD:
-            pass
-        if self.type == self.TEST:
-            pass
+        from .manager import PaymentManager
+
+        if not self.active:
+            return f"Вывод {self.output_id} уже в процессе закупки или уже выведен", 400
+
+        pay_manager = PaymentManager()
+
+        is_output_moogold = pay_manager._enough_money_moogold_balance(
+            self.cost_withdrawal_of_items
+        )
+
+        if not is_output_moogold:
+            return "На балансе MOOGOLD не хватает денег", 400
+
+        composites = CompositeItems.objects.all()
+
+        crystal_items = self.output_items.filter(item__type=Item.CRYSTAL)
+        blessing_items = self.output_items.filter(item__type=Item.BLESSING)
+        ghost_items = self.output_items.filter(item__type=Item.GHOST_ITEM)
+
+        if crystal_items:
+            crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
+            value_set = [i.crystals_quantity for i in crystal_composite]
+
+            for crystal_item in crystal_items:
+                combination = crystal_item.item.get_crystal_combinations(
+                    value_set=value_set
+                )
+
+                for com in combination:
+                    com_item = crystal_composite.filter(crystals_quantity=com).get()
+
+                    if com_item.service == CompositeItems.MOOGOLD:
+
+                        pay_manager._create_moogold_output(
+                            output=self,
+                            product_id=com_item.ext_id,
+                            quantity=1,
+                            server=get_genshin_server.get_server(self.player_id),
+                            uid=self.player_id,
+                            user_item=crystal_item,
+                        )
+
+                crystal_item.withdrawal_process = True
+                crystal_item.save()
+
+        if blessing_items:
+            blessing_composite = composites.filter(type=CompositeItems.BLESSING).first()
+            for blessing_item in blessing_items:
+                pay_manager._create_moogold_output(
+                    output=self,
+                    product_id=blessing_composite.ext_id,
+                    quantity=1,
+                    server=get_genshin_server.get_server(self.player_id),
+                    uid=self.player_id,
+                    user_item=blessing_item,
+                )
+                blessing_item.withdrawal_process = True
+                blessing_item.save()
+
+        if ghost_items:
+            crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
+            value_set = [i.crystals_quantity for i in crystal_composite]
+
+            for ghost_item in ghost_items:
+                combination = ghost_item.item.get_crystal_combinations(
+                    value_set=value_set
+                )
+                for com in combination:
+                    com_item = crystal_composite.filter(crystals_quantity=com).get()
+
+                    if com_item.service == CompositeItems.MOOGOLD:
+                        pay_manager._create_moogold_output(
+                            output=self,
+                            product_id=com_item.ext_id,
+                            quantity=1,
+                            server=get_genshin_server.get_server(self.player_id),
+                            uid=self.player_id,
+                            user_item=ghost_item,
+                        )
+                ghost_item.withdrawal_process = True
+                blessing_item.save()
+
+        self.approval_user = approval_user
+        self.active = False
+        self.save()
+
+        return f"{self.output_id} одобрен пользователем {approval_user}", 200
+
+    @cached_property
+    def cost_withdrawal_of_items(self) -> float:
+        price = 0.0
+
+        composites = CompositeItems.objects.all()
+
+        crystal_items = self.output_items.filter(item__type=Item.CRYSTAL)
+        blessing_items = self.output_items.filter(item__type=Item.BLESSING)
+        ghost_items = self.output_items.filter(item__type=Item.GHOST_ITEM)
+
+        if crystal_items:
+            crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
+            value_set = [i.crystals_quantity for i in crystal_composite]
+            for crystal_item in crystal_items:
+                combination = crystal_item.item.get_crystal_combinations(
+                    value_set=value_set
+                )
+                for com in combination:
+                    com_item = crystal_composite.filter(crystals_quantity=com).get()
+                    price += com_item.price_dollar
+
+        if blessing_items:
+            blessing_composite = composites.filter(type=CompositeItems.BLESSING).first()
+            for _ in blessing_items:
+                price += blessing_composite.price_dollar
+
+        if ghost_items:
+            crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
+            value_set = [i.crystals_quantity for i in crystal_composite]
+            for ghost_item in ghost_items:
+                combination = ghost_item.item.get_crystal_combinations(
+                    value_set=value_set
+                )
+                for com in combination:
+                    com_item = crystal_composite.filter(crystals_quantity=com).get()
+                    price += com_item.price_dollar
+        return price
 
     class Meta:
         verbose_name = "Вывод предмета"
@@ -455,6 +580,7 @@ class CompositeItems(models.Model):
         verbose_name="Количество кристаллов", null=True, default=0
     )
     price_dollar = models.FloatField(verbose_name="Стоимость в долларах", default=0.0)
+
     created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
     removed = models.BooleanField(verbose_name="Удалено", default=False)
@@ -464,7 +590,7 @@ class CompositeItems(models.Model):
 
     @cached_property
     def price_rub(self) -> float:
-        currency = round(float(get_currency()["USDRUB"]["code"]["high"]), 2)
+        currency = float(get_currency()["USDRUB"]["high"])
         return round(currency * self.price_dollar)
 
     class Meta:
@@ -514,7 +640,10 @@ class PurchaseCompositeItems(models.Model):
     pci_id = models.CharField(
         verbose_name="Внутренний идентификатор", max_length=70, default=id_generator_X64
     )
-
+    player_id = models.CharField(
+        verbose_name="Идентификатор аккаунта вывода", max_length=512, null=True
+    )
+    server = models.CharField(verbose_name="Сервер", max_length=120, null=True)
     output = models.ForeignKey(
         verbose_name="Вывод",
         to="payments.Output",
@@ -522,6 +651,15 @@ class PurchaseCompositeItems(models.Model):
         null=True,
         blank=True,
         related_name="purchase_ci_outputs",
+    )
+
+    user_item = models.ForeignKey(
+        verbose_name="Выводимый предмет",
+        to="users.UserItems",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="purchase_composite_in_users_item",
     )
 
     def __str__(self):
