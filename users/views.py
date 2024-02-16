@@ -33,17 +33,22 @@ from gateways.enka import get_genshin_account
 
 # todo test
 def google_auth(request):
-    return HttpResponse(f'<a href="{reverse("social:begin", args=["google-oauth2"]) }">Google</a>')
+    return HttpResponse(
+        f'<a href="{reverse("social:begin", args=["google-oauth2"]) }">Google</a>'
+    )
 
 
 # todo test
 def vk_auth(request):
     from requests import post
+
     request_url = reverse("social:begin", args=["vk-oauth2"])
     print(reverse("social:begin", args=["vk-oauth2"]))
     resp = post(f"https://{request.get_host()}{request_url}")
     print(resp.text)
-    return HttpResponse(f'<a href="{reverse("social:begin", args=["vk-oauth2"]) }">VK</a>')
+    return HttpResponse(
+        f'<a href="{reverse("social:begin", args=["vk-oauth2"]) }">VK</a>'
+    )
     # return Response()
 
 
@@ -84,8 +89,8 @@ class AuthViewSet(GenericViewSet):
         strategy = load_strategy(request)
         backend = load_backend(
             strategy=strategy,
-            name='google-oauth2',
-            redirect_uri='https://a8f0-5-167-232-2.ngrok-free.app/auth/convert-token/'
+            name="google-oauth2",
+            redirect_uri="https://a8f0-5-167-232-2.ngrok-free.app/auth/convert-token/",
         )
         # url = backend.access_token_url()
         url = backend.authorization_url()
@@ -99,8 +104,8 @@ class AuthViewSet(GenericViewSet):
         strategy = load_strategy(request)
         backend = load_backend(
             strategy=strategy,
-            name='vk-oauth2',
-            redirect_uri=f'{request.get_host()}/auth/convert-token/'
+            name="vk-oauth2",
+            redirect_uri=f"{request.get_host()}/auth/convert-token/",
         )
         # url = backend.access_token_url()
         url = backend.authorization_url()

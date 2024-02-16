@@ -4,7 +4,12 @@ from django.utils import timezone
 from colorfield.fields import ColorField
 from django.contrib.auth.models import User
 
-from utils.functions import id_generator, generate_upload_name, transliterate
+from utils.functions import (
+    id_generator,
+    generate_upload_name,
+    transliterate,
+    find_combination,
+)
 
 
 class RarityCategory(models.Model):
@@ -66,11 +71,6 @@ class Item(models.Model):
     crystals_quantity = models.IntegerField(
         verbose_name="Количество кристаллов", null=True, default=0
     )
-    ghost_crystals_quantity = models.IntegerField(
-        verbose_name="Количество кристаллов для призрачного предмета",
-        null=True,
-        default=0,
-    )
     purchase_price = models.FloatField(
         verbose_name="Закупочная цена", default=0, null=False
     )
@@ -99,6 +99,9 @@ class Item(models.Model):
     )
     removed = models.BooleanField(verbose_name="Удалено", default=False)
     is_output = models.BooleanField(verbose_name="Выводимый/Не выводимый", default=True)
+
+    def get_crystal_combinations(self, value_set):
+        return find_combination(target=self.crystals_quantity, values=value_set)
 
     def __str__(self):
         return self.name
