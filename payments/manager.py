@@ -90,4 +90,4 @@ class PaymentManager:
             return True
 
     def _get_status_order_in_moogold(self, order_id):
-        return self.moogold.get_moogold_order_detail(order_id=order_id)["order_status"] 
+        return self.moogold.get_moogold_order_detail(order_id=order_id)["order_status"]

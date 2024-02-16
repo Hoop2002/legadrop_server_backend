@@ -121,6 +121,7 @@ class OutputAdmin(admin.ModelAdmin):
         "updated_at",
         "active",
         "removed",
+        "remove_user",
     )
     inlines = [OutputInline, PurchaseCompositeItemsOutputInline]
     readonly_fields = ("output_id", "updated_at", "created_at")

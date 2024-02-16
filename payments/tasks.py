@@ -1,10 +1,18 @@
 from celery import shared_task
 from django.utils import timezone
-from payments.models import PaymentOrder, Calc, PromoCode, CompositeItems, Output, PurchaseCompositeItems
+from payments.models import (
+    PaymentOrder,
+    Calc,
+    PromoCode,
+    CompositeItems,
+    Output,
+    PurchaseCompositeItems,
+)
 from users.models import ActivatedPromo, ActivatedLinks
 from gateways.lava_api import LavaApi
 from gateways.moogold_api import MoogoldApi
 from payments.manager import PaymentManager
+
 
 @shared_task
 def deactivate_expired_promo():
@@ -126,6 +134,7 @@ def updating_moogold_composite_items(moogold=MoogoldApi()):
 
         composite_item.save()
 
+
 @shared_task
 def check_output_status_in_moogold(manager=PaymentManager()):
     outputs = Output.objects.filter(active=True).all()
@@ -148,13 +157,15 @@ def check_output_status_in_moogold(manager=PaymentManager()):
                 if status == pci.REFUNDED:
                     pci.status = pci.REFUNDED
 
-                
-            
             pci.save()
-        
-        if purchase_items.count() == output.purchase_ci_outputs.all().filter(status=PurchaseCompositeItems.COMPLETED).count():
+
+        if (
+            purchase_items.count()
+            == output.purchase_ci_outputs.all()
+            .filter(status=PurchaseCompositeItems.COMPLETED)
+            .count()
+        ):
             output.status = output.COMPLETED
             output.active = False
-        
+
         output.save()
-        

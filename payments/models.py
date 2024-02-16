@@ -406,8 +406,8 @@ class Output(models.Model):
     )
 
     active = models.BooleanField(verbose_name="Активный", default=True)
-    
-    remove_user =  models.ForeignKey(
+
+    remove_user = models.ForeignKey(
         verbose_name="Удаливший пользователь",
         to=User,
         on_delete=models.SET_NULL,
@@ -550,6 +550,8 @@ class Output(models.Model):
     def remove(self, user_remove: User):
         self.removed = True
         self.remove_user = user_remove
+        self.active = False
+        self.save()
         return f"{self.output_id} удален пользователем {self.remove_user}", 200
 
     class Meta:

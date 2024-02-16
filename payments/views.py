@@ -179,7 +179,8 @@ class AdminOutputsViewSet(ModelViewSet):
         output = self.get_object()
         if not output:
             return Response(
-                {"message": "Такого вывода не существует"}, status=status.HTTP_404_NOT_FOUND
+                {"message": "Такого вывода не существует"},
+                status=status.HTTP_404_NOT_FOUND,
             )
         message, success = output.approval_output(approval_user=request.user)
 
@@ -191,12 +192,14 @@ class AdminOutputsViewSet(ModelViewSet):
         output = self.get_object()
         if not output:
             return Response(
-                {"message": "Такого вывода не существует"}, status=status.HTTP_404_NOT_FOUND
+                {"message": "Такого вывода не существует"},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
-        message, success  = output.remove(user_remove=request.user)
+        message, success = output.remove(user_remove=request.user)
 
         return Response({"message": message}, status=success)
+
 
 @extend_schema(tags=["admin/ref_links"])
 class AdminRefLinkViewSet(ModelViewSet):
