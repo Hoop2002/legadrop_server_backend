@@ -42,7 +42,6 @@ urlpatterns = [
     path("", include("payments.urls")),
     path("", include("core.urls")),
     path("", include("social_django.urls", namespace="social")),
-    path("auth/", include("drf_social_oauth2.urls", namespace="drf")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
