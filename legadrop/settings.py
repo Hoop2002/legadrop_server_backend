@@ -50,8 +50,6 @@ INSTALLED_APPS = [
     "drf_spectacular_sidecar",
     "rest_framework_simplejwt",
     "social_django",
-    "oauth2_provider",
-    "drf_social_oauth2",
     "colorfield",
     "core",
     "cases",
@@ -95,8 +93,6 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.BasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
-        "drf_social_oauth2.authentication.SocialAuthentication",
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 20,
@@ -203,13 +199,11 @@ BASE_URL = env("BASE_URL_APP")
 BACK_URL_LAVA = env("BACK_URL_LAVA")
 
 SOCIAL_AUTH_REQUIRE_POST = True
-LOGIN_REDIRECT_URL = "/cases"
+LOGIN_REDIRECT_URL = "/get_token"
 ACTIVATE_JWT = True
 AUTHENTICATION_BACKENDS = (
     "social_core.backends.google.GoogleOAuth2",
     "django.contrib.auth.backends.ModelBackend",
-    "drf_social_oauth2.backends.DjangoOAuth2",
-    "social_core.backends.google.GoogleOAuth2",
     "social_core.backends.vk.VKOAuth2",
 )
 SOCIAL_AUTH_PIPELINE = (
@@ -242,7 +236,6 @@ SOCIAL_AUTH_VK_OAUTH2_KEY = env(
 SOCIAL_AUTH_VK_OAUTH2_SECRET = env(
     "SOCIAL_AUTH_VK_OAUTH2_SECRET", default="SOCIAL_AUTH_VK_OAUTH2_SECRET"
 )
-SOCIAL_AUTH_VK_APP_USER_MODE = 2
 
 OAUTH2_PROVIDER = {
     "ACCESS_TOKEN_EXPIRE_SECONDS": 3600 * 24 * 30,

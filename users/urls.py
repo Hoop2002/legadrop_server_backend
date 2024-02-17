@@ -2,7 +2,7 @@ from django.urls import path
 from users import views
 
 urlpatterns = [
-    path("token/<str:backend>", views.register_by_access_token, name="register_token"),
+    path("get_token", views.AuthViewSet.as_view({'get': 'get_token'}), name="get_token"),
     path("sign_in", views.AuthViewSet.as_view({"post": "sign_in"}), name="sign_in"),
     path("sign_up", views.AuthViewSet.as_view({"post": "sign_up"}), name="sign_up"),
     path(

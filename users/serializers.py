@@ -304,3 +304,8 @@ class AdminUserPaymentHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentOrder
         fields = ("sum", "manually_approved", "status", "created_at", "updated_at")
+
+
+class SuccessSignUpSerializer(serializers.Serializer):
+    next = serializers.CharField()
+    token = serializers.CharField()

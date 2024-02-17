@@ -1,14 +1,12 @@
 from django.contrib.auth import authenticate, login, REDIRECT_FIELD_NAME
-from django.http import HttpResponse
-from django.shortcuts import redirect
-from social_django.utils import load_backend, load_strategy, psa
-from social_core.actions import do_auth, do_complete
+from social_django.utils import load_backend, load_strategy
+from social_core.actions import do_auth
 from django.urls import reverse
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 
@@ -26,38 +24,43 @@ from users.serializers import (
     AdminUserListSerializer,
     GameHistorySerializer,
     AdminUserPaymentHistorySerializer,
+    SuccessSignUpSerializer,
 )
 from payments.models import PaymentOrder, RefLinks
 
 from gateways.enka import get_genshin_account
 
 
-@psa('social:complete')
-def register_by_access_token(request, backend):
-    # This view expects an access_token GET parameter, if it's needed,
-    # request.backend and request.strategy will be loaded with the current
-    # backend and strategy.
-    token = request.GET.get('access_token')
-    print(token)
-    print(request.GET)
-    user = request.backend.do_auth(token)
-    if user:
-        login(request, user)
-        token = AccessToken.for_user(user)
-        return token
-    else:
-        return 'ERROR'
-
-
 @extend_schema(tags=["main"])
 class AuthViewSet(GenericViewSet):
     queryset = UserProfile.objects
-    permission_classes = [AllowAny]
+
+    def get_permissions(self):
+        if self.action == "get_token":
+            self.permission_classes = [IsAuthenticated]
+        else:
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action == "sign_up":
             return UserProfileCreateSerializer
+        if self.action == "get_token":
+            return SuccessSignUpSerializer
         return UserSignInSerializer
+
+    def get_token(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            next_url = request.build_absolute_uri(reverse("shopitems_list"))
+            user = request.user
+            token = AccessToken.for_user(user)
+            request.session.clear()
+            ref = self._check_cookies(request)
+            response = Response({'next': next_url, 'token': str(token)})
+            if ref:
+                ref.delete_cookie("ref")
+                ref.activate_link(user)
+            return response
 
     def sign_up(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -91,10 +94,8 @@ class AuthViewSet(GenericViewSet):
         backend = load_backend(
             strategy=strategy,
             name="vk-oauth2",
-            # redirect_uri=f'{self.request.scheme}://{self.request.get_host()}/complete/vk-oauth2/'
-            redirect_uri=f"{self.request.scheme}://{self.request.get_host()}/token/vk-oauth2",
+            redirect_uri=f'{self.request.scheme}://{self.request.get_host()}/complete/vk-oauth2/'
         )
-        print(backend.EXTRA_DATA)
         return do_auth(backend, REDIRECT_FIELD_NAME)
 
     def sign_in(self, request, *args, **kwargs):
