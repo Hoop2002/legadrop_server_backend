@@ -56,7 +56,7 @@ class AuthViewSet(GenericViewSet):
             token = AccessToken.for_user(user)
             request.session.clear()
             ref = self._check_cookies(request)
-            response = Response({'next': next_url, 'token': str(token)})
+            response = Response({"next": next_url, "token": str(token)})
             if ref:
                 ref.delete_cookie("ref")
                 ref.activate_link(user)
@@ -94,7 +94,7 @@ class AuthViewSet(GenericViewSet):
         backend = load_backend(
             strategy=strategy,
             name="vk-oauth2",
-            redirect_uri=f'{self.request.scheme}://{self.request.get_host()}/complete/vk-oauth2/'
+            redirect_uri=f"{self.request.scheme}://{self.request.get_host()}/complete/vk-oauth2/",
         )
         return do_auth(backend, REDIRECT_FIELD_NAME)
 
