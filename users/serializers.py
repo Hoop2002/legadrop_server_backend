@@ -103,7 +103,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def get_ref_link(self, instance) -> str:
-        ref = instance.ref_links.last()
+        ref = instance.ref_links.first()
         if not ref:
             ref = RefLinks.objects.create(from_user=instance)
         generic = GenericSettings.load()
