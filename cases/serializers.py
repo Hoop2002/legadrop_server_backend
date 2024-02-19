@@ -1,13 +1,14 @@
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework import status
-from cases.models import Case, Item, RarityCategory, Category, ConditionCase
-from users.models import UserItems
+from cases.models import Case, Item, RarityCategory, Category, ConditionCase, Contests
+from users.models import UserItems, ContestsWinners
 from payments.models import Calc
 
 from utils.fields import Base64ImageField
 
 
-class ConditionCaseSerializer(serializers.ModelSerializer):
+class ConditionSerializer(serializers.ModelSerializer):
     type_condition = serializers.ChoiceField(
         choices=ConditionCase.CONDITION_TYPES_CHOICES
     )
@@ -34,6 +35,7 @@ class ConditionCaseSerializer(serializers.ModelSerializer):
         fields = (
             "condition_id",
             "name",
+            "description",
             "type_condition",
             "price",
             "time",
@@ -261,6 +263,81 @@ class AdminCasesSerializer(ListCasesSerializer):
             "item_ids",
             "conditions",
             "condition_ids",
+            "created_at",
+            "updated_at",
+        )
+
+
+class ContestsSerializer(serializers.ModelSerializer):
+    time_start = serializers.DateTimeField(source="next_start")
+    current_award = ItemListSerializer()
+    count_participants = serializers.SerializerMethodField()
+    last_winner = serializers.SerializerMethodField()
+    conditions = serializers.SerializerMethodField()
+
+    def get_count_participants(self) -> int:
+        return self.instance.participants.count()
+
+    def get_last_winner(self):
+        return self.instance.winners.order_by("pk").last()
+
+    def get_conditions(self) -> list[str]:
+        return self.instance.conditions.value_list("description", flat=True)
+
+    class Meta:
+        model = Contests
+        fields = (
+            "contest_id",
+            "name",
+            "time_start",
+            "current_award",
+            "count_participants",
+            "last_winner",
+            "conditions",
+        )
+
+
+class AdminContestsSerializer(serializers.ModelSerializer):
+    current_award_id = serializers.CharField(write_only=True)
+    timer = serializers.DurationField(help_text="Формат: дни часы:минуты:секунды")
+
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get("request")
+        if request and getattr(request, "method", None) == "PUT":
+            for field in fields:
+                fields[field].required = False
+        return fields
+
+    def validate(self, attrs):
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
+
+    class Meta:
+        model = Contests
+        fields = (
+            "contest_id",
+            "name",
+            "timer",
+            "active",
+            "one_time",
+            "items",
+            "current_award",
+            "current_award_id",
+            "participants",
+            "conditions",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "contest_id",
+            "items",
+            "participants",
             "created_at",
             "updated_at",
         )

@@ -13,9 +13,11 @@ from cases.serializers import (
     UserItemSerializer,
     ItemsAdminSerializer,
     RarityCategoryAdminSerializer,
-    ConditionCaseSerializer,
+    ConditionSerializer,
+    AdminContestsSerializer,
+    ContestsSerializer,
 )
-from cases.models import Case, Item, RarityCategory, ConditionCase
+from cases.models import Case, Item, RarityCategory, ConditionCase, Contests
 
 
 @extend_schema(tags=["cases"])
@@ -62,10 +64,10 @@ class CasesViewSet(GenericViewSet):
         return Response(serializer.data)
 
 
-@extend_schema(tags=["admin/cases"])
-class AdminCaseConditionsViewSet(ModelViewSet):
+@extend_schema(tags=["admin/conditions"])
+class AdminConditionsViewSet(ModelViewSet):
     queryset = ConditionCase.objects.all()
-    serializer_class = ConditionCaseSerializer
+    serializer_class = ConditionSerializer
     permission_classes = [IsAdminUser]
     lookup_field = "condition_id"
     http_method_names = ["get", "post", "delete", "put"]
@@ -183,3 +185,36 @@ class AdminRarityCategoryViewSet(ModelViewSet):
     serializer_class = RarityCategoryAdminSerializer
     permission_classes = [IsAdminUser]
     http_method_names = ["get", "post", "put", "delete"]
+
+
+@extend_schema(tags=["admin/contest"])
+class AdminContestViewSet(ModelViewSet):
+    queryset = Contests.objects.filter(removed=False)
+    lookup_field = "contest_id"
+    permission_classes = [IsAdminUser]
+    http_method_names = ["get", "post", "put", "delete"]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ContestsSerializer
+        return AdminContestsSerializer
+
+    @extend_schema(
+        description=(
+            "Ни одно поле для этого запроса не является обязательным, можно отправить хоть пустой"
+            "объект, тогда ничего не будет обновлено. Но если поле отправляется, то его надо заполнить"
+        )
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        count = (
+            self.get_queryset()
+            .filter(contest_id=self.kwargs["contest_id"], removed=False)
+            .update(removed=True, active=False)
+        )
+
+        if count > 0:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_404_NOT_FOUND)
