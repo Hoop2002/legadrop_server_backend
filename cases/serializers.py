@@ -364,6 +364,7 @@ class AdminContestsSerializer(serializers.ModelSerializer):
                         {"item_ids": f"Предмета с id {item} не существует"}
                     )
             attrs["items"] = Item.objects.filter(item_id__in=attrs["item_ids"])
+            attrs.pop("item_ids")
 
         if "current_award_id" in attrs:
             if not Item.objects.filter(item_id=attrs["current_award_id"]).exists():
