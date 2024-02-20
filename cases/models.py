@@ -49,7 +49,10 @@ class Contests(models.Model):
         blank=True,
     )
     conditions = models.ManyToManyField(
-        verbose_name="Условия участия", to="ConditionCase", related_name="contests"
+        verbose_name="Условия участия",
+        to="ConditionCase",
+        related_name="contests",
+        blank=True,
     )
     created_at = models.DateTimeField("Создан", auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField("Обновлён", auto_now=True)

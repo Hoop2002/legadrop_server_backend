@@ -218,3 +218,13 @@ class AdminContestViewSet(ModelViewSet):
         if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    @extend_schema(request=None)
+    @action(detail=True, methods=["post"])
+    def set_random_award(self, request, *args, **kwargs):
+        instance = self.get_object()
+        message = instance.set_new_award()
+        if message:
+            return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)

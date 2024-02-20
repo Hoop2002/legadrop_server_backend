@@ -2,7 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework import status
 from cases.models import Case, Item, RarityCategory, Category, ConditionCase, Contests
-from users.models import UserItems, ContestsWinners
+from users.models import UserItems, UserProfile, ContestsWinners
 from payments.models import Calc
 
 from utils.fields import Base64ImageField
@@ -268,6 +268,16 @@ class AdminCasesSerializer(ListCasesSerializer):
         )
 
 
+class LastWinnerSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username")
+    photo = Base64ImageField(source="user.profile.image", use_url=True, max_length=None)
+    item = ItemListSerializer()
+
+    class Meta:
+        model = ContestsWinners
+        fields = ("username", "photo", "item")
+
+
 class ContestsSerializer(serializers.ModelSerializer):
     time_start = serializers.DateTimeField(source="next_start")
     current_award = ItemListSerializer()
@@ -275,14 +285,21 @@ class ContestsSerializer(serializers.ModelSerializer):
     last_winner = serializers.SerializerMethodField()
     conditions = serializers.SerializerMethodField()
 
-    def get_count_participants(self) -> int:
-        return self.instance.participants.count()
+    @staticmethod
+    def get_count_participants(instance) -> int:
+        return instance.participants.count()
 
-    def get_last_winner(self):
-        return self.instance.winners.order_by("pk").last()
+    @staticmethod
+    def get_last_winner(instance) -> LastWinnerSerializer or dict:
+        winner = instance.winners.order_by("pk").last()
+        if not winner:
+            return {}
+        serializer = LastWinnerSerializer()
+        return serializer.data
 
-    def get_conditions(self) -> list[str]:
-        return self.instance.conditions.value_list("description", flat=True)
+    @staticmethod
+    def get_conditions(instance) -> list[str]:
+        return instance.conditions.values_list("description", flat=True)
 
     class Meta:
         model = Contests
@@ -297,9 +314,31 @@ class ContestsSerializer(serializers.ModelSerializer):
         )
 
 
+class EasyUserListSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username")
+
+    class Meta:
+        model = UserProfile
+        fields = ("user_id", "username")
+
+
 class AdminContestsSerializer(serializers.ModelSerializer):
-    current_award_id = serializers.CharField(write_only=True)
+    current_award = ItemListSerializer(read_only=True)
+    current_award_id = serializers.CharField(write_only=True, required=False)
     timer = serializers.DurationField(help_text="Формат: дни часы:минуты:секунды")
+    items = ItemListSerializer(many=True, read_only=True)
+    item_ids = serializers.ListSerializer(
+        child=serializers.CharField(), write_only=True
+    )
+    conditions = ListConditionSerializer(many=True, read_only=True)
+    condition_ids = serializers.ListSerializer(
+        child=serializers.CharField(), write_only=True, required=False
+    )
+    one_time = serializers.BooleanField(default=False)
+    participants = EasyUserListSerializer(many=True, read_only=True)
+    participant_ids = serializers.ListSerializer(
+        child=serializers.IntegerField(), write_only=True, required=False
+    )
 
     def get_fields(self):
         fields = super().get_fields()
@@ -310,12 +349,84 @@ class AdminContestsSerializer(serializers.ModelSerializer):
         return fields
 
     def validate(self, attrs):
-        return super().validate(attrs)
+        super().validate(attrs)
+        if "next_start" in attrs:
+            now = timezone.now()
+            if now > attrs["next_start"]:
+                raise serializers.ValidationError(
+                    {"next_start": "Время начала не может быть больше, чем текущее!"}
+                )
+
+        if "item_ids" in attrs:
+            for item in attrs["item_ids"]:
+                if not Item.objects.filter(item_id=item).exists():
+                    raise serializers.ValidationError(
+                        {"item_ids": f"Предмета с id {item} не существует"}
+                    )
+            attrs["items"] = Item.objects.filter(item_id__in=attrs["item_ids"])
+
+        if "current_award_id" in attrs:
+            if not Item.objects.filter(item_id=attrs["current_award_id"]).exists():
+                raise serializers.ValidationError(
+                    {"current_award": f"Такого приза не существует!"}
+                )
+            attrs["current_award"] = Item.objects.filter(
+                item_id=attrs["current_award_id"]
+            ).last()
+            attrs.pop("current_award_id")
+
+        if "condition_ids" in attrs:
+            for condition in attrs["condition_ids"]:
+                if not ConditionCase.objects.filter(condition_id=condition).exists():
+                    raise serializers.ValidationError(
+                        {"condition_ids": f"Условия с id {condition} не существует"}
+                    )
+            attrs["conditions"] = ConditionCase.objects.filter(
+                condition_id__in=attrs["condition_ids"]
+            )
+            attrs.pop("condition_ids")
+
+        if "participants" in attrs:
+            for participant in attrs["participants"]:
+                if not UserProfile.objects.filter(user_id=participant).exists():
+                    raise serializers.ValidationError(
+                        {
+                            "participants": f"Пользователя с id {participant} не существует"
+                        }
+                    )
+            attrs["participants"] = UserProfile.objects.filter(
+                user_id__in=attrs["participants"]
+            )
+
+        return attrs
 
     def create(self, validated_data):
-        return super().create(validated_data)
+        if "current_award" in validated_data and "items" in validated_data:
+            if validated_data["current_award"] not in validated_data["items"]:
+                raise serializers.ValidationError(
+                    {"current_award": "Приз должен быть в списке допустимых предметов!"}
+                )
+        instance = super().create(validated_data)
+        if not instance.current_award:
+            instance.set_new_award()
+        return instance
 
     def update(self, instance, validated_data):
+        if "current_award" in validated_data:
+            if "items" in validated_data:
+                all_items = validated_data["items"] | instance.items.all()
+                all_items = all_items.distinct()
+                if validated_data["current_award"] not in all_items:
+                    raise serializers.ValidationError(
+                        {
+                            "current_award": "Приз должен быть в списке допустимых предметов!"
+                        }
+                    )
+
+            if validated_data["current_award"] not in instance.items.all():
+                raise serializers.ValidationError(
+                    {"current_award": "Приз должен быть в списке допустимых предметов!"}
+                )
         return super().update(instance, validated_data)
 
     class Meta:
@@ -324,20 +435,22 @@ class AdminContestsSerializer(serializers.ModelSerializer):
             "contest_id",
             "name",
             "timer",
+            "next_start",
             "active",
             "one_time",
             "items",
+            "item_ids",
             "current_award",
             "current_award_id",
             "participants",
+            "participant_ids",
             "conditions",
+            "condition_ids",
             "created_at",
             "updated_at",
         )
         read_only_fields = (
             "contest_id",
-            "items",
-            "participants",
             "created_at",
             "updated_at",
         )
