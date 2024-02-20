@@ -410,6 +410,8 @@ class AdminContestsSerializer(serializers.ModelSerializer):
         instance = super().create(validated_data)
         if not instance.current_award:
             instance.set_new_award()
+        if not instance.next_start:
+            instance.next_start = instance.created_at + instance.timer
         return instance
 
     def update(self, instance, validated_data):
