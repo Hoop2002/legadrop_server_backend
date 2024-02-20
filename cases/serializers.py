@@ -279,11 +279,19 @@ class LastWinnerSerializer(serializers.ModelSerializer):
 
 
 class ContestsSerializer(serializers.ModelSerializer):
-    time_start = serializers.DateTimeField(source="next_start")
+    next_start = serializers.SerializerMethodField()
     current_award = ItemListSerializer()
     count_participants = serializers.SerializerMethodField()
     last_winner = serializers.SerializerMethodField()
     conditions = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_next_start(instance) -> timezone.datetime:
+        if instance.next_start:
+            return instance.next_start
+        if not instance.next_start:
+            instance.set_next_start()
+            return instance.next_start
 
     @staticmethod
     def get_count_participants(instance) -> int:
@@ -306,7 +314,7 @@ class ContestsSerializer(serializers.ModelSerializer):
         fields = (
             "contest_id",
             "name",
-            "time_start",
+            "next_start",
             "current_award",
             "count_participants",
             "last_winner",

@@ -18,6 +18,34 @@ from cases.serializers import (
     ContestsSerializer,
 )
 from cases.models import Case, Item, RarityCategory, ConditionCase, Contests
+from utils.serializers import SuccessSerializer
+
+
+@extend_schema(tags=["contests"])
+class ContestsViewSet(ModelViewSet):
+    queryset = Contests.objects.filter(active=True, removed=False)
+    serializer_class = ContestsSerializer
+    http_method_names = ["get", "post"]
+    lookup_field = "contest_id"
+
+    @extend_schema(
+        request=None, responses={200: SuccessSerializer, 400: SuccessSerializer}
+    )
+    def participate(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.participants.filter(id=request.user.id).exists():
+            return Response(
+                {"message": "Вы уже принимаете участие в этом конкурсе!"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        message, _status = instance.check_conditions(request.user)
+        if not _status:
+            return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+        instance.participants.add(request.user)
+        return Response(
+            {"message": "Теперь вы принимаете участие в конкурсе"},
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema(tags=["cases"])

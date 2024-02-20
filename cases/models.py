@@ -70,10 +70,10 @@ class Contests(models.Model):
         self.current_award = item
         self.save()
 
-    def set_next_start(self):
+    def set_next_start(self, force=False):
         from users.models import ContestsWinners
 
-        if not self.next_start and self.active:
+        if (not self.next_start and self.active and not self.removed) or force:
             last_winner = (
                 ContestsWinners.objects.filter(contest=self)
                 .order_by("created_at")
@@ -82,8 +82,40 @@ class Contests(models.Model):
             if last_winner:
                 self.next_start = last_winner.created_at + self.timer
             else:
-                self.next_start = self.updated_at + self.timer
+                _next = self.updated_at + self.timer
+                if _next < timezone.localtime():
+                    _next = timezone.localtime() + self.timer
+                self.next_start = _next
             self.save()
+
+    def check_conditions(self, user: User) -> tuple[str, bool]:
+        from payments.models import PaymentOrder
+
+        if self.conditions.exists():
+            for condition in self.conditions.iterator():
+                now = timezone.localtime()
+                time = now - timezone.timedelta(
+                    hours=condition.time.hour,
+                    minutes=condition.time.minute,
+                    seconds=condition.time.second,
+                )
+
+                if condition.type_condition == ConditionCase.CALC:
+                    amount = (
+                        PaymentOrder.objects.filter(
+                            user=user,
+                            created_at__gte=time,
+                            status__in=(PaymentOrder.SUCCESS, PaymentOrder.APPROVAL),
+                        ).aggregate(models.Sum("sum"))["sum__sum"]
+                        or 0
+                    )
+                    amount = float(amount)
+                    if amount < condition.price:
+                        return (
+                            f"Для участия в этом конкурсе требуется внести {condition.price - amount}, в течении {condition.time}",
+                            False,
+                        )
+        return "", True
 
     def __str__(self):
         return self.name

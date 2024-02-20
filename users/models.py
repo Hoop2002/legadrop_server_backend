@@ -116,6 +116,15 @@ class UserItems(models.Model):
         blank=True,
         related_name="saled_items",
     )
+    contest = models.ForeignKey(
+        verbose_name="Конкурс",
+        to="cases.Contests",
+        to_field="contest_id",
+        on_delete=models.PROTECT,
+        related_name="user_item_contest",
+        null=True,
+        blank=True,
+    )
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
 
