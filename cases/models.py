@@ -12,6 +12,119 @@ from utils.functions import (
 )
 
 
+class Contests(models.Model):
+    contest_id = models.CharField(
+        default=id_generator, max_length=9, editable=False, unique=True
+    )
+    name = models.CharField(verbose_name="Название", max_length=256)
+    timer = models.DurationField(
+        verbose_name="Промежуток",
+        default=timezone.timedelta(seconds=3600 * 24),
+        help_text="Формат указания в виде 'дни часы:минуты:секунды'",
+    )
+    next_start = models.DateTimeField(
+        verbose_name="Время следующего розыгрыша", null=True, blank=True
+    )
+    active = models.BooleanField(verbose_name="Активен", default=True)
+    one_time = models.BooleanField(verbose_name="Конкурс одноразовый", default=False)
+    items = models.ManyToManyField(
+        verbose_name="Список призов",
+        to="Item",
+        related_name="contests",
+        limit_choices_to={"removed": False},
+    )
+    current_award = models.ForeignKey(
+        verbose_name="Текущий приз",
+        to="Item",
+        related_name="current_award_contests",
+        to_field="item_id",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    participants = models.ManyToManyField(
+        verbose_name="Участники",
+        to=User,
+        related_name="contests",
+        blank=True,
+    )
+    conditions = models.ManyToManyField(
+        verbose_name="Условия участия",
+        to="ConditionCase",
+        related_name="contests",
+        blank=True,
+    )
+    created_at = models.DateTimeField("Создан", auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField("Обновлён", auto_now=True)
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
+
+    def set_new_award(self):
+        if self.items.count() == 1:
+            return "Не возможно выбрать приз, Должно быть больше 1"
+
+        while True:
+            item = self.items.order_by("?").first()
+            if item != self.current_award:
+                break
+
+        self.current_award = item
+        self.save()
+
+    def set_next_start(self, force=False):
+        from users.models import ContestsWinners
+
+        if (not self.next_start and self.active and not self.removed) or force:
+            last_winner = (
+                ContestsWinners.objects.filter(contest=self)
+                .order_by("created_at")
+                .last()
+            )
+            if last_winner:
+                self.next_start = last_winner.created_at + self.timer
+            else:
+                _next = self.updated_at + self.timer
+                if _next < timezone.localtime():
+                    _next = timezone.localtime() + self.timer
+                self.next_start = _next
+            self.save()
+
+    def check_conditions(self, user: User) -> tuple[str, bool]:
+        from payments.models import PaymentOrder
+
+        if self.conditions.exists():
+            for condition in self.conditions.iterator():
+                now = timezone.localtime()
+                time = now - timezone.timedelta(
+                    hours=condition.time.hour,
+                    minutes=condition.time.minute,
+                    seconds=condition.time.second,
+                )
+
+                if condition.type_condition == ConditionCase.CALC:
+                    amount = (
+                        PaymentOrder.objects.filter(
+                            user=user,
+                            created_at__gte=time,
+                            status__in=(PaymentOrder.SUCCESS, PaymentOrder.APPROVAL),
+                        ).aggregate(models.Sum("sum"))["sum__sum"]
+                        or 0
+                    )
+                    amount = float(amount)
+                    if amount < condition.price:
+                        return (
+                            f"Для участия в этом конкурсе требуется внести {condition.price - amount}, в течении {condition.time}",
+                            False,
+                        )
+        return "", True
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Конкурс"
+        verbose_name_plural = "Конкурсы"
+
+
 class RarityCategory(models.Model):
     rarity_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
@@ -133,6 +246,9 @@ class ConditionCase(models.Model):
         (TIME, "Время"),
     )
     name = models.CharField(max_length=256, unique=True)
+    description = models.TextField(
+        verbose_name="Описание для пользователя", blank=True, null=True
+    )
     condition_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )

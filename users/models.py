@@ -116,6 +116,15 @@ class UserItems(models.Model):
         blank=True,
         related_name="saled_items",
     )
+    contest = models.ForeignKey(
+        verbose_name="Конкурс",
+        to="cases.Contests",
+        to_field="contest_id",
+        on_delete=models.PROTECT,
+        related_name="user_item_contest",
+        null=True,
+        blank=True,
+    )
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
 
@@ -231,3 +240,27 @@ class ActivatedLinks(models.Model):
     class Meta:
         verbose_name = "Переход по реф ссылке"
         verbose_name_plural = "Переходы по реф ссылкам"
+
+
+class ContestsWinners(models.Model):
+    user = models.ForeignKey(
+        verbose_name="Победитель",
+        to=User,
+        on_delete=models.PROTECT,
+        related_name="contests_win",
+    )
+    contest = models.ForeignKey(
+        verbose_name="Конкурс",
+        to="cases.Contests",
+        on_delete=models.PROTECT,
+        related_name="winners",
+    )
+    item = models.ForeignKey(
+        verbose_name="Приз", to="cases.Item", on_delete=models.PROTECT
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Победитель конкурса"
+        verbose_name_plural = "Победители конкурсов"
