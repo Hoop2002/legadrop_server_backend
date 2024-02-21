@@ -404,8 +404,12 @@ class Output(models.Model):
         blank=True,
         related_name="user_approval_output",
     )
-    withdrawal_price = models.FloatField(
-        verbose_name="Стоимость вывода", blank=True, null=True
+    withdrawal_price = models.DecimalField(
+        verbose_name="Стоимость вывода",
+        blank=True,
+        null=True,
+        decimal_places=2,
+        max_digits=20,
     )
 
     active = models.BooleanField(verbose_name="Активный", default=True)
