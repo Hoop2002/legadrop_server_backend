@@ -230,7 +230,9 @@ class AdminUserListSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_all_output(instance) -> float:
-        all_ = instance.user.user_outputs.filter(active=False, status="completed").aggregate(Sum("withdrawal_price"))
+        all_ = instance.user.user_outputs.filter(
+            active=False, status="completed"
+        ).aggregate(Sum("withdrawal_price"))
         return all_["withdrawal_price__sum"] or 0
 
     @staticmethod
