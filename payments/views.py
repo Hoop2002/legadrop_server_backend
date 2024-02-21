@@ -22,6 +22,7 @@ from payments.serializers import (
     RefLinksAdminSerializer,
     UserListOutputSerializer,
     UserOutputSerializer,
+    UserCreateOutputSerializer
 )
 from utils.serializers import SuccessSerializer
 
@@ -167,7 +168,7 @@ class AdminOutputsViewSet(ModelViewSet):
     queryset = Output.objects.filter(removed=False)
     serializer_class = AdminOutputSerializer
     permission_classes = [IsAdminUser]
-    http_method_names = ["get", "post"]
+    http_method_names = ["get", "post", "delete"]
     lookup_field = "output_id"
 
     def get_serializer_class(self):
@@ -189,8 +190,7 @@ class AdminOutputsViewSet(ModelViewSet):
         return Response({"message": message}, status=success)
 
     @extend_schema(responses={200: SuccessSerializer}, request=None)
-    @action(detail=True, methods=["post"])
-    def remove(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         output = self.get_object()
         if not output:
             return Response(
@@ -242,6 +242,8 @@ class UserOutputsViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == "list":
             return UserListOutputSerializer
+        if self.action == "create":
+            return UserCreateOutputSerializer
         return UserOutputSerializer
 
     def list(self, request, *args, **kwargs):
@@ -250,3 +252,12 @@ class UserOutputsViewSet(ModelViewSet):
         serializer = self.get_serializer(result, many=True)
         response = self.get_paginated_response(serializer.data)
         return response
+
+    def create(self, request, *args, **kwargs):
+        if not request.user.profile.withdrawal_is_allowed:
+            return Response({"message": "Вам не разрешен вывод"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        return Response()

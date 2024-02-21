@@ -504,7 +504,6 @@ class Output(models.Model):
                 blessing_item.save()
 
         self.approval_user = approval_user
-        self.active = False
         self.save()
 
         return f"{self.output_id} одобрен пользователем {approval_user}", 200

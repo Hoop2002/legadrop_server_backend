@@ -32,6 +32,10 @@ class UserProfile(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(1)],
     )
 
+    withdrawal_is_allowed = models.BooleanField(
+        verbose_name="Разрешение на вывод", default=True
+    )
+
     @cached_property
     def winrate(self) -> float:
         win = self.user.opened_cases.filter(win=True).count()
