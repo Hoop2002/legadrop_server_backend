@@ -1,12 +1,24 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib import admin
-from users.models import UserProfile, UserItems, ActivatedPromo, ActivatedLinks
+from users.models import (
+    UserProfile,
+    UserItems,
+    ActivatedPromo,
+    ActivatedLinks,
+    ContestsWinners,
+)
 from django.utils.safestring import mark_safe
 from django.urls import reverse
 
 
 admin.site.unregister(User)
+
+
+@admin.register(ContestsWinners)
+class ContestsWinnersAdmin(admin.ModelAdmin):
+    list_display = ("contest_id", "user", "contest")
+    readonly_fields = ("contest_id", "created_at", "updated_at")
 
 
 @admin.register(UserItems)

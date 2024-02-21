@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAdminUser
 
 from core.models import GenericSettings
 from cases.models import OpenedCases
-from payments.models import PaymentOrder
+from payments.models import PaymentOrder, Output
 from users.models import UserItems
 
 from core.serializers import (
@@ -74,7 +74,10 @@ class AdminAnalyticsViewSet(ModelViewSet):
 
         queryset = self.filter_queryset(self.get_queryset().filter(**default_filter))
         total_income = queryset.aggregate(Sum("sum"))["sum__sum"] or 0
-        total_expense = 0  # todo добавить сумму вывода
+        total_expense = Output.objects.filter(
+            active=False, status="completed"
+        ).aggregate(Sum("withdrawal_price"))
+        total_expense = total_expense["withdrawal_price__sum"] or 0
         count_users = User.objects.filter(
             **default_user_filter, is_staff=False, is_superuser=False
         ).count()
@@ -100,7 +103,10 @@ class AdminAnalyticsViewSet(ModelViewSet):
         else:
             average_income = total_income / count_users
 
-        total_expense = 0  # todo добавить сумму всех выводов
+        total_expense = Output.objects.filter(
+            active=False, status="completed"
+        ).aggregate(Sum("withdrawal_price"))
+        total_expense = total_expense["withdrawal_price__sum"] or 0
         ggr = total_income - total_expense
 
         serializer = self.get_serializer(
@@ -133,7 +139,7 @@ class AnalyticsFooterView(APIView):
             total_users=total_users,
             users_online=users_online,
             total_purchase=total_purchase,
-            total_outputs=total_outputs,
+            total_crystal=total_outputs,
         )
         serializer = FooterSerializer(data)
         return Response(serializer.data)

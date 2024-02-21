@@ -21,7 +21,7 @@ class FooterSerializer(serializers.Serializer):
     total_users = serializers.IntegerField()
     users_online = serializers.IntegerField()
     total_purchase = serializers.IntegerField()
-    total_outputs = serializers.IntegerField()
+    total_crystal = serializers.IntegerField()
 
 
 class AdminGenericSettingsSerializer(serializers.ModelSerializer):

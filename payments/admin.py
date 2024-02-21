@@ -52,12 +52,16 @@ class RefLinkAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
 
     def user_link(self, instance):
-        return mark_safe(
-            '<a href="{}">{}</a>'.format(
-                reverse("admin:auth_user_change", args=(instance.from_user.user.pk,)),
-                instance.from_user.user.username,
+        if instance.from_user:
+            return mark_safe(
+                '<a href="{}">{}</a>'.format(
+                    reverse(
+                        "admin:auth_user_change", args=(instance.from_user.user.pk,)
+                    ),
+                    instance.from_user.user.username,
+                )
             )
-        )
+        return "---"
 
     user_link.short_description = "Пользователь"
 

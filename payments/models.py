@@ -415,6 +415,13 @@ class Output(models.Model):
         blank=True,
         related_name="user_approval_output",
     )
+    withdrawal_price = models.DecimalField(
+        verbose_name="Стоимость вывода",
+        blank=True,
+        null=True,
+        decimal_places=2,
+        max_digits=20,
+    )
 
     active = models.BooleanField(verbose_name="Активный", default=True)
 
@@ -576,6 +583,7 @@ class Output(models.Model):
         self.removed = True
         self.remove_user = user_remove
         self.active = False
+        self.withdrawal_price = self.cost_withdrawal_of_items
         self.save()
         return f"{self.output_id} удален пользователем {self.remove_user}", 200
 

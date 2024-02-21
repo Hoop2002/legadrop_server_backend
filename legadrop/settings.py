@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "drf_spectacular_sidecar",
     "rest_framework_simplejwt",
+    "corsheaders",
     "social_django",
     "colorfield",
     "core",
@@ -62,6 +63,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -198,6 +200,7 @@ GATEWAYS_SETTINGS = {
 BASE_URL = env("BASE_URL_APP")
 BACK_URL_LAVA = env("BACK_URL_LAVA")
 
+# social auth settings
 SOCIAL_AUTH_REQUIRE_POST = True
 LOGIN_REDIRECT_URL = "/get_token"
 ACTIVATE_JWT = True
@@ -240,6 +243,10 @@ SOCIAL_AUTH_VK_OAUTH2_SECRET = env(
 OAUTH2_PROVIDER = {
     "ACCESS_TOKEN_EXPIRE_SECONDS": 3600 * 24 * 30,
 }
+
+
+# cors settings
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS")
 
 
 # todo fix this shit

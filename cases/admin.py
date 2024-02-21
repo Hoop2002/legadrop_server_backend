@@ -7,9 +7,17 @@ from cases.models import (
     Item,
     RarityCategory,
     Category,
+    Contests,
 )
 
 admin.site.register(ConditionCase)
+
+
+@admin.register(Contests)
+class ContestsAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "timer", "active", "one_time")
+    readonly_fields = ("created_at", "updated_at")
+    filter_horizontal = ("items", "conditions", "participants")
 
 
 @admin.register(OpenedCases)
