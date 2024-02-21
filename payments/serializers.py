@@ -75,8 +75,10 @@ class UserListOutputSerializer(serializers.ModelSerializer):
             "created_at",
         )
 
+
 class UserItemsCreateOutputSerializer(serializers.Serializer):
     item_id = serializers.IntegerField(source="item.item_id")
+
 
 class UserCreateOutputSerializer(serializers.ModelSerializer):
     output_items = UserItemsCreateOutputSerializer(many=True)
@@ -87,27 +89,29 @@ class UserCreateOutputSerializer(serializers.ModelSerializer):
         items = user.items.all()
         items_ids = [i.id for i in items]
 
-        if not "output_items" in attrs: 
+        if not "output_items" in attrs:
             raise serializers.ValidationError("Не выбраны предметы")
         if not "player_id" in attrs:
-            raise serializers.ValidationError("Необходимо указать \"player_id\"")
+            raise serializers.ValidationError('Необходимо указать "player_id"')
 
-        if not attrs['output_items']:
+        if not attrs["output_items"]:
             raise serializers.ValidationError("Не выбраны предметы")
 
-        for i in attrs['output_items']:
-            if not i['item']['item_id'] in items_ids:
+        for i in attrs["output_items"]:
+            if not i["item"]["item_id"] in items_ids:
                 raise serializers.ValidationError("Нет такого предмета в инвентаре")
-            
-            item = items.filter(id=i['item']['item_id']).get()
+
+            item = items.filter(id=i["item"]["item_id"]).get()
 
             if item.withdrawn or item.withdrawal_process:
-                raise serializers.ValidationError("Предмет выведен или находится в процессе вывода")
+                raise serializers.ValidationError(
+                    "Предмет выведен или находится в процессе вывода"
+                )
             if not item.active:
                 raise serializers.ValidationError("Предмет отсутствует на аккаунте")
 
         return attrs
-    
+
     class Meta:
         model = Output
         fields = (
@@ -115,6 +119,7 @@ class UserCreateOutputSerializer(serializers.ModelSerializer):
             "comment",
             "output_items",
         )
+
 
 class UserOutputSerializer(serializers.ModelSerializer):
     output_items = UserItemSerializer(many=True)
