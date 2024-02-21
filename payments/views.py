@@ -22,7 +22,7 @@ from payments.serializers import (
     RefLinksAdminSerializer,
     UserListOutputSerializer,
     UserOutputSerializer,
-    UserCreateOutputSerializer
+    UserCreateOutputSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -255,9 +255,11 @@ class UserOutputsViewSet(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if not request.user.profile.withdrawal_is_allowed:
-            return Response({"message": "Вам не разрешен вывод"}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"message": "Вам не разрешен вывод"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         return Response()

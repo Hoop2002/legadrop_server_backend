@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.db.models import Sum
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -229,8 +230,8 @@ class AdminUserListSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_all_output(instance) -> float:
-        # todo сделать выводы
-        return 0
+        all_ = instance.user.user_outputs.filter(active=False, status="completed").aggregate(Sum("withdrawal_price"))
+        return all_["withdrawal_price__sum"] or 0
 
     @staticmethod
     def get_all_debit(instance) -> float:
