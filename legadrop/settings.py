@@ -246,7 +246,7 @@ OAUTH2_PROVIDER = {
 
 
 # cors settings
-CORS_ALLOWED_ORIGINS = env.list("ALLOWED_HOSTS")
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS")
 
 
 # todo fix this shit
