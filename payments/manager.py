@@ -59,7 +59,7 @@ class PaymentManager:
         return payment_order
 
     def _create_moogold_output(
-        self, output, product_id, quantity, server, uid, user_item
+        self, output, product_id, quantity, server, uid, user_item, composite_item
     ):
 
         moogold_order = self.moogold.buy_moogold_item(
@@ -74,6 +74,7 @@ class PaymentManager:
             player_id=moogold_order["account_details"]["User ID"],
             server=moogold_order["account_details"]["Server"],
             user_item=user_item,
+            composite_item=composite_item,
         )
         purchase.save()
 

@@ -103,7 +103,7 @@ def verify_payment_order(lava=LavaApi()):
                         comment=comment,
                         demo=user.profile.demo,
                         order=order,
-                    )  
+                    )
 
                     order.active = False
                     order.status = order.SUCCESS
