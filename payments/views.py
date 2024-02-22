@@ -260,6 +260,6 @@ class UserOutputsViewSet(ModelViewSet):
             )
 
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        return Response()
+        if serializer.is_valid(raise_exception=True):
+            output = serializer.save() 
+            return Response(UserOutputSerializer(output).data)
