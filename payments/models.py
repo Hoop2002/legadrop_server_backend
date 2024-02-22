@@ -481,7 +481,8 @@ class Output(models.Model):
                             user_item=crystal_item,
                         )
 
-                crystal_item.withdrawal_process = True
+                crystal_item.withdrawal_process = False
+                crystal_item.withdrawn = True
                 crystal_item.save()
 
         if blessing_items:
@@ -495,7 +496,8 @@ class Output(models.Model):
                     uid=self.player_id,
                     user_item=blessing_item,
                 )
-                blessing_item.withdrawal_process = True
+                blessing_item.withdrawal_process = False
+                crystal_item.withdrawn = True
                 blessing_item.save()
 
         if ghost_items:
@@ -518,7 +520,8 @@ class Output(models.Model):
                             uid=self.player_id,
                             user_item=ghost_item,
                         )
-                ghost_item.withdrawal_process = True
+                ghost_item.withdrawal_process = False
+                crystal_item.withdrawn = True
                 blessing_item.save()
 
         self.approval_user = approval_user
