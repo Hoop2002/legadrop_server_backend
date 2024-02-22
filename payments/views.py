@@ -231,6 +231,9 @@ class AdminRefLinkViewSet(ModelViewSet):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
 
+from payments.models import PurchaseCompositeItems
+
+
 @extend_schema(tags=["output"])
 class UserOutputsViewSet(ModelViewSet):
     queryset = Output.objects.filter(removed=False)
@@ -261,5 +264,5 @@ class UserOutputsViewSet(ModelViewSet):
 
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            output = serializer.save() 
+            output = serializer.save()
             return Response(UserOutputSerializer(output).data)
