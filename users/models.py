@@ -60,12 +60,9 @@ class UserProfile(models.Model):
     def total_income(self) -> float:
         links = self.ref_links.filter(active=True, removed=False)
         activated = ActivatedLinks.objects.filter(bonus_using=True, link__in=links)
-        amounts = activated.aggregate(
-            debit=models.Sum("calc_link__debit"), credit=models.Sum("calc_link__credit")
-        )
-        service_credit = amounts["credit"] or 0
-        service_debit = amounts["debit"] or 0
-        income = (service_credit + service_debit) * self.partner_income
+        amounts = activated.aggregate(income=models.Sum("calc_link__order__sum"))
+        service_income = amounts["income"] or 0
+        income = float(service_income) * self.partner_income
         return round(float(income), 2)
 
     def all_debit(self) -> float:
@@ -150,17 +147,12 @@ class UserItems(models.Model):
         self.active = False
         if item.sale_price != 0:
             sale_price = item.sale_price
-            credit = (item.price - (item.price - item.sale_price)) - item.purchase_price
         elif item.percent_price != 0:
             sale_price = item.price * item.percent_price
-            credit = sale_price - item.purchase_price
         else:
             sale_price = item.purchase_price
-            credit = sale_price - item.purchase_price
         calc = Calc.objects.create(
             user=self.user,
-            credit=credit,
-            debit=credit * -1,
             balance=sale_price,
             comment=f"Продажа пользовательского предмета {self.id}",
         )
@@ -236,12 +228,13 @@ class ActivatedLinks(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        if not self.link.active:
-            self.bonus_using = True
-        if self.calc_link.exists():
-            self.bonus_using = True
+        if self.id:
+            if not self.link.active:
+                self.bonus_using = True
+            if self.calc_link.exists():
+                self.bonus_using = True
 
-        super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Переход по реф ссылке"

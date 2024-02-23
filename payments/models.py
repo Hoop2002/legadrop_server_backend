@@ -99,18 +99,14 @@ class PaymentOrder(models.Model):
             if activate_promo:
                 comment = f'Пополнение с использованием промокода {activate_promo.promo.name} \
                            f"{activate_promo.promo.code_data}" пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную'
-                credit = float(self.sum) * float(activate_promo.promo.percent)
+                balance = float(self.sum) * float(activate_promo.promo.percent)
             else:
                 comment = f'Пополнение с использованием реферальной ссылки {activated_link.link.code_data} \
                             "{activated_link.link.code_data}" пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную'
-                credit = float(self.sum) * float(activated_link.link.bonus)
-            debit = (credit - float(self.sum)) * -1
-            balance = credit
+                balance = float(self.sum) * float(activated_link.link.bonus)
 
             calc = Calc.objects.create(
                 user=self.user,
-                credit=credit,
-                debit=debit,
                 balance=balance,
                 comment=comment,
                 demo=self.user.profile.demo,
@@ -125,14 +121,10 @@ class PaymentOrder(models.Model):
         else:
             comment = f"Пополнение пользоватeлем {self.user.username} на сумму {round(self.sum, 2)} \nService: NONE\nОдобрен вручную"
 
-            credit = float(self.sum)
-            debit = 0
-            balance = credit
+            balance = float(self.sum)
 
             calc = Calc.objects.create(
                 user=self.user,
-                credit=credit,
-                debit=debit,
                 balance=balance,
                 comment=comment,
                 demo=self.user.profile.demo,
@@ -201,9 +193,7 @@ class PromoCode(models.Model):
         if self.type == self.BALANCE:
             calc = Calc.objects.create(
                 user=user,
-                credit=self.summ,
                 balance=self.summ,
-                debit=-self.summ,
                 demo=user.profile.demo,
                 comment=f"Активация промокода {self.name}",
             )
@@ -274,30 +264,14 @@ class RefLinks(models.Model):
 class Calc(models.Model):
     """
     Модель начислений.
-    debit -- поступление денег на сервис, не зависит откуда идут поступления, пополнение баланса или возврат средст
-    credit -- Расход средств сервиса, когда делаем возврат пользователю или закупаем предметы
     balance -- Используется для расчёта начислений пользователя, как начальный баланс
     + balance -- пополнение баланса
     - balance -- списание с баланса
-
-    Использование сочетания credit, debit и balance, при наличии credit и debit, они должны быть с разным знаком
-
-    Описание структуры работы:
-        - Пополнение баланса пользователем: credit + (наши нереализованные деньги) debit 0, balance + (учёт пользовательского баланса);
-        - Пополнение баланса с использованием промокода с бонусом к пополнению: credit = сумма пополнения * коэф пополнения, debit = (credit - сумма пополнеия) * -1, balance = credit;
-        - При пополнении баланса промокодом: credit = сумма промокода, debit = сумма промокода * -1, balance = сумма промокода;
-        - Покупка кейса: balance - (списание у пользователя стоимости кейса), debit = стоимость кейса - закупочная стоимость предмета выпавшего из кейса, credit = debit * -1;
-        - Покупка предмета пользователем: balance - (списание у пользователя стоимости), debit = стоимость продажи предмета пользователю - закупочная стоимость. credit = debit * -1;
-        - Вывод предмета пользователем с аккаунта: credit 0, debit = 0, потому что credit и так есть в остатке, делать ли запись?;
-        - Продажа предмета пользователем сервису: credit = (стоимость предмета * на коэф) - стоимость закупки, debit = credit * -1;
-        ИЛИ если указана прямая стоимость продажи, то credit = (стоимость предмета - (стоимость предмета - стоимость продажи)) - стоимость закупки, debit = credit * -1;
     """
 
     calc_id = models.CharField(
         default=id_generator, unique=True, max_length=9, editable=False
     )
-    debit = models.FloatField(verbose_name="Приход", null=False, default=0)
-    credit = models.FloatField(verbose_name="Расход", null=False, default=0)
     balance = models.FloatField(
         verbose_name="Пользовательский баланс", null=False, default=0
     )
@@ -529,20 +503,6 @@ class Output(models.Model):
 
         self.approval_user = approval_user
         self.save()
-
-        credit = round(price_in_dollars * float(get_currency()["USDRUB"]["high"]), 2)
-        debit = credit
-        comment = f"Закупка предметов на сумму {credit} для пользователя {self.user}"
-
-        calc = Calc.objects.create(
-            user=self.user,
-            credit=credit,
-            debit=debit,
-            balance=0,
-            comment=comment,
-            demo=self.user.profile.demo,
-            output=self,
-        )
 
         return (
             f"{self.output_id} одобрен пользователем {approval_user} создано начисление {calc.calc_id}",
