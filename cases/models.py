@@ -306,6 +306,12 @@ class Case(models.Model):
     )
     removed = models.BooleanField(verbose_name="Удалено", default=False)
 
+    def set_recommendation_price(self):
+        if not self.id:
+            return
+        self.price = self.recommendation_price
+        self.save()
+
     def save(self, *args, **kwargs):
         if not self.removed:
             self.translit_name = transliterate(self.name)
@@ -371,11 +377,16 @@ class Case(models.Model):
 
     @cached_property
     def recommendation_price(self) -> float:
+        from core.models import GenericSettings
+
+        generic = GenericSettings.load()
         items = self.items.all()
+        if items.count() == 0:
+            return 0
         items_kfs = [1 / item.purchase_price for item in items]
         normalise_kof = 1 / sum(items_kfs)
         price = len(items_kfs) * normalise_kof
-        price = price + price * 0.1
+        price = price + price * generic.default_mark_up_case
         return round(price, 2)
 
     recommendation_price.short_description = "Рекомендованная минимальная цена"

@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
@@ -18,6 +19,12 @@ class GenericSettings(models.Model):
         default="legadrop.org",
         max_length=256,
         help_text="Вводим только домен, без протокола. По дефолту связывается по https",
+    )
+
+    default_mark_up_case = models.FloatField(
+        verbose_name="Дефолтная наценка на кейсы",
+        default=0.1,
+        validators=[MinValueValidator(0)],
     )
 
     def save(self, *args, **kwargs):

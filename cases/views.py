@@ -9,6 +9,7 @@ from cases.serializers import (
     CaseSerializer,
     ListCasesSerializer,
     AdminCasesSerializer,
+    AdminCreateCaseSerializer,
     ItemListSerializer,
     UserItemSerializer,
     ItemsAdminSerializer,
@@ -16,7 +17,7 @@ from cases.serializers import (
     ConditionSerializer,
     AdminContestsSerializer,
     ContestsSerializer,
-    AdminListCasesSerializer
+    AdminListCasesSerializer,
 )
 from cases.models import Case, Item, RarityCategory, ConditionCase, Contests
 from utils.serializers import SuccessSerializer
@@ -125,7 +126,19 @@ class AdminCasesViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == "list":
             return AdminListCasesSerializer
+        if self.action == "create":
+            return AdminCreateCaseSerializer
         return AdminCasesSerializer
+
+    @extend_schema(responses={201: AdminCasesSerializer})
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        if instance.items.exists():
+            instance.set_recommendation_price()
+        serializer = AdminCasesSerializer(instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
         description=(
