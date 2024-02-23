@@ -18,6 +18,7 @@ from cases.serializers import (
     AdminContestsSerializer,
     ContestsSerializer,
     AdminListCasesSerializer,
+    TestOpenCaseSerializer,
 )
 from cases.models import Case, Item, RarityCategory, ConditionCase, Contests
 from utils.serializers import SuccessSerializer
@@ -128,7 +129,65 @@ class AdminCasesViewSet(ModelViewSet):
             return AdminListCasesSerializer
         if self.action == "create":
             return AdminCreateCaseSerializer
+        if self.action == "test_open_cases":
+            return TestOpenCaseSerializer
         return AdminCasesSerializer
+
+    @action(detail=False, methods=["post"])
+    def test_open_cases(self, request, *args, **kwargs):
+        from django.conf import settings
+        from django.utils import timezone
+        from random import choices
+        import json
+
+        filename = f"open_{str(timezone.now().timestamp())}.json"
+        path = settings.MEDIA_ROOT / "test_open" / filename
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        items = {
+            f"id_{price}": price for price in serializer.validated_data["items_prices"]
+        }
+        count_open = serializer.validated_data["count_open"]
+        percent = serializer.validated_data["percent"]
+
+        # считаем коэффициент для айтемов и берём цену для дальнейших вычислений
+        items_kfs = {
+            item: {"kof": 1 / items[item], "price": items[item]} for item in items
+        }
+        # из полученных коэффициентов выше считаем нормализацию
+        normalise_kof = 1 / sum([items_kfs[item]["kof"] for item in items_kfs])
+
+        case_price = len(items) * normalise_kof
+        case_price = case_price + case_price * percent
+
+        # высчитываем дефолтный процент для каждого айтема
+        for item in items_kfs.keys():
+            items_kfs[item]["percent"] = normalise_kof * items_kfs[item]["kof"]
+
+        history = dict(case_price=case_price, items=items_kfs, open={})
+        full_profit = 0
+        for _open in range(count_open):
+            rand_item = choices(
+                list(items_kfs.keys()),
+                weights=[items_kfs[item]["percent"] for item in items_kfs.keys()],
+            )[0]
+            full_profit += case_price - items_kfs[rand_item]["price"]
+            history["open"].update(
+                {
+                    _open: {
+                        "price": items_kfs[rand_item]["price"],
+                        "profit": case_price - items_kfs[rand_item]["price"],
+                    }
+                }
+            )
+        history.update({"full_profit": full_profit})
+        with open(path, "w+") as file:
+            file.write(json.dumps(history))
+
+        file_path = (
+            f"{request.scheme}://{request.get_host()}/media/test_open/{filename}"
+        )
+        return Response({"full_profit": full_profit, "file_path": file_path})
 
     @extend_schema(responses={201: AdminCasesSerializer})
     def create(self, request, *args, **kwargs):

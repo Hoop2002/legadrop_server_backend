@@ -258,6 +258,12 @@ class AdminCreateCaseSerializer(ListCasesSerializer):
         read_only_fields = ("recommendation_price",)
 
 
+class TestOpenCaseSerializer(serializers.Serializer):
+    items_prices = serializers.ListField(child=serializers.FloatField())
+    count_open = serializers.IntegerField()
+    percent = serializers.FloatField()
+
+
 class AdminCasesSerializer(AdminCreateCaseSerializer):
     name = serializers.CharField(max_length=256)
     image = Base64ImageField(max_length=None, use_url=True, required=False)
