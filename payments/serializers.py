@@ -4,6 +4,7 @@ from payments.models import PaymentOrder, PromoCode, Calc, Output, RefLinks
 from payments.manager import PaymentManager
 from users.serializers import AdminUserListSerializer, UserItemSerializer
 from users.models import UserItems
+from datetime import datetime
 
 
 class UserPaymentOrderSerializer(serializers.ModelSerializer):
@@ -211,3 +212,8 @@ class RefLinksAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = RefLinks
         fields = ("code_data", "from_user", "active", "created_at")
+
+
+class AdminGetBalanceMoogoldSerializer(serializers.Serializer):
+    balance = serializers.FloatField()
+    date = serializers.DateTimeField(default=datetime.now)
