@@ -7,7 +7,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAdminUser, AllowAny
-
+from payments.manager import PaymentManager
 
 from core.models import GenericSettings
 from payments.models import PaymentOrder, PromoCode, RefLinks, Output
@@ -23,6 +23,7 @@ from payments.serializers import (
     UserListOutputSerializer,
     UserOutputSerializer,
     UserCreateOutputSerializer,
+    AdminGetBalanceMoogoldSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -260,6 +261,18 @@ class UserOutputsViewSet(ModelViewSet):
             )
 
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if serializer.is_valid(raise_exception=True):
+            output = serializer.save()
+            return Response(UserOutputSerializer(output).data)
 
-        return Response()
+
+@extend_schema(tags=["admin/analytics"])
+class AdminBalanceInMoogoldViewSet(GenericViewSet):
+    http_method_names = ["get"]
+    serializer_class = AdminGetBalanceMoogoldSerializer
+    permission_classes = [IsAdminUser]
+
+    @action(detail=False)
+    def balance(self, request, manager=PaymentManager()):
+        balance = manager._get_moogold_balance()
+        return Response(AdminGetBalanceMoogoldSerializer({"balance": balance}).data)

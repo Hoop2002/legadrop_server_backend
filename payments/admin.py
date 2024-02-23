@@ -73,6 +73,8 @@ class AdminPurchaseCompositeItems(admin.ModelAdmin):
         "name",
         "type",
         "status",
+        "user_item",
+        "composite_item",
         "ext_id_order",
         "player_id",
         "output",

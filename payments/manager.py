@@ -59,7 +59,7 @@ class PaymentManager:
         return payment_order
 
     def _create_moogold_output(
-        self, output, product_id, quantity, server, uid, user_item
+        self, output, product_id, quantity, server, uid, user_item, composite_item
     ):
 
         moogold_order = self.moogold.buy_moogold_item(
@@ -74,6 +74,7 @@ class PaymentManager:
             player_id=moogold_order["account_details"]["User ID"],
             server=moogold_order["account_details"]["Server"],
             user_item=user_item,
+            composite_item=composite_item,
         )
         purchase.save()
 
@@ -91,3 +92,7 @@ class PaymentManager:
 
     def _get_status_order_in_moogold(self, order_id):
         return self.moogold.get_moogold_order_detail(order_id=order_id)["order_status"]
+
+    def _get_moogold_balance(self):
+        balance = round(float(self.moogold.get_moogold_balance()["balance"]), 2)
+        return balance

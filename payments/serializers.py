@@ -2,8 +2,9 @@ from rest_framework import serializers
 
 from payments.models import PaymentOrder, PromoCode, Calc, Output, RefLinks
 from payments.manager import PaymentManager
-
 from users.serializers import AdminUserListSerializer, UserItemSerializer
+from users.models import UserItems
+from datetime import datetime
 
 
 class UserPaymentOrderSerializer(serializers.ModelSerializer):
@@ -112,6 +113,20 @@ class UserCreateOutputSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    def create(self, validated_data):
+        user = self.context["request"].user
+
+        user_items = validated_data.pop("output_items")
+
+        output = Output.objects.create(user=user, **validated_data)
+        for i in user_items:
+            item = UserItems.objects.filter(id=i["item"]["item_id"]).first()
+            item.withdrawal_process = True
+            item.save()
+            output.output_items.add(item)
+
+        return output
+
     class Meta:
         model = Output
         fields = (
@@ -197,3 +212,8 @@ class RefLinksAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = RefLinks
         fields = ("code_data", "from_user", "active", "created_at")
+
+
+class AdminGetBalanceMoogoldSerializer(serializers.Serializer):
+    balance = serializers.FloatField()
+    date = serializers.DateTimeField(default=datetime.now)
