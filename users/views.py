@@ -167,6 +167,8 @@ class UserItemsListView(ModelViewSet):
     @extend_schema(request=None)
     def destroy(self, request, *args, **kwargs):
         user_item: UserItems = self.get_object()
+        if not user_item.active:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         if user_item.withdrawal_process:
             return Response(

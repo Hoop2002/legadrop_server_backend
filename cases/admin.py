@@ -34,30 +34,14 @@ class AdminCategory(admin.ModelAdmin):
 @admin.register(Case)
 class CaseAdmin(admin.ModelAdmin):
     list_display = ("case_id", "name", "translit_name", "price")
-    readonly_fields = ("created_at", "updated_at", "translit_name", "case_id")
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+        "translit_name",
+        "case_id",
+        "recommendation_price",
+    )
     filter_horizontal = ("items", "conditions")
-    fieldsets = [
-        (
-            None,
-            {
-                "fields": [
-                    "case_id",
-                    "name",
-                    "translit_name",
-                    "active",
-                    "image",
-                    "price",
-                    "case_free",
-                    "category",
-                    "items",
-                    "conditions",
-                    "created_at",
-                    "updated_at",
-                    "removed",
-                ],
-            },
-        ),
-    ]
 
 
 @admin.register(RarityCategory)
