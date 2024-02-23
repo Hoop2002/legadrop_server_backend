@@ -14,6 +14,7 @@ class GenericSettingsAdmin(admin.ModelAdmin):
                     "online_buff",
                     "purchase_buff",
                     "output_crystal_buff",
+                    "default_mark_up_case",
                 )
             },
         ),
