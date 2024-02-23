@@ -16,6 +16,7 @@ from cases.serializers import (
     ConditionSerializer,
     AdminContestsSerializer,
     ContestsSerializer,
+    AdminListCasesSerializer
 )
 from cases.models import Case, Item, RarityCategory, ConditionCase, Contests
 from utils.serializers import SuccessSerializer
@@ -123,7 +124,7 @@ class AdminCasesViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == "list":
-            return ListCasesSerializer
+            return AdminListCasesSerializer
         return AdminCasesSerializer
 
     @extend_schema(
