@@ -136,8 +136,7 @@ class CalcAdmin(admin.ModelAdmin):
     list_display = (
         "calc_id",
         "user_link",
-        "debit",
-        "credit",
+        "balance",
         "comment",
         "created_at",
     )
@@ -146,7 +145,7 @@ class CalcAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Связи", {"fields": ("user", "promo_using", "order", "ref_link")}),
-        ("Деньги", {"fields": ("debit", "credit", "balance", "comment")}),
+        ("Деньги", {"fields": ("balance", "comment")}),
         (None, {"fields": ("created_at", "updated_at", "demo")}),
     )
 

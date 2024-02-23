@@ -424,20 +424,15 @@ class Case(models.Model):
         win = item.purchase_price > self.price if not self.case_free else True
         OpenedCases.objects.create(case=self, user=user, win=win)
 
-        debit = self.price - item.purchase_price
         if not self.case_free:
             Calc.objects.create(
                 user=user,
                 balance=-self.price,
-                debit=debit,
-                credit=debit * -1,
                 comment=f"Открытие кейса {self.name}",
             )
         else:
             Calc.objects.create(
                 user=user,
-                debit=item.purchase_price,
-                credit=item.purchase_price * -1,
                 comment=f"Открытие кейса {self.name}",
             )
         UserItems.objects.create(user=user, item=item, from_case=True, case=self)

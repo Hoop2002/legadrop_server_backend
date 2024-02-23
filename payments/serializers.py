@@ -188,7 +188,7 @@ class AdminPromoCodeSerializer(AdminListPromoSerializer):
 class CalcsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Calc
-        fields = ("user_id", "debit", "credit", "created_at")
+        fields = ("user_id", "balance", "created_at")
 
 
 class RefLinksAdminSerializer(serializers.ModelSerializer):

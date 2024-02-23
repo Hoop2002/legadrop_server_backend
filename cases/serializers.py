@@ -87,8 +87,6 @@ class UserItemSerializer(serializers.ModelSerializer):
         Calc.objects.create(
             user_id=user_item.user_id,
             balance=-user_item.item.price,
-            debit=user_item.item.price - user_item.item.purchase_price,
-            credit=-(user_item.item.price - user_item.item.purchase_price),
         )
         return user_item
 
