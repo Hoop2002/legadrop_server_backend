@@ -504,20 +504,6 @@ class Output(models.Model):
         self.approval_user = approval_user
         self.save()
 
-        credit = round(price_in_dollars * float(get_currency()["USDRUB"]["high"]), 2)
-        debit = credit
-        comment = f"Закупка предметов на сумму {credit} для пользователя {self.user}"
-
-        calc = Calc.objects.create(
-            user=self.user,
-            credit=credit,
-            debit=debit,
-            balance=0,
-            comment=comment,
-            demo=self.user.profile.demo,
-            output=self,
-        )
-
         return (
             f"{self.output_id} одобрен пользователем {approval_user} создано начисление {calc.calc_id}",
             200,
