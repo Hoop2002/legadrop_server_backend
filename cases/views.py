@@ -87,6 +87,10 @@ class CasesViewSet(GenericViewSet):
         message, success = case.check_conditions(user=request.user)
         if not success:
             return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+        if case.price > request.user.profile.balance:
+            return Response(
+                {"message": "Недостаточно средств!"}, status=status.HTTP_400_BAD_REQUEST
+            )
         item = case.open_case(request.user)
         serializer = self.get_serializer(item)
         return Response(serializer.data)

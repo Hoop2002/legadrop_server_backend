@@ -200,6 +200,17 @@ GATEWAYS_SETTINGS = {
 BASE_URL = env("BASE_URL_APP")
 BACK_URL_LAVA = env("BACK_URL_LAVA")
 
+
+# email settings
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="test@gmail.com")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="key")
+EMAIL_PORT = env("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=True)
+# DEFAULT_FROM_EMAIL = 'default from email'
+
+
 # social auth settings
 SOCIAL_AUTH_REQUIRE_POST = True
 LOGIN_REDIRECT_URL = "/get_token"

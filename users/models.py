@@ -18,7 +18,9 @@ class UserProfile(models.Model):
     locale = models.CharField(verbose_name="Локаль", max_length=8, default="ru")
     verified = models.BooleanField(verbose_name="Верифицирован", default=False)
     individual_percent = models.FloatField(
-        verbose_name="Индивидуальный процент", default=1
+        verbose_name="Индивидуальный процент",
+        default=0,
+        validators=[MinValueValidator(-1)],
     )
     demo = models.BooleanField(verbose_name="Демо пользователь", default=False)
     partner_percent = models.FloatField(

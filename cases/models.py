@@ -3,6 +3,8 @@ from django.db import models
 from django.utils import timezone
 from colorfield.fields import ColorField
 from django.contrib.auth.models import User
+from django.utils.functional import cached_property
+from random import choices
 
 from utils.functions import (
     id_generator,
@@ -352,6 +354,65 @@ class Case(models.Model):
                         )
         return "", True
 
+    def get_items(self):
+        """Возвращает json предметов с проставленными процентами"""
+        items = self.items.values(
+            "item_id", "name", "price", "image", "rarity_category", "purchase_price"
+        )
+        # считаем коэффициент для айтемов
+        items_kfs = {item["item_id"]: 1 / item["purchase_price"] for item in items}
+        # из полученных коэффициентов выше считаем нормализацию
+        normalise_kof = 1 / sum([items_kfs[item] for item in items_kfs])
+
+        # высчитываем дефолтный процент для каждого айтема
+        for item in items:
+            item["percent"] = normalise_kof * items_kfs[item["item_id"]] * 100
+        return items
+
+    @cached_property
+    def recommendation_price(self) -> float:
+        items = self.items.all()
+        items_kfs = [1 / item.purchase_price for item in items]
+        normalise_kof = 1 / sum(items_kfs)
+        price = len(items_kfs) * normalise_kof
+        price = price + price * 0.1
+        return round(price, 2)
+
+    recommendation_price.short_description = "Рекомендованная минимальная цена"
+
+    def _get_rand_item(self, user: User):
+        items = self.items.all()
+        # считаем коэффициент для айтемов и берём цену для дальнейших вычислений
+        items_kfs = {
+            item.item_id: {"kof": 1 / item.purchase_price, "price": item.purchase_price}
+            for item in items
+        }
+        # из полученных коэффициентов выше считаем нормализацию
+        normalise_kof = 1 / sum([items_kfs[item]["kof"] for item in items_kfs])
+        # высчитываем дефолтный процент для каждого айтема
+
+        for item in items_kfs.keys():
+            items_kfs[item]["percent"] = normalise_kof * items_kfs[item]["kof"]
+
+        if user.profile.individual_percent != 0:
+            # теперь считаем то же самое, что выше, только с учётом коэффициента пользователя
+            user_kof = normalise_kof * (1 + user.profile.individual_percent)
+            for item in items_kfs.keys():
+                if items_kfs[item]["price"] > self.price:
+                    items_kfs[item]["percent"] = user_kof * items_kfs[item]["kof"]
+            sum_percent = sum([items_kfs[item]["percent"] for item in items_kfs.keys()])
+            # Нормализиуем получившиеся проценты
+            for item in items_kfs.keys():
+                items_kfs[item]["percent"] = items_kfs[item]["percent"] / sum_percent
+
+        rand_item = choices(
+            list(items_kfs.keys()),
+            weights=[items_kfs[item]["percent"] for item in items_kfs.keys()],
+        )[0]
+        rand_item = self.items.get(item_id=rand_item)
+
+        return rand_item
+
     def open_case(self, user: User):
         """Метод открытия кейса
         Условия проверки бесплатного кейса, только как защита от дурака
@@ -359,19 +420,25 @@ class Case(models.Model):
         from payments.models import Calc
         from users.models import UserItems
 
-        # todo возвращать предмет по системе шансов
-        item = self.items.first()
+        item = self._get_rand_item(user)
         win = item.purchase_price > self.price if not self.case_free else True
         OpenedCases.objects.create(case=self, user=user, win=win)
 
         debit = self.price - item.purchase_price
         if not self.case_free:
             Calc.objects.create(
-                user=user, balance=-self.price, debit=debit, credit=debit * -1
+                user=user,
+                balance=-self.price,
+                debit=debit,
+                credit=debit * -1,
+                comment=f"Открытие кейса {self.name}",
             )
         else:
             Calc.objects.create(
-                user=user, debit=item.purchase_price, credit=item.purchase_price * -1
+                user=user,
+                debit=item.purchase_price,
+                credit=item.purchase_price * -1,
+                comment=f"Открытие кейса {self.name}",
             )
         UserItems.objects.create(user=user, item=item, from_case=True, case=self)
         return item
