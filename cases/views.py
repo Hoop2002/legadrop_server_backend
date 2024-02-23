@@ -16,7 +16,7 @@ from cases.serializers import (
     ConditionSerializer,
     AdminContestsSerializer,
     ContestsSerializer,
-    AdminListCasesSerializer
+    AdminListCasesSerializer,
 )
 from cases.models import Case, Item, RarityCategory, ConditionCase, Contests
 from utils.serializers import SuccessSerializer
