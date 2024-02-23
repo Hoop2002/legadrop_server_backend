@@ -19,10 +19,12 @@ from cases.models import Item
 class PaymentOrder(models.Model):
     UKASA = "yookassa"
     LAVA = "lava"
+    FREEKASSA = "freekassa"
 
     PAYMENT_TYPES_CHOICES = (
         (LAVA, "Платежная система ЛАВА(LAVA)"),
         (UKASA, "Платежная система ЮКасса(Yookassa)"),
+        (FREEKASSA, "Платежная система ФРИКАССА(Freekassa)"),
     )
 
     CREATE = "create"
@@ -307,6 +309,15 @@ class Calc(models.Model):
         on_delete=models.SET_NULL,
         related_name="calc",
     )
+    output = models.ForeignKey(
+        verbose_name="Вывод",
+        to="payments.Output",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="calcs",
+    )
+
     user = models.ForeignKey(
         verbose_name="Пользователь",
         to=User,
@@ -434,9 +445,9 @@ class Output(models.Model):
 
         pay_manager = PaymentManager()
 
-        is_output_moogold = pay_manager._enough_money_moogold_balance(
-            self.cost_withdrawal_of_items
-        )
+        price_in_dollars = self.cost_withdrawal_of_items
+
+        is_output_moogold = pay_manager._enough_money_moogold_balance(price_in_dollars)
 
         if not is_output_moogold:
             return "На балансе MOOGOLD не хватает денег", 400
@@ -468,9 +479,11 @@ class Output(models.Model):
                             server=get_genshin_server.get_server(self.player_id),
                             uid=self.player_id,
                             user_item=crystal_item,
+                            composite_item=com_item,
                         )
 
-                crystal_item.withdrawal_process = True
+                crystal_item.withdrawal_process = False
+                crystal_item.withdrawn = True
                 crystal_item.save()
 
         if blessing_items:
@@ -483,8 +496,10 @@ class Output(models.Model):
                     server=get_genshin_server.get_server(self.player_id),
                     uid=self.player_id,
                     user_item=blessing_item,
+                    composite_item=blessing_composite,
                 )
-                blessing_item.withdrawal_process = True
+                blessing_item.withdrawal_process = False
+                crystal_item.withdrawn = True
                 blessing_item.save()
 
         if ghost_items:
@@ -506,14 +521,33 @@ class Output(models.Model):
                             server=get_genshin_server.get_server(self.player_id),
                             uid=self.player_id,
                             user_item=ghost_item,
+                            composite_item=com_item,
                         )
-                ghost_item.withdrawal_process = True
+                ghost_item.withdrawal_process = False
+                crystal_item.withdrawn = True
                 blessing_item.save()
 
         self.approval_user = approval_user
         self.save()
 
-        return f"{self.output_id} одобрен пользователем {approval_user}", 200
+        credit = round(price_in_dollars * float(get_currency()["USDRUB"]["high"]), 2)
+        debit = credit
+        comment = f"Закупка предметов на сумму {credit} для пользователя {self.user}"
+
+        calc = Calc.objects.create(
+            user=self.user,
+            credit=credit,
+            debit=debit,
+            balance=0,
+            comment=comment,
+            demo=self.user.profile.demo,
+            output=self,
+        )
+
+        return (
+            f"{self.output_id} одобрен пользователем {approval_user} создано начисление {calc.calc_id}",
+            200,
+        )
 
     @cached_property
     def cost_withdrawal_of_items(self) -> float:
@@ -676,6 +710,15 @@ class PurchaseCompositeItems(models.Model):
         related_name="purchase_ci_outputs",
     )
 
+    composite_item = models.ForeignKey(
+        verbose_name="Составная предмета",
+        to=CompositeItems,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="purchase_composite_in_composite_items",
+    )
+
     user_item = models.ForeignKey(
         verbose_name="Выводимый предмет",
         to="users.UserItems",
@@ -684,6 +727,13 @@ class PurchaseCompositeItems(models.Model):
         blank=True,
         related_name="purchase_composite_in_users_item",
     )
+
+    @cached_property
+    def total_crystals(self):
+        total = PurchaseCompositeItems.objects.aggregate(
+            total=models.Sum("composite_item__crystals_quantity")
+        )["total"]
+        return total
 
     def __str__(self):
         return f"Закупка {self.pci_id} на {self.output}"
