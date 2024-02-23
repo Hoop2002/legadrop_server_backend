@@ -206,7 +206,59 @@ class ListConditionSerializer(serializers.ModelSerializer):
         read_only_fields = ("name", "type_condition")
 
 
-class AdminCasesSerializer(ListCasesSerializer):
+class AdminCreateCaseSerializer(ListCasesSerializer):
+    name = serializers.CharField(max_length=256)
+    image = Base64ImageField(max_length=None, use_url=True, required=False)
+    active = serializers.BooleanField(default=False)
+    category_id = serializers.CharField(max_length=9, write_only=True)
+    item_ids = serializers.ListSerializer(
+        child=serializers.CharField(), write_only=True
+    )
+    condition_ids = serializers.ListSerializer(
+        child=serializers.CharField(), write_only=True, required=False
+    )
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if "name" in attrs:
+            if Case.objects.filter(name=attrs["name"]).exists():
+                raise serializers.ValidationError(
+                    {"name": "Кейс с таким именем уже существует!"}
+                )
+        return attrs
+
+    def create(self, validated_data):
+        if "condition_ids" in validated_data:
+            condition_ids = validated_data.pop("condition_ids")
+            conditions = ConditionCase.objects.filter(condition_id__in=condition_ids)
+            validated_data["conditions"] = conditions
+
+        # item обязательные, поэтому не ставим проверку
+        item_ids = validated_data.pop("item_ids")
+        items = Item.objects.filter(item_id__in=item_ids)
+        if items.count() < 1:
+            raise serializers.ValidationError(
+                {"item_ids": "Ни одного предмета не выбрано!"}
+            )
+        validated_data["items"] = items
+
+        return super().create(validated_data)
+
+    class Meta:
+        model = Case
+        fields = (
+            "name",
+            "active",
+            "image",
+            "recommendation_price",
+            "category_id",
+            "item_ids",
+            "condition_ids",
+        )
+        read_only_fields = ("recommendation_price",)
+
+
+class AdminCasesSerializer(AdminCreateCaseSerializer):
     name = serializers.CharField(max_length=256)
     image = Base64ImageField(max_length=None, use_url=True, required=False)
     category = CaseCategorySerializer(read_only=True)
@@ -227,19 +279,6 @@ class AdminCasesSerializer(ListCasesSerializer):
             for field in fields:
                 fields[field].required = False
         return fields
-
-    def create(self, validated_data):
-        if "condition_ids" in validated_data:
-            condition_ids = validated_data.pop("condition_ids")
-            conditions = ConditionCase.objects.filter(condition_id__in=condition_ids)
-            validated_data["conditions"] = conditions
-
-        # item обязательные, поэтому не ставим проверку
-        item_ids = validated_data.pop("item_ids")
-        items = Item.objects.filter(item_id__in=item_ids)
-        validated_data["items"] = items
-
-        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         if "condition_ids" in validated_data:
@@ -262,6 +301,7 @@ class AdminCasesSerializer(ListCasesSerializer):
             "active",
             "image",
             "price",
+            "recommendation_price",
             "case_free",
             "category",
             "category_id",
@@ -272,6 +312,7 @@ class AdminCasesSerializer(ListCasesSerializer):
             "created_at",
             "updated_at",
         )
+        read_only_fields = ("recommendation_price",)
 
 
 class LastWinnerSerializer(serializers.ModelSerializer):
