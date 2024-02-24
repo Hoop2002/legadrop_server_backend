@@ -143,8 +143,8 @@ class AnalyticsFooterView(APIView):
         pci = PurchaseCompositeItems.objects.first()
         
         total_outputs = (
-            pci.total_crystals if pci != None else 0 + generic.output_crystal_buff
-        )
+            pci.total_crystals if pci != None else 0 
+        ) + generic.output_crystal_buff
 
         data = dict(
             opened_cases=opened_cases,
