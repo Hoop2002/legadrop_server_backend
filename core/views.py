@@ -11,8 +11,10 @@ from rest_framework.permissions import IsAdminUser
 
 from core.models import GenericSettings
 from cases.models import OpenedCases
-from payments.models import PaymentOrder, Output
+from payments.models import PaymentOrder, Output, PurchaseCompositeItems
 from users.models import UserItems
+
+from legadrop.settings import REDIS_CONNECTION_STRING
 
 from core.serializers import (
     AdminAnalyticsSerializer,
@@ -20,6 +22,8 @@ from core.serializers import (
     FooterSerializer,
     AdminGenericSettingsSerializer,
 )
+
+import redis
 
 
 class BaseDateFilter(filters.FilterSet):
@@ -123,17 +127,25 @@ class AdminAnalyticsViewSet(ModelViewSet):
 @extend_schema(tags=["footer"])
 class AnalyticsFooterView(APIView):
     @extend_schema(responses=FooterSerializer)
-    def get(self, request):
+    def get(self, request, r=redis.from_url(REDIS_CONNECTION_STRING)):
         generic = GenericSettings.load()
         opened_cases = OpenedCases.objects.all().count() + generic.opened_cases_buff
         total_users = User.objects.all().count() + generic.users_buff
-        # todo сделать онлайн пользователей
-        users_online = 0 + generic.users_buff
+
+        users_online = (
+            len(r.zrange("asgi:group:online_users", 0, -1)) + generic.users_buff
+        )
+
         total_purchase = (
             UserItems.objects.filter(from_case=False).count() + generic.purchase_buff
         )
-        # todo выводы
-        total_outputs = 0 + generic.output_crystal_buff
+
+        pci = PurchaseCompositeItems.objects.first()
+        
+        total_outputs = (
+            pci.total_crystals if pci != None else 0 + generic.output_crystal_buff
+        )
+
         data = dict(
             opened_cases=opened_cases,
             total_users=total_users,
