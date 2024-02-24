@@ -58,6 +58,23 @@ INSTALLED_APPS = [
     "payments",
 ]
 
+CHANNELS_REDIS_HOST = env.str("REDIS_HOST", "localhost")
+CHANNELS_REDIS_PORT = env.int("REDIS_PORT", 6379)
+CHANNELS_REDIS_DB = env.int("REDIS_DATABASE", 0)
+
+REDIS_CONNECTION_STRING = (
+    f"redis://{CHANNELS_REDIS_HOST}:{CHANNELS_REDIS_PORT}/{CHANNELS_REDIS_DB}"
+)
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_CONNECTION_STRING],
+        },
+    },
+}
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
