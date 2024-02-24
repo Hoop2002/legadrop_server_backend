@@ -10,6 +10,7 @@ from utils.functions import (
     output_id_generator,
     id_generator_X64,
     get_genshin_server,
+    ref_output_id_generator
 )
 from gateways.economia_api import get_currency
 from users.models import User, ActivatedPromo
@@ -701,3 +702,60 @@ class PurchaseCompositeItems(models.Model):
     class Meta:
         verbose_name = "Закупка на сторонем сервисе"
         verbose_name_plural = "Закупки на стороних сервисах"
+
+class RefOutput(models.Model):
+    CARD = "card"
+    СRYPTOCURRENCY = "cryptocurrency"
+    SBP = "sbp"
+
+
+    REFOUTPUT_TYPE = (
+        (CARD, "Вывод на банковскую карту"),
+        (СRYPTOCURRENCY, "Вывод на криптокошелек"),
+        (SBP, "Вывод по СБП")
+    )
+
+    CREATED = "created"
+    COMPLETED = "completed"
+    CANCELED = "canceled"
+
+    REFOUTPUT_STATUS = (
+        (CREATED, "Созданный"),
+        (COMPLETED, "Завершенный"),
+        (CANCELED, "Отмененный")
+    )
+
+
+    ref_output_id = models.CharField(verbose_name="Идектификатор", max_length=72, default=ref_output_id_generator)
+    
+    type = models.CharField(verbose_name="Тип платежа", max_length=32, choices=REFOUTPUT_TYPE, default=CARD)
+    
+    user = models.ForeignKey(
+        verbose_name="Пользователь",
+        to=User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_ref_outputs",
+    )
+    
+
+    sum = models.FloatField(verbose_name="Сумма вывода")
+    comment = models.TextField(verbose_name="Комментарий", max_length=1024, null=True)
+
+    card_number = models.CharField(verbose_name="Номер карты", max_length=32, null=True)
+    phone = models.CharField(verbose_name="Номер телефона", max_length=13, null=True)
+    crypto_number = models.CharField(verbose_name="Номер криптокошелька", max_length=2048, null=True)
+    
+    status = models.CharField(verbose_name="Статус вывода", choices=REFOUTPUT_STATUS, default=CREATED)
+    active = models.CharField(verbose_name="Активный", default=True)
+    
+    created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
+    
+    def __str__(self):
+        return f"Запрос на вывод средств {self.sum}  партнером {self.user}"
+
+    class Meta:
+        verbose_name = "Вывод с реферальной программы"
+        verbose_name_plural = "Выводы с реферальных программ"
