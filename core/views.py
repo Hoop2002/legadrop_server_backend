@@ -133,7 +133,7 @@ class AnalyticsFooterView(APIView):
         total_users = User.objects.all().count() + generic.users_buff
 
         users_online = (
-            len(r.zrange("asgi:group:online_users", 0, -1)) + generic.users_buff
+            len(r.zrange("asgi:group:online_users", 0, -1)) + generic.online_buff
         )
 
         total_purchase = (
@@ -141,9 +141,9 @@ class AnalyticsFooterView(APIView):
         )
 
         pci = PurchaseCompositeItems.objects.first()
-        
+
         total_outputs = (
-            pci.total_crystals if pci != None else 0 
+            pci.total_crystals if pci != None else 0
         ) + generic.output_crystal_buff
 
         data = dict(

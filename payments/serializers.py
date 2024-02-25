@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from payments.models import PaymentOrder, PromoCode, Calc, Output, RefLinks
+from payments.models import PaymentOrder, PromoCode, Calc, Output, RefLinks, RefOutput
 from payments.manager import PaymentManager
 from users.serializers import AdminUserListSerializer, UserItemSerializer
 from users.models import UserItems
@@ -217,3 +217,47 @@ class RefLinksAdminSerializer(serializers.ModelSerializer):
 class AdminGetBalanceMoogoldSerializer(serializers.Serializer):
     balance = serializers.FloatField()
     date = serializers.DateTimeField(default=datetime.now)
+
+
+class AdminRefOutputListSerializer(serializers.ModelSerializer):
+    user = AdminUserListSerializer(read_only=True, source="user.profile")
+
+    class Meta:
+        model = RefOutput
+        fields = ("ref_output_id", "user", "sum", "status", "active")
+
+
+class AdminRefOutputSerializer(serializers.ModelSerializer):
+    user = AdminUserListSerializer(read_only=True, source="user.profile")
+
+    class Meta:
+        model = RefOutput
+        fields = "__all__"
+
+
+class UserRefOutputListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RefOutput
+        fields = ("ref_output_id", "sum", "status", "type")
+
+
+class UserRefOutputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RefOutput
+        fields = (
+            "ref_output_id",
+            "sum",
+            "status",
+            "type",
+            "comment",
+            "card_number",
+            "phone",
+            "crypto_number",
+            "created_at",
+        )
+
+
+class UserRefOutputCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RefOutput
+        fields = ("sum", "comment", "type", "card_number", "phone", "crypto_number")

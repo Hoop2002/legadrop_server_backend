@@ -10,7 +10,7 @@ from utils.functions import (
     output_id_generator,
     id_generator_X64,
     get_genshin_server,
-    ref_output_id_generator
+    ref_output_id_generator,
 )
 from gateways.economia_api import get_currency
 from users.models import User, ActivatedPromo
@@ -703,16 +703,16 @@ class PurchaseCompositeItems(models.Model):
         verbose_name = "Закупка на сторонем сервисе"
         verbose_name_plural = "Закупки на стороних сервисах"
 
+
 class RefOutput(models.Model):
     CARD = "card"
     СRYPTOCURRENCY = "cryptocurrency"
     SBP = "sbp"
 
-
     REFOUTPUT_TYPE = (
         (CARD, "Вывод на банковскую карту"),
         (СRYPTOCURRENCY, "Вывод на криптокошелек"),
-        (SBP, "Вывод по СБП")
+        (SBP, "Вывод по СБП"),
     )
 
     CREATED = "created"
@@ -722,14 +722,17 @@ class RefOutput(models.Model):
     REFOUTPUT_STATUS = (
         (CREATED, "Созданный"),
         (COMPLETED, "Завершенный"),
-        (CANCELED, "Отмененный")
+        (CANCELED, "Отмененный"),
     )
 
+    ref_output_id = models.CharField(
+        verbose_name="Идектификатор", max_length=72, default=ref_output_id_generator
+    )
 
-    ref_output_id = models.CharField(verbose_name="Идектификатор", max_length=72, default=ref_output_id_generator)
-    
-    type = models.CharField(verbose_name="Тип платежа", max_length=32, choices=REFOUTPUT_TYPE, default=CARD)
-    
+    type = models.CharField(
+        verbose_name="Тип платежа", max_length=32, choices=REFOUTPUT_TYPE, default=CARD
+    )
+
     user = models.ForeignKey(
         verbose_name="Пользователь",
         to=User,
@@ -738,21 +741,42 @@ class RefOutput(models.Model):
         blank=True,
         related_name="user_ref_outputs",
     )
-    
 
     sum = models.FloatField(verbose_name="Сумма вывода")
     comment = models.TextField(verbose_name="Комментарий", max_length=1024, null=True)
 
     card_number = models.CharField(verbose_name="Номер карты", max_length=32, null=True)
     phone = models.CharField(verbose_name="Номер телефона", max_length=13, null=True)
-    crypto_number = models.CharField(verbose_name="Номер криптокошелька", max_length=2048, null=True)
-    
-    status = models.CharField(verbose_name="Статус вывода", choices=REFOUTPUT_STATUS, default=CREATED)
-    active = models.CharField(verbose_name="Активный", default=True)
-    
+    crypto_number = models.CharField(
+        verbose_name="Номер криптокошелька", max_length=2048, null=True
+    )
+
+    status = models.CharField(
+        verbose_name="Статус вывода", choices=REFOUTPUT_STATUS, default=CREATED
+    )
+    active = models.BooleanField(verbose_name="Активный", default=True)
+
     created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
-    
+    removed = models.BooleanField(verbose_name="Удаленный", default=False)
+
+    def completed(self):
+        self.status = self.COMPLETED
+        self.active = False
+        self.save()
+        return f"Вывод {self.ref_output_id} переведен в статус {self.COMPLETED}", 200
+
+    def cancel(self):
+        self.status = self.CANCELED
+        self.active = False
+        self.save()
+        return f"Вывод {self.ref_output_id} переведен в статус {self.CANCELED}", 200
+
+    def remove(self):
+        self.removed = True
+        self.save()
+        return f"Вывод {self.ref_output_id} удален", 200
+
     def __str__(self):
         return f"Запрос на вывод средств {self.sum}  партнером {self.user}"
 
