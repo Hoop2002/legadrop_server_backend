@@ -8,6 +8,11 @@ class GenericSettings(models.Model):
     online_buff = models.IntegerField("Баф онлайна", default=0)
     purchase_buff = models.IntegerField("Баф покупок", default=0)
     output_crystal_buff = models.IntegerField("Баф выводов", default=0)
+
+    min_ref_output = models.FloatField(
+        "Минимальная сумма вывода с реферальной программы", default=500.00
+    )
+
     domain_url = models.CharField(
         "Домен реферальной ссылки",
         default="legadrop.org",

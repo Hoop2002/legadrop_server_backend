@@ -159,7 +159,9 @@ class UserItemsListView(ModelViewSet):
         return UserItemSerializer
 
     def list(self, request, *args, **kwargs):
-        items = self.paginate_queryset(self.get_queryset().filter(active=True))
+        items = self.paginate_queryset(
+            self.get_queryset().filter(active=True, user=request.user)
+        )
         serializer = self.get_serializer(items, many=True)
         response = self.get_paginated_response(serializer.data)
         return response
@@ -169,6 +171,12 @@ class UserItemsListView(ModelViewSet):
         user_item: UserItems = self.get_object()
         if not user_item.active:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if not request.user == user_item.user:
+            return Response(
+                {"message": "Не ваш предмет"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if user_item.withdrawal_process:
             return Response(

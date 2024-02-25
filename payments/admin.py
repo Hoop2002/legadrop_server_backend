@@ -10,7 +10,7 @@ from payments.models import (
     CompositeItems,
     PurchaseCompositeItems,
     RefLinks,
-    RefOutput
+    RefOutput,
 )
 from users.models import UserItems
 
@@ -66,6 +66,7 @@ class RefLinkAdmin(admin.ModelAdmin):
 
     user_link.short_description = "Пользователь"
 
+
 @admin.register(RefOutput)
 class AdminRefOutput(admin.ModelAdmin):
     fields = (
@@ -80,9 +81,11 @@ class AdminRefOutput(admin.ModelAdmin):
         "status",
         "active",
         "created_at",
-        "updated_at"
+        "updated_at",
+        "removed",
     )
     readonly_fields = ("updated_at", "created_at")
+
 
 @admin.register(PurchaseCompositeItems)
 class AdminPurchaseCompositeItems(admin.ModelAdmin):
