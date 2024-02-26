@@ -518,3 +518,10 @@ class AdminContestsSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+
+
+class AdminCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ("category_id", "name")
+        read_only_fields = ("category_id",)
