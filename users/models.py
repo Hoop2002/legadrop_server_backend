@@ -1,3 +1,4 @@
+from random import choices
 from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -160,9 +161,66 @@ class UserItems(models.Model):
         self.save()
         return
 
+    def upgrade_item(
+        self, items: models.QuerySet[Item]
+    ) -> models.QuerySet[Item] or None:
+        if items.count() == 0:
+            return
+        if items.filter(purchase_price=0).exists():
+            return
+        normalise_kof = self.item.purchase_price / 2
+        price_items = items.aggregate(sum=models.Sum("purchase_price"))["sum"]
+        percent_items = normalise_kof * price_items
+        percent_items_normalised = normalise_kof * price_items
+        lose = 1 - percent_items
+        lose_normalised = 1 - percent_items
+        if self.user.profile.individual_percent != 0:
+            percent_items = (
+                normalise_kof * (1 + self.user.profile.individual_percent)
+            ) / price_items
+            percent_items_normalised = percent_items / (lose + percent_items)
+            lose_normalised = lose / (lose + percent_items)
+
+        result = choices(
+            ["lose", "win"], weights=[lose_normalised, percent_items_normalised]
+        )[0]
+        if result == "lose":
+            return
+        return items
+
     class Meta:
         verbose_name = "Предмет пользователя"
         verbose_name_plural = "Предметы пользователей"
+
+
+class UserUpgradeHistory(models.Model):
+    user = models.ForeignKey(
+        verbose_name="Пользователь",
+        to=User,
+        related_name="upgrade_history",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    upgraded = models.ForeignKey(
+        verbose_name="Возвышаемый предмет",
+        to=UserItems,
+        related_name="upgraded_item",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    desired = models.ForeignKey(
+        verbose_name="Желаемый предмет",
+        to=Item,
+        related_name="Предмет",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    success = models.BooleanField(verbose_name="Успешный", default=False)
+    created_at = models.DateTimeField(verbose_name="Создан", auto_now=True)
+    updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now_add=True)
 
 
 class ActivatedPromo(models.Model):
