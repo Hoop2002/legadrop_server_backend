@@ -353,4 +353,5 @@ class UserRefOutputViewSet(ModelViewSet):
         return UserRefOutputSerializer
 
     def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
         return super().create(request, *args, **kwargs)

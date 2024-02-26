@@ -5,7 +5,7 @@ from payments.manager import PaymentManager
 from users.serializers import AdminUserListSerializer, UserItemSerializer
 from users.models import UserItems
 from datetime import datetime
-
+from core.models import GenericSettings
 
 class UserPaymentOrderSerializer(serializers.ModelSerializer):
     type_payments = serializers.ChoiceField(choices=PaymentOrder.PAYMENT_TYPES_CHOICES)
@@ -258,6 +258,12 @@ class UserRefOutputSerializer(serializers.ModelSerializer):
 
 
 class UserRefOutputCreateSerializer(serializers.ModelSerializer):
+
+    def validate(self, attrs):
+        generic_settings = GenericSettings.objects.first()
+
+        return super().validate(attrs)
+
     class Meta:
         model = RefOutput
         fields = ("sum", "comment", "type", "card_number", "phone", "crypto_number")
