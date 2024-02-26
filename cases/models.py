@@ -199,6 +199,7 @@ class Item(models.Model):
         validators=[MinValueValidator(0)],
     )
     sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
+    upgrade = models.BooleanField(verbose_name="Доступно в апгрейде", default=True)
     image = models.ImageField(upload_to=generate_upload_name, verbose_name="Картинка")
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
@@ -383,6 +384,8 @@ class Case(models.Model):
         items = self.items.all()
         if items.count() == 0:
             return 0
+        if items.filter(purchase_price=0).exists():
+            items = items.exclude(purchase_price=0)
         items_kfs = [1 / item.purchase_price for item in items]
         normalise_kof = 1 / sum(items_kfs)
         price = len(items_kfs) * normalise_kof
@@ -393,6 +396,8 @@ class Case(models.Model):
 
     def _get_rand_item(self, user: User):
         items = self.items.all()
+        if items.filter(purchase_price=0).exists():
+            items = items.exclude(purchase_price=0)
         # считаем коэффициент для айтемов и берём цену для дальнейших вычислений
         items_kfs = {
             item.item_id: {"kof": 1 / item.purchase_price, "price": item.purchase_price}
