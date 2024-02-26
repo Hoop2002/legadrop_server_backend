@@ -382,10 +382,10 @@ class Case(models.Model):
 
         generic = GenericSettings.load()
         items = self.items.all()
-        if items.count() == 0:
-            return 0
         if items.filter(purchase_price=0).exists():
             items = items.exclude(purchase_price=0)
+        if items.count() == 0:
+            return 0
         items_kfs = [1 / item.purchase_price for item in items]
         normalise_kof = 1 / sum(items_kfs)
         price = len(items_kfs) * normalise_kof

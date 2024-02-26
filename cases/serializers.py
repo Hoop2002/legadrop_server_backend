@@ -45,7 +45,6 @@ class ConditionSerializer(serializers.ModelSerializer):
 
 
 class RarityCategorySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = RarityCategory
         fields = ("rarity_id", "name", "rarity_color")
@@ -137,7 +136,6 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
 
 
 class CaseCategorySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Category
         fields = ("category_id", "name")
@@ -221,7 +219,15 @@ class AdminCreateCaseSerializer(ListCasesSerializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
         if "name" in attrs:
-            if Case.objects.filter(name=attrs["name"]).exists():
+            if self.instance:
+                case_exists = (
+                    Case.objects.filter(name=attrs["name"])
+                    .exclude(id=self.instance.id)
+                    .exists()
+                )
+            else:
+                case_exists = Case.objects.filter(name=attrs["name"]).exists()
+            if case_exists:
                 raise serializers.ValidationError(
                     {"name": "Кейс с таким именем уже существует!"}
                 )

@@ -3,12 +3,15 @@ from django.db.models.signals import post_save
 
 
 def set_price(sender, instance, **kwargs):
+    from cases.models import Case
     if not instance.items.exists():
         return
     if instance.case_free:
         return
     if not instance.price:
-        instance.set_recommendation_price()
+        Case.objects.filter(pk=instance.pk).update(price=instance.recommendation_price)
+    if instance.price < instance.recommendation_price:
+        Case.objects.filter(pk=instance.pk).update(price=instance.recommendation_price)
 
 
 class CasesConfig(AppConfig):
