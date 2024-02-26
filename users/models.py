@@ -68,7 +68,10 @@ class UserProfile(models.Model):
 
     @cached_property
     def total_withdrawal(self) -> float:
-        refs = self.user.user_ref_outputs.filter(models.Q(status="created") | models.Q(status="completed"), models.Q(removed=False)) 
+        refs = self.user.user_ref_outputs.filter(
+            models.Q(status="created") | models.Q(status="completed"),
+            models.Q(removed=False),
+        )
         amount = refs.aggregate(total=models.Sum("sum"))["total"]
         if not amount:
             amount = 0.0

@@ -7,6 +7,7 @@ from users.models import UserItems
 from datetime import datetime
 from core.models import GenericSettings
 
+
 class UserPaymentOrderSerializer(serializers.ModelSerializer):
     type_payments = serializers.ChoiceField(choices=PaymentOrder.PAYMENT_TYPES_CHOICES)
 

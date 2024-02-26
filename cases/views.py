@@ -19,8 +19,9 @@ from cases.serializers import (
     ContestsSerializer,
     AdminListCasesSerializer,
     TestOpenCaseSerializer,
+    AdminCategorySerializer,
 )
-from cases.models import Case, Item, RarityCategory, ConditionCase, Contests
+from cases.models import Case, Item, RarityCategory, ConditionCase, Contests, Category
 from utils.serializers import SuccessSerializer
 
 
@@ -115,6 +116,15 @@ class AdminConditionsViewSet(ModelViewSet):
     )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
+
+
+@extend_schema(tags=["admin/category"])
+class AdminCategoryViewSet(ModelViewSet):
+    permission_classes = [IsAdminUser]
+    queryset = Category.objects.all()
+    serializer_class = AdminCategorySerializer
+    lookup_field = "category_id"
+    http_method_names = ["get", "post", "delete", "put"]
 
 
 @extend_schema(tags=["admin/cases"])
