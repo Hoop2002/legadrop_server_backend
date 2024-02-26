@@ -353,5 +353,8 @@ class UserRefOutputViewSet(ModelViewSet):
         return UserRefOutputSerializer
 
     def create(self, request, *args, **kwargs):
+
         serializer = self.get_serializer(data=request.data)
-        return super().create(request, *args, **kwargs)
+        if serializer.is_valid(raise_exception=True):
+            ref_output = serializer.save()
+            return Response(UserRefOutputSerializer(ref_output).data)
