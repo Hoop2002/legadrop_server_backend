@@ -299,6 +299,7 @@ class AdminRarityCategoryViewSet(ModelViewSet):
     queryset = RarityCategory.objects.all()
     serializer_class = RarityCategoryAdminSerializer
     permission_classes = [IsAdminUser]
+    lookup_field = "rarity_id"
     http_method_names = ["get", "post", "put", "delete"]
 
 
