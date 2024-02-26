@@ -65,6 +65,18 @@ class UserProfile(models.Model):
         income = float(service_income) * self.partner_income
         return round(float(income), 2)
 
+    @cached_property
+    def total_withdrawal(self) -> float:
+        refs = self.user.user_ref_outputs.filter(models.Q(status="created") | models.Q(status="completed"), models.Q(removed=False)) 
+        amount = refs.aggregate(total=models.Sum("sum"))["total"]
+        if not amount:
+            amount = 0.0
+        return round(float(amount), 2)
+
+    @cached_property
+    def available_withdrawal(self) -> float:
+        return round(self.total_income - self.total_withdrawal, 2)
+
     def all_debit(self) -> float:
         from payments.models import Calc, PaymentOrder
 
