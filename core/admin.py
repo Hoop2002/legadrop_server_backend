@@ -18,5 +18,15 @@ class GenericSettingsAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        (
+            "Настройки апгрейда",
+            {
+                "fields": (
+                    "base_upgrade_percent",
+                    "minimal_price_upgrade",
+                    "base_upper_ratio",
+                )
+            },
+        ),
         ("Базовые настройки", {"fields": ("domain_url", "redirect_domain")}),
     )
