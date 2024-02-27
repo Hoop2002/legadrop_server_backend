@@ -196,7 +196,7 @@ class UserItems(models.Model):
             return False, "Неверные параметры"
         if upgrade and upgrade.count() == 0 and not balance:
             return False, "Неверные параметры"
-        if upgrade and upgrade.filter(price=0).exists():
+        if upgrade and upgrade.filter(item__price=0).exists():
             return False, "Неверные параметры"
 
         price_items = upgraded.aggregate(sum=models.Sum("price"))["sum"]
