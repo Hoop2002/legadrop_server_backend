@@ -25,6 +25,7 @@ from users.serializers import (
     GameHistorySerializer,
     AdminUserPaymentHistorySerializer,
     SuccessSignUpSerializer,
+    UpgradeItemSerializer,
 )
 from payments.models import PaymentOrder, RefLinks
 
@@ -200,6 +201,17 @@ class UserItemsListView(ModelViewSet):
         serializer = self.get_serializer(items, many=True)
         response = self.get_paginated_response(serializer.data)
         return response
+
+
+class UpgradeItem(GenericViewSet):
+    queryset = UserItems.objects
+    serializer_class = UpgradeItemSerializer
+    http_method_names = ["get", "post"]
+
+    @extend_schema(responses=UserItemSerializer(many=True))
+    @action(detail=False, methods=["get"])
+    def get_upgrade_data(self, request, *args, **kwargs):
+        pass
 
 
 @extend_schema(tags=["genshin"])

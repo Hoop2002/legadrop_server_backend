@@ -209,6 +209,24 @@ class HistoryItemSerializer(UserItemSerializer):
         )
 
 
+class UpgradeItemSerializer(serializers.ModelSerializer):
+    upgrade_items = serializers.ListSerializer(
+        child=serializers.IntegerField(), help_text="Предметы для обновления"
+    )
+    upgraded_items = serializers.ListSerializer(
+        child=serializers.IntegerField(), help_text="Желаемые предметы"
+    )
+
+    def validate(self, attrs: dict) -> dict:
+        attrs = super().validate(attrs)
+        # todo проверка что польщователю принадлежат обновляемые предметы
+        return attrs
+
+    class Meta:
+        model = UserItems
+        fields = ("upgrade_items", "upgraded_items")
+
+
 class GetGenshinAccountSerializer(serializers.Serializer):
     uid = serializers.CharField()
 

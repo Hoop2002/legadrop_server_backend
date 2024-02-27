@@ -183,21 +183,19 @@ class UserItems(models.Model):
             return
         if items.filter(purchase_price=0).exists():
             return
-        normalise_kof = self.item.purchase_price / 2
         price_items = items.aggregate(sum=models.Sum("purchase_price"))["sum"]
-        percent_items = normalise_kof * price_items
-        percent_items_normalised = normalise_kof * price_items
-        lose = 1 - percent_items
-        lose_normalised = 1 - percent_items
+        upgrade_kof = price_items / self.item.purchase_price
+        # todo вынести дефолтный стартовый процент
+        upgrade_percent = 0.84 / upgrade_kof
+        upgrade_percent_normalised = upgrade_percent
+        lose = 0.84 - upgrade_percent
+        lose_normalised = lose
         if self.user.profile.individual_percent != 0:
-            percent_items = (
-                normalise_kof * (1 + self.user.profile.individual_percent)
-            ) / price_items
-            percent_items_normalised = percent_items / (lose + percent_items)
-            lose_normalised = lose / (lose + percent_items)
-
+            upgrade_percent = upgrade_percent * self.user.profile.individual_percent
+            upgrade_percent_normalised = upgrade_percent / (lose + upgrade_percent)
+            lose_normalised = lose / (lose + upgrade_percent)
         result = choices(
-            ["lose", "win"], weights=[lose_normalised, percent_items_normalised]
+            ["lose", "win"], weights=[lose_normalised, upgrade_percent_normalised]
         )[0]
         if result == "lose":
             return
