@@ -176,30 +176,51 @@ class UserItems(models.Model):
         self.save()
         return
 
+    @classmethod
     def upgrade_item(
-        self, items: models.QuerySet[Item]
+        cls,
+        user: User,
+        upgrade: models.QuerySet["UserItems"] = None,
+        upgraded: models.QuerySet[Item] = None,
+        balance: float = None,
     ) -> models.QuerySet[Item] or None:
-        if items.count() == 0:
-            return
-        if items.filter(purchase_price=0).exists():
-            return
-        price_items = items.aggregate(sum=models.Sum("purchase_price"))["sum"]
-        upgrade_kof = price_items / self.item.purchase_price
-        # todo вынести дефолтный стартовый процент
-        upgrade_percent = 0.84 / upgrade_kof
+        from core.models import GenericSettings
+
+        generic = GenericSettings.load()
+
+        if not upgrade and not balance:
+            return False, "Неверные параметры"
+        if upgraded and upgraded.count() == 0:
+            return False, "Неверные параметры"
+        if upgraded and upgraded.filter(price=0).exists():
+            return False, "Неверные параметры"
+        if upgrade and upgrade.count() == 0 and not balance:
+            return False, "Неверные параметры"
+        if upgrade and upgrade.filter(price=0).exists():
+            return False, "Неверные параметры"
+
+        price_items = upgraded.aggregate(sum=models.Sum("price"))["sum"]
+
+        if upgrade:
+            cost = upgrade.aggregate(sum=models.Sum("item__price"))["sum"]
+        else:
+            cost = balance
+
+        upgrade_kof = price_items / cost
+        upgrade_percent = generic.base_upgrade_percent / upgrade_kof
         upgrade_percent_normalised = upgrade_percent
-        lose = 0.84 - upgrade_percent
+        lose = 1 - upgrade_percent
         lose_normalised = lose
-        if self.user.profile.individual_percent != 0:
-            upgrade_percent = upgrade_percent * self.user.profile.individual_percent
+        if user.profile.individual_percent != 0:
+            upgrade_percent = upgrade_percent * user.profile.individual_percent
             upgrade_percent_normalised = upgrade_percent / (lose + upgrade_percent)
             lose_normalised = lose / (lose + upgrade_percent)
         result = choices(
             ["lose", "win"], weights=[lose_normalised, upgrade_percent_normalised]
         )[0]
         if result == "lose":
-            return
-        return items
+            return False, "Проигрыш"
+        return True, upgraded
 
     class Meta:
         verbose_name = "Предмет пользователя"
@@ -215,20 +236,19 @@ class UserUpgradeHistory(models.Model):
         null=True,
         blank=True,
     )
-    upgraded = models.ForeignKey(
+    upgraded = models.ManyToManyField(
         verbose_name="Возвышаемый предмет",
         to=UserItems,
         related_name="upgraded_item",
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
     )
-    desired = models.ForeignKey(
+    balance = models.FloatField(
+        verbose_name="Баланс", default=None, null=True, blank=True
+    )
+    desired = models.ManyToManyField(
         verbose_name="Желаемый предмет",
         to=Item,
         related_name="Предмет",
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
     )
     success = models.BooleanField(verbose_name="Успешный", default=False)

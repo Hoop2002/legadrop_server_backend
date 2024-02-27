@@ -1,4 +1,4 @@
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 
@@ -30,6 +30,21 @@ class GenericSettings(models.Model):
         verbose_name="Дефолтная наценка на кейсы",
         default=0.1,
         validators=[MinValueValidator(0)],
+    )
+    base_upgrade_percent = models.FloatField(
+        verbose_name="Базовая ставка расчёта",
+        default=0.85,
+        validators=[MinValueValidator(0.5), MaxValueValidator(1)],
+    )
+    minimal_price_upgrade = models.FloatField(
+        verbose_name="Минимальная ставка при апгрейде",
+        default=20,
+        validators=[MinValueValidator(0)],
+    )
+    base_upper_ratio = models.FloatField(
+        verbose_name="Минимальный коэффициент возвышения",
+        default=1.25,
+        validators=[MinValueValidator(1)],
     )
 
     def save(self, *args, **kwargs):
