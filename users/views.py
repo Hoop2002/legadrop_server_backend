@@ -275,12 +275,13 @@ class UpgradeItem(GenericViewSet):
                 balance=data["balance"],
             )
             history.desired.set(data["upgraded_items"])
+            Calc.objects.create(
+                balance=-data["balance"], user=request.user, comment="Апгрейд"
+            )
             if not _status:
                 if items == "Проигрыш":
                     return Response(status=status.HTTP_204_NO_CONTENT)
                 return Response(status=status.HTTP_400_BAD_REQUEST)
-
-            Calc.objects.create(balance=-data["balance"], user=request.user)
             history.success = True
             history.save()
             UserItems.objects.bulk_create(
@@ -296,11 +297,11 @@ class UpgradeItem(GenericViewSet):
             history = UserUpgradeHistory.objects.create(
                 user=request.user,
             )
-            history.upgraded.set(data["upgraded_items"])
+            history.upgraded.set(data["upgrade_items"])
             history.desired.set(data["upgraded_items"])
+            data["upgrade_items"].update(active=False)
             if not _status:
                 if items == "Проигрыш":
-                    data["upgrade_items"].update(active=False)
                     return Response(status=status.HTTP_204_NO_CONTENT)
                 return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -311,22 +312,22 @@ class UpgradeItem(GenericViewSet):
             )
             return Response(ItemListSerializer(items, many=True).data)
 
-    @staticmethod
-    def _check_conditions(data) -> (str, bool) or ((float, float), bool):
+    def _check_conditions(self, data) -> (str, bool) or ((float, float), bool):
         generic = GenericSettings.load()
         if data.get("upgrade_items"):
             cost = data.get("upgrade_items").aggregate(sum=Sum("item__price"))["sum"]
         else:
             cost = data.get("balance")
         upgraded_cost = data.get("upgraded_items").aggregate(sum=Sum("price"))["sum"]
+        default_data = self._get_min_values(data.get("upgraded_items"))
 
         upgrade_ratio = upgraded_cost / cost
         upgrade_percent = generic.base_upgrade_percent / upgrade_ratio
 
         if upgrade_ratio < generic.base_upper_ratio:
             return "Слишком большая ставка", False
-        if cost < generic.minimal_price_upgrade:
-            return f"Минимальная ставка от {generic.minimal_price_upgrade}", False
+        if (cost < generic.minimal_price_upgrade) or (cost < default_data["min_bet"]):
+            return f"Минимальная ставка от {default_data['min_bet']}", False
         return (upgrade_ratio, upgrade_percent), True
 
     @staticmethod
@@ -340,9 +341,9 @@ class UpgradeItem(GenericViewSet):
         max_ratio = upgraded_cost / min_bet
         max_bet = upgraded_cost / generic.base_upper_ratio
         return {
-            "min_bet": round(min_bet, 4),
+            "min_bet": round(min_bet, 2),
             "min_ratio": round(min_ratio, 4),
-            "max_bet": round(max_bet, 4),
+            "max_bet": round(max_bet, 2),
             "max_ratio": round(max_ratio, 4),
         }
 
