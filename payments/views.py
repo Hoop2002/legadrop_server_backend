@@ -10,7 +10,14 @@ from rest_framework.permissions import IsAdminUser, AllowAny
 from payments.manager import PaymentManager
 
 from core.models import GenericSettings
-from payments.models import PaymentOrder, PromoCode, RefLinks, Output, RefOutput
+from payments.models import (
+    PaymentOrder,
+    PromoCode,
+    RefLinks,
+    Output,
+    RefOutput,
+    PurchaseCompositeItems,
+)
 from payments.serializers import (
     UserPaymentOrderSerializer,
     AdminPaymentOrderSerializer,
@@ -29,6 +36,8 @@ from payments.serializers import (
     UserRefOutputListSerializer,
     UserRefOutputSerializer,
     UserRefOutputCreateSerializer,
+    AdminPurchaseListSerializer,
+    AdminPurchaseSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -336,6 +345,20 @@ class AdminRefOutputViewSet(ModelViewSet):
         message, success = ref_output.cancel()
 
         return Response({"message": message}, status=success)
+
+
+@extend_schema(tags=["admin/purchase"])
+class AdminPurchaseViewSet(ModelViewSet):
+    http_method_names = ["get"]
+    queryset = PurchaseCompositeItems.objects.filter(removed=False)
+    serializer_class = AdminPurchaseSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = "id"
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return AdminPurchaseListSerializer
+        return AdminPurchaseSerializer
 
 
 @extend_schema(tags=["ref_outputs"])
