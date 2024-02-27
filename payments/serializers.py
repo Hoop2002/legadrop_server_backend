@@ -1,6 +1,14 @@
 from rest_framework import serializers
 
-from payments.models import PaymentOrder, PromoCode, Calc, Output, RefLinks, RefOutput
+from payments.models import (
+    PaymentOrder,
+    PromoCode,
+    Calc,
+    Output,
+    RefLinks,
+    RefOutput,
+    PurchaseCompositeItems,
+)
 from payments.manager import PaymentManager
 from users.serializers import AdminUserListSerializer, UserItemSerializer
 from users.models import UserItems
@@ -64,7 +72,23 @@ class AdminListOutputSerializer(serializers.ModelSerializer):
         fields = ("id", "output_id", "type", "status")
 
 
+class AdminPurchaseListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurchaseCompositeItems
+        fields = ("id", "ext_id_order", "player_id", "status", "created_at")
+
+
+class AdminPurchaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurchaseCompositeItems
+        fields = "__all__"
+
+
 class AdminOutputSerializer(AdminListOutputSerializer):
+    stat = Output.OUTPUT_STATUS
+    output_items = UserItemSerializer(many=True)
+    purchase_ci_outputs = AdminPurchaseSerializer(many=True)
+
     class Meta:
         model = Output
         fields = "__all__"
@@ -265,18 +289,21 @@ class UserRefOutputCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         user = self.context.get("request").user
-        
+
         generic_settings = GenericSettings.objects.first()
 
         if not "sum" in attrs:
             raise serializers.ValidationError("Не указана сумма")
-        
-        
-        if generic_settings.min_ref_output > attrs['sum']:
-            raise serializers.ValidationError(f"Сумма вывода не может быть меньше {generic_settings.min_ref_output}")
 
-        if attrs['sum'] > user.profile.available_withdrawal:
-            raise serializers.ValidationError(f"Сумма вывода не может быть больше доступной к выводу")
+        if generic_settings.min_ref_output > attrs["sum"]:
+            raise serializers.ValidationError(
+                f"Сумма вывода не может быть меньше {generic_settings.min_ref_output}"
+            )
+
+        if attrs["sum"] > user.profile.available_withdrawal:
+            raise serializers.ValidationError(
+                f"Сумма вывода не может быть больше доступной к выводу"
+            )
 
         if not "type" in attrs:
             raise serializers.ValidationError("Не выбран тип оплаты")
@@ -326,10 +353,10 @@ class UserRefOutputCreateSerializer(serializers.ModelSerializer):
         attrs["user"] = user
 
         return attrs
-    
+
     def create(self, validated_data):
         return super().create(validated_data)
-    
+
     class Meta:
         model = RefOutput
         fields = ("sum", "comment", "type", "card_number", "phone", "crypto_number")

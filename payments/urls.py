@@ -31,6 +31,11 @@ router.register(
     views.AdminRefOutputViewSet,
     basename="admin_refoutputs",
 )
+router.register(
+    "6383d341-4d14-4868-81ba-3c6382f2128e/purchase",
+    viewset=views.AdminPurchaseViewSet,
+    basename="purchase",
+)
 
 
 router.register("payments", views.UserPaymentOrderViewSet, basename="user_payments")

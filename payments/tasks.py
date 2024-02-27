@@ -149,14 +149,9 @@ def check_output_status_in_moogold(manager=PaymentManager()):
                     pci.status = pci.REFUNDED
 
             pci.save()
-
-        if (
-            purchase_items.count()
-            == output.purchase_ci_outputs.all()
-            .filter(status=PurchaseCompositeItems.COMPLETED)
-            .count()
-        ):
-            output.status = output.COMPLETED
-            output.active = False
+        if purchase_items.count() != 0:
+            if purchase_items.count() == output.purchase_ci_outputs.all().filter(status=PurchaseCompositeItems.COMPLETED).count():
+                output.status = output.COMPLETED
+                output.active = False
 
         output.save()
