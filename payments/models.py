@@ -514,6 +514,12 @@ class Output(models.Model):
         )
 
     @cached_property
+    def cost_withdrawal_of_items_in_rub(self) -> float:
+        currency = float(get_currency()["USDRUB"]["high"])
+        return round(self.cost_withdrawal_of_items * currency, 2)
+         
+
+    @cached_property
     def cost_withdrawal_of_items(self) -> float:
         price = 0.0
 

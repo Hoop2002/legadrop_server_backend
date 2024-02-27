@@ -85,10 +85,11 @@ class AdminPurchaseSerializer(serializers.ModelSerializer):
 
 
 class AdminOutputSerializer(AdminListOutputSerializer):
-    stat = Output.OUTPUT_STATUS
     output_items = UserItemSerializer(many=True)
     purchase_ci_outputs = AdminPurchaseSerializer(many=True)
-
+    cost_withdrawal_of_items = serializers.FloatField()
+    cost_withdrawal_of_items_in_rub = serializers.FloatField()
+                
     class Meta:
         model = Output
         fields = "__all__"
