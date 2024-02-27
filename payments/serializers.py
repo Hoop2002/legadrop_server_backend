@@ -1,6 +1,14 @@
 from rest_framework import serializers
 
-from payments.models import PaymentOrder, PromoCode, Calc, Output, RefLinks, RefOutput
+from payments.models import (
+    PaymentOrder,
+    PromoCode,
+    Calc,
+    Output,
+    RefLinks,
+    RefOutput,
+    PurchaseCompositeItems,
+)
 from payments.manager import PaymentManager
 from users.serializers import AdminUserListSerializer, UserItemSerializer
 from users.models import UserItems
@@ -64,7 +72,23 @@ class AdminListOutputSerializer(serializers.ModelSerializer):
         fields = ("id", "output_id", "type", "status")
 
 
+class AdminPurchaseListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurchaseCompositeItems
+        fields = ("id", "ext_id_order", "player_id", "status", "created_at")
+
+
+class AdminPurchaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurchaseCompositeItems
+        fields = "__all__"
+
+
 class AdminOutputSerializer(AdminListOutputSerializer):
+    stat = Output.OUTPUT_STATUS
+    output_items = UserItemSerializer(many=True)
+    purchase_ci_outputs = AdminPurchaseSerializer(many=True)
+
     class Meta:
         model = Output
         fields = "__all__"
