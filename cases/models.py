@@ -366,7 +366,7 @@ class Case(models.Model):
         items = self.items.values(
             "item_id", "name", "price", "image", "rarity_category", "purchase_price"
         )
-        # считаем коэффициент для айтемов
+        # считаем коэффициент для айтемов todo запретить предметам без закупочной цены попадать в кейсы
         items_kfs = {item["item_id"]: 1 / item["purchase_price"] for item in items}
         # из полученных коэффициентов выше считаем нормализацию
         normalise_kof = 1 / sum([items_kfs[item] for item in items_kfs])

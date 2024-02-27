@@ -7,12 +7,21 @@ from users.models import (
     ActivatedPromo,
     ActivatedLinks,
     ContestsWinners,
+    UserUpgradeHistory,
 )
 from django.utils.safestring import mark_safe
 from django.urls import reverse
 
 
 admin.site.unregister(User)
+
+
+@admin.register(UserUpgradeHistory)
+class UserUpgradeHistoryAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "success")
+    list_filter = ("user", "success")
+    readonly_fields = ("created_at",)
+    filter_horizontal = ("upgraded", "desired")
 
 
 @admin.register(ContestsWinners)
@@ -26,6 +35,7 @@ class UserItemsAdmin(admin.ModelAdmin):
     list_display = ("id", "user_link", "item", "active", "withdrawn")
     list_display_links = ("id",)
     list_filter = ("user", "active", "item")
+    readonly_fields = ("created_at",)
 
     def user_link(self, instance):
         return mark_safe(
