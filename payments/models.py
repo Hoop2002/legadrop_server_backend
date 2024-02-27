@@ -201,7 +201,10 @@ class PromoCode(models.Model):
         activation = ActivatedPromo.objects.create(user=user, promo=self)
         activation.calc_promo.add(calc)
         activation.save()
-        return "Успешно активирован", True
+        if self.type == self.BONUS:
+            return f"Успешно активирован!\n{self.PROMO_TYPES[1][1]} +{(self.percent * 100) - 100}%", True
+        if self.type == self.BALANCE:
+            return f"Успешно активирован!\n{self.PROMO_TYPES[0][1]} +{self.summ}р", True
 
     @cached_property
     def activations(self) -> int:

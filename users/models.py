@@ -79,7 +79,10 @@ class UserProfile(models.Model):
 
     @cached_property
     def available_withdrawal(self) -> float:
-        return round(self.total_income - self.total_withdrawal, 2)
+        w = round(self.total_income - self.total_withdrawal, 2)
+        if w <= 0:
+           return 0
+        return w
 
     def all_debit(self) -> float:
         from payments.models import Calc, PaymentOrder
