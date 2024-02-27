@@ -742,7 +742,7 @@ class RefOutput(models.Model):
         related_name="user_ref_outputs",
     )
 
-    sum = models.FloatField(verbose_name="Сумма вывода")
+    sum = models.FloatField(verbose_name="Сумма вывода", validators=[MinValueValidator(0)])
     comment = models.TextField(verbose_name="Комментарий", max_length=1024, null=True)
 
     card_number = models.CharField(verbose_name="Номер карты", max_length=32, null=True)
