@@ -140,6 +140,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "user",
             "ref_link",
             "total_income",
+            "total_withdrawal",
+            "available_withdrawal",
             "code_data",
             "image",
             "balance",
