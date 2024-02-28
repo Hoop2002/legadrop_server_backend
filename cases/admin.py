@@ -94,7 +94,7 @@ class ItemAdmin(admin.ModelAdmin):
         ),
         (
             "Цены",
-            {"fields": ("price", "purchase_price", "sale_price", "percent_price")},
+            {"fields": ("price", "sale_price", "percent_price")},
         ),
     )
     #
