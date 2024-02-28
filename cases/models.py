@@ -187,21 +187,24 @@ class Item(models.Model):
         verbose_name="Количество кристаллов", null=True, default=0
     )
 
-    # purchase_price = models.FloatField(
+    #purchase_price = models.FloatField(
     #    verbose_name="Закупочная цена", default=0, null=False
-    # )
+    #)
 
-    @cached_property
+    #purchase_price_rub = models.FloatField(
+    #    verbose_name="Закупочная цена в рублях", default=0, null=False
+    #)
+
+    @property
     def purchase_price_rub(self):
         from gateways.economia_api import get_currency
-
         currency = float(get_currency()["USDRUB"]["high"])
         return round(self.purchase_price * currency, 2)
-
-    @cached_property
+    
+    @property
     def purchase_price(self):
         from payments.models import CompositeItems
-
+        
         price = 0.0
 
         composites = CompositeItems.objects.all()
@@ -434,8 +437,8 @@ class Case(models.Model):
 
     def _get_rand_item(self, user: User):
         items = self.items.all()
-        if items.filter(purchase_price=0).exists():
-            items = items.exclude(purchase_price=0)
+        #if items.filter(purchase_price=0).exists():
+        #    items = items.exclude(purchase_price=0)
         # считаем коэффициент для айтемов и берём цену для дальнейших вычислений
         items_kfs = {
             item.item_id: {"kof": 1 / item.purchase_price, "price": item.purchase_price}
