@@ -98,6 +98,7 @@ class UserItemSerializer(serializers.ModelSerializer):
 class ItemsAdminSerializer(serializers.ModelSerializer):
     price = serializers.FloatField(required=True)
     purchase_price = serializers.FloatField(required=True)
+    purchase_price_rub = serializers.FloatField(required=True)
     image = Base64ImageField(
         required=False, max_length=None, use_url=True, allow_null=True
     )
@@ -120,7 +121,12 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
             "item_id",
             "name",
             "price",
+            "crystals_quantity",
+            "type",
+            "service",
+            "is_output",
             "purchase_price",
+            "purchase_price_rub",
             "sale_price",
             "percent_price",
             "sale",

@@ -181,14 +181,53 @@ class Item(models.Model):
         verbose_name="Тип предмета", max_length=32, choices=ITEMS_TYPE, null=True
     )
     service = models.CharField(
-        verbose_name="Тип предмета", max_length=32, choices=SERVICE_TYPES, null=True
+        verbose_name="Сервис", max_length=32, choices=SERVICE_TYPES, null=True
     )
     crystals_quantity = models.IntegerField(
         verbose_name="Количество кристаллов", null=True, default=0
     )
-    purchase_price = models.FloatField(
-        verbose_name="Закупочная цена", default=0, null=False
-    )
+
+    # purchase_price = models.FloatField(
+    #    verbose_name="Закупочная цена", default=0, null=False
+    # )
+
+    @cached_property
+    def purchase_price_rub(self):
+        from gateways.economia_api import get_currency
+
+        currency = float(get_currency()["USDRUB"]["high"])
+        return round(self.purchase_price * currency, 2)
+
+    @cached_property
+    def purchase_price(self):
+        from payments.models import CompositeItems
+
+        price = 0.0
+
+        composites = CompositeItems.objects.all()
+
+        crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
+        blessing_composite = composites.filter(type=CompositeItems.BLESSING).first()
+
+        if self.type == self.BLESSING:
+            price += blessing_composite.price_dollar
+
+        if self.type == self.CRYSTAL:
+            value_set = [i.crystals_quantity for i in crystal_composite]
+            combination = self.get_crystal_combinations(value_set)
+            for com in combination:
+                com_item = crystal_composite.filter(crystals_quantity=com).get()
+                price += com_item.price_dollar
+
+        if self.type == self.GHOST_ITEM:
+            value_set = [i.crystals_quantity for i in crystal_composite]
+            combination = self.get_crystal_combinations(value_set)
+            for com in combination:
+                com_item = crystal_composite.filter(crystals_quantity=com).get()
+                price += com_item.price_dollar
+
+        return price
+
     is_output = models.BooleanField(
         verbose_name="Выводимый предмет с сервиса", null=False, default=True
     )
@@ -214,7 +253,6 @@ class Item(models.Model):
         blank=True,
     )
     removed = models.BooleanField(verbose_name="Удалено", default=False)
-    is_output = models.BooleanField(verbose_name="Выводимый/Не выводимый", default=True)
 
     def get_crystal_combinations(self, value_set):
         return find_combination(target=self.crystals_quantity, values=value_set)
