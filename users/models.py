@@ -81,7 +81,7 @@ class UserProfile(models.Model):
     def available_withdrawal(self) -> float:
         w = round(self.total_income - self.total_withdrawal, 2)
         if w <= 0:
-           return 0
+            return 0
         return w
 
     def all_debit(self) -> float:

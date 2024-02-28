@@ -202,7 +202,10 @@ class PromoCode(models.Model):
         activation.calc_promo.add(calc)
         activation.save()
         if self.type == self.BONUS:
-            return f"Успешно активирован!\n{self.PROMO_TYPES[1][1]} +{(self.percent * 100) - 100}%", True
+            return (
+                f"Успешно активирован!\n{self.PROMO_TYPES[1][1]} +{(self.percent * 100) - 100}%",
+                True,
+            )
         if self.type == self.BALANCE:
             return f"Успешно активирован!\n{self.PROMO_TYPES[0][1]} +{self.summ}р", True
 
@@ -517,7 +520,6 @@ class Output(models.Model):
     def cost_withdrawal_of_items_in_rub(self) -> float:
         currency = float(get_currency()["USDRUB"]["high"])
         return round(self.cost_withdrawal_of_items * currency, 2)
-         
 
     @cached_property
     def cost_withdrawal_of_items(self) -> float:

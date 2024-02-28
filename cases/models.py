@@ -186,30 +186,32 @@ class Item(models.Model):
     crystals_quantity = models.IntegerField(
         verbose_name="Количество кристаллов", null=True, default=0
     )
-    
-    #purchase_price = models.FloatField(
+
+    # purchase_price = models.FloatField(
     #    verbose_name="Закупочная цена", default=0, null=False
-    #)
+    # )
 
     @cached_property
     def purchase_price_rub(self):
         from gateways.economia_api import get_currency
+
         currency = float(get_currency()["USDRUB"]["high"])
         return round(self.purchase_price * currency, 2)
 
     @cached_property
     def purchase_price(self):
         from payments.models import CompositeItems
+
         price = 0.0
 
         composites = CompositeItems.objects.all()
-        
+
         crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
         blessing_composite = composites.filter(type=CompositeItems.BLESSING).first()
 
         if self.type == self.BLESSING:
             price += blessing_composite.price_dollar
-        
+
         if self.type == self.CRYSTAL:
             value_set = [i.crystals_quantity for i in crystal_composite]
             combination = self.get_crystal_combinations(value_set)
@@ -223,9 +225,8 @@ class Item(models.Model):
             for com in combination:
                 com_item = crystal_composite.filter(crystals_quantity=com).get()
                 price += com_item.price_dollar
-        
-        return price
 
+        return price
 
     is_output = models.BooleanField(
         verbose_name="Выводимый предмет с сервиса", null=False, default=True
