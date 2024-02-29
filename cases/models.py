@@ -405,10 +405,10 @@ class Case(models.Model):
     def get_items(self):
         """Возвращает json предметов с проставленными процентами"""
         items = self.items.values(
-            "item_id", "name", "price", "image", "rarity_category", "purchase_price"
+            "item_id", "name", "price", "image", "rarity_category"
         )
         # считаем коэффициент для айтемов todo запретить предметам без закупочной цены попадать в кейсы
-        items_kfs = {item["item_id"]: 1 / item["purchase_price"] for item in items}
+        items_kfs = {item["item_id"]: 1 / Item.objects.filter(item_id=item["item_id"]).get().purchase_price for item in items}
         # из полученных коэффициентов выше считаем нормализацию
         normalise_kof = 1 / sum([items_kfs[item] for item in items_kfs])
 
@@ -423,8 +423,8 @@ class Case(models.Model):
 
         generic = GenericSettings.load()
         items = self.items.all()
-        if items.filter(purchase_price=0).exists():
-            items = items.exclude(purchase_price=0)
+        #if items.filter(purchase_price=0).exists():
+        #    items = items.exclude(purchase_price=0)
         if items.count() == 0:
             return 0
         items_kfs = [1 / item.purchase_price for item in items]

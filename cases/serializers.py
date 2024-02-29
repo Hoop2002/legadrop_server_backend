@@ -97,8 +97,8 @@ class UserItemSerializer(serializers.ModelSerializer):
 
 class ItemsAdminSerializer(serializers.ModelSerializer):
     price = serializers.FloatField(required=True)
-    purchase_price = serializers.FloatField(required=True)
-    purchase_price_rub = serializers.FloatField(required=True)
+    purchase_price = serializers.FloatField(read_only=True)
+    purchase_price_rub = serializers.FloatField(read_only=True)
     image = Base64ImageField(
         required=False, max_length=None, use_url=True, allow_null=True
     )
