@@ -41,6 +41,11 @@ router.register("cases", views.CasesViewSet, basename="cases")
 
 urlpatterns = [
     path(
+        "cases/<str:translit_name>/open_case/<int:count>",
+        views.CasesViewSet.as_view({"post": "open_case"}),
+        name="cases",
+    ),
+    path(
         "contests/",
         views.ContestsViewSet.as_view({"get": "list"}),
         name="contests_list",

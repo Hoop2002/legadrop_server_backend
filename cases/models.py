@@ -187,24 +187,25 @@ class Item(models.Model):
         verbose_name="Количество кристаллов", null=True, default=0
     )
 
-    #purchase_price = models.FloatField(
+    # purchase_price = models.FloatField(
     #    verbose_name="Закупочная цена", default=0, null=False
-    #)
+    # )
 
-    #purchase_price_rub = models.FloatField(
+    # purchase_price_rub = models.FloatField(
     #    verbose_name="Закупочная цена в рублях", default=0, null=False
-    #)
+    # )
 
     @property
     def purchase_price_rub(self):
         from gateways.economia_api import get_currency
+
         currency = float(get_currency()["USDRUB"]["high"])
         return round(self.purchase_price * currency, 2)
-    
-    @property
+
+    @cached_property
     def purchase_price(self):
         from payments.models import CompositeItems
-        
+
         price = 0.0
 
         composites = CompositeItems.objects.all()
@@ -216,11 +217,14 @@ class Item(models.Model):
             price += blessing_composite.price_dollar
 
         if self.type == self.CRYSTAL:
-            value_set = [i.crystals_quantity for i in crystal_composite]
-            combination = self.get_crystal_combinations(value_set)
-            for com in combination:
-                com_item = crystal_composite.filter(crystals_quantity=com).get()
-                price += com_item.price_dollar
+            if self.crystals_quantity < 60:
+                price += self.crystals_quantity * 0.014
+            else:
+                value_set = [i.crystals_quantity for i in crystal_composite]
+                combination = self.get_crystal_combinations(value_set)
+                for com in combination:
+                    com_item = crystal_composite.filter(crystals_quantity=com).get()
+                    price += com_item.price_dollar
 
         if self.type == self.GHOST_ITEM:
             value_set = [i.crystals_quantity for i in crystal_composite]
@@ -229,7 +233,10 @@ class Item(models.Model):
                 com_item = crystal_composite.filter(crystals_quantity=com).get()
                 price += com_item.price_dollar
 
-        return price
+        if price == 0.0:
+            price += 0.1
+
+        return round(price, 2)
 
     is_output = models.BooleanField(
         verbose_name="Выводимый предмет с сервиса", null=False, default=True
@@ -405,10 +412,14 @@ class Case(models.Model):
     def get_items(self):
         """Возвращает json предметов с проставленными процентами"""
         items = self.items.values(
-            "item_id", "name", "price", "image", "rarity_category", "purchase_price"
+            "item_id", "name", "price", "image", "rarity_category"
         )
         # считаем коэффициент для айтемов todo запретить предметам без закупочной цены попадать в кейсы
-        items_kfs = {item["item_id"]: 1 / item["purchase_price"] for item in items}
+        items_kfs = {
+            item["item_id"]: 1
+            / Item.objects.filter(item_id=item["item_id"]).get().purchase_price
+            for item in items
+        }
         # из полученных коэффициентов выше считаем нормализацию
         normalise_kof = 1 / sum([items_kfs[item] for item in items_kfs])
 
@@ -423,8 +434,8 @@ class Case(models.Model):
 
         generic = GenericSettings.load()
         items = self.items.all()
-        if items.filter(purchase_price=0).exists():
-            items = items.exclude(purchase_price=0)
+        # if items.filter(purchase_price=0).exists():
+        #    items = items.exclude(purchase_price=0)
         if items.count() == 0:
             return 0
         items_kfs = [1 / item.purchase_price for item in items]
@@ -437,7 +448,7 @@ class Case(models.Model):
 
     def _get_rand_item(self, user: User):
         items = self.items.all()
-        #if items.filter(purchase_price=0).exists():
+        # if items.filter(purchase_price=0).exists():
         #    items = items.exclude(purchase_price=0)
         # считаем коэффициент для айтемов и берём цену для дальнейших вычислений
         items_kfs = {
