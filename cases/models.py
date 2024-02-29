@@ -201,7 +201,7 @@ class Item(models.Model):
         currency = float(get_currency()["USDRUB"]["high"])
         return round(self.purchase_price * currency, 2)
     
-    @property
+    @cached_property
     def purchase_price(self):
         from payments.models import CompositeItems
         
@@ -216,11 +216,14 @@ class Item(models.Model):
             price += blessing_composite.price_dollar
 
         if self.type == self.CRYSTAL:
-            value_set = [i.crystals_quantity for i in crystal_composite]
-            combination = self.get_crystal_combinations(value_set)
-            for com in combination:
-                com_item = crystal_composite.filter(crystals_quantity=com).get()
-                price += com_item.price_dollar
+            if self.crystals_quantity < 60:
+                price += self.crystals_quantity * 0.014
+            else:
+                value_set = [i.crystals_quantity for i in crystal_composite]
+                combination = self.get_crystal_combinations(value_set)
+                for com in combination:
+                    com_item = crystal_composite.filter(crystals_quantity=com).get()
+                    price += com_item.price_dollar
 
         if self.type == self.GHOST_ITEM:
             value_set = [i.crystals_quantity for i in crystal_composite]
@@ -229,7 +232,10 @@ class Item(models.Model):
                 com_item = crystal_composite.filter(crystals_quantity=com).get()
                 price += com_item.price_dollar
 
-        return price
+        if price == 0.0:
+            price += 0.1
+
+        return round(price, 2)
 
     is_output = models.BooleanField(
         verbose_name="Выводимый предмет с сервиса", null=False, default=True
