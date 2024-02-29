@@ -92,7 +92,10 @@ class CasesViewSet(GenericViewSet):
     def open_case(self, request, count: int = 1, *args, **kwargs):
 
         if count <= 0:
-            return Response({"message": "Ошибка, количество открытий не может быть меньше 0!"}, status=400)
+            return Response(
+                {"message": "Ошибка, количество открытий не может быть меньше 0!"},
+                status=400,
+            )
 
         case = self.get_object()
         message, success = case.check_conditions(user=request.user)
