@@ -85,24 +85,27 @@ class CasesViewSet(GenericViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(request=None, responses={200: ItemListSerializer})
-    @action(detail=True, methods=["post"], )
+    @action(
+        detail=True,
+        methods=["post"],
+    )
     def open_case(self, request, count: int = 1, *args, **kwargs):
         if count <= 0:
             return Response({"message": "Ошибка"}, status=400)
-        
+
         case = self.get_object()
         message, success = case.check_conditions(user=request.user)
-       
+
         if not success:
             return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         if case.price * count > request.user.profile.balance:
             return Response(
                 {"message": "Недостаточно средств!"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         items = []
-        
+
         for _ in range(count):
             item = case.open_case(request.user)
             items.append(item)

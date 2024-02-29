@@ -187,24 +187,25 @@ class Item(models.Model):
         verbose_name="Количество кристаллов", null=True, default=0
     )
 
-    #purchase_price = models.FloatField(
+    # purchase_price = models.FloatField(
     #    verbose_name="Закупочная цена", default=0, null=False
-    #)
+    # )
 
-    #purchase_price_rub = models.FloatField(
+    # purchase_price_rub = models.FloatField(
     #    verbose_name="Закупочная цена в рублях", default=0, null=False
-    #)
+    # )
 
     @property
     def purchase_price_rub(self):
         from gateways.economia_api import get_currency
+
         currency = float(get_currency()["USDRUB"]["high"])
         return round(self.purchase_price * currency, 2)
-    
+
     @cached_property
     def purchase_price(self):
         from payments.models import CompositeItems
-        
+
         price = 0.0
 
         composites = CompositeItems.objects.all()
@@ -414,7 +415,11 @@ class Case(models.Model):
             "item_id", "name", "price", "image", "rarity_category"
         )
         # считаем коэффициент для айтемов todo запретить предметам без закупочной цены попадать в кейсы
-        items_kfs = {item["item_id"]: 1 / Item.objects.filter(item_id=item["item_id"]).get().purchase_price for item in items}
+        items_kfs = {
+            item["item_id"]: 1
+            / Item.objects.filter(item_id=item["item_id"]).get().purchase_price
+            for item in items
+        }
         # из полученных коэффициентов выше считаем нормализацию
         normalise_kof = 1 / sum([items_kfs[item] for item in items_kfs])
 
@@ -429,7 +434,7 @@ class Case(models.Model):
 
         generic = GenericSettings.load()
         items = self.items.all()
-        #if items.filter(purchase_price=0).exists():
+        # if items.filter(purchase_price=0).exists():
         #    items = items.exclude(purchase_price=0)
         if items.count() == 0:
             return 0
@@ -443,7 +448,7 @@ class Case(models.Model):
 
     def _get_rand_item(self, user: User):
         items = self.items.all()
-        #if items.filter(purchase_price=0).exists():
+        # if items.filter(purchase_price=0).exists():
         #    items = items.exclude(purchase_price=0)
         # считаем коэффициент для айтемов и берём цену для дальнейших вычислений
         items_kfs = {
