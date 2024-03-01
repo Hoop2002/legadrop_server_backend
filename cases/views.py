@@ -90,6 +90,11 @@ class CasesViewSet(GenericViewSet):
         methods=["post"],
     )
     def open_case(self, request, count: int = 1, *args, **kwargs):
+        if count > 10:
+            return Response(
+                {"message": "Ошибка, количество открытий не может быть больше 10!"},
+                status=400,
+            )
 
         if count <= 0:
             return Response(

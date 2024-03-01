@@ -45,11 +45,11 @@ class PaymentOrder(models.Model):
     type_payments = models.CharField(max_length=64, choices=PAYMENT_TYPES_CHOICES)
 
     lava_id = models.CharField(max_length=256, null=True)
-    lava_link = models.CharField(max_length=512, null=True)
+    location = models.CharField(max_length=512, null=True)
     lava_expired = models.DateTimeField(null=True)
     project_lava = models.CharField(max_length=256, null=True)
     project_lava_name = models.CharField(max_length=64, null=True)
-    include_service_lava = models.CharField(max_length=128, null=True)
+    include_service = models.CharField(max_length=128, null=True)
 
     user = models.ForeignKey(
         verbose_name="Пользователь",

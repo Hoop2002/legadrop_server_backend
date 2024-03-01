@@ -381,3 +381,21 @@ class UserRefOutputViewSet(ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             ref_output = serializer.save()
             return Response(UserRefOutputSerializer(ref_output).data)
+
+
+@extend_schema(tags=["freekassa"])
+class AdminFreekassaNotifyViewSet(GenericViewSet):
+    http_method_names = ["post"]
+    permission_classes = [AllowAny]
+
+    def notification(self, request, *args, **kwargs):
+        data = request.data
+        data_dict = {key: value[0] for key, value in data.items()}
+        order = PaymentOrder.objects.filter(
+            order_id=data_dict["MERCHANT_ORDER_ID"]
+        ).get()
+
+        order.active = True
+        order.status = PaymentOrder.SUCCESS
+
+        return Response({"message": "OK"})

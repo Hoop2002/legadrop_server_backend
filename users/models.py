@@ -55,7 +55,7 @@ class UserProfile(models.Model):
         )["balance__sum"]
         if balance is None:
             return 0
-        return balance
+        return round(balance, 2)
 
     @cached_property
     def total_income(self) -> float:

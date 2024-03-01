@@ -347,6 +347,8 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             "partner_percent",
             "partner_income",
             "total_income",
+            "total_withdrawal",
+            "available_withdrawal",
             "balance",
             "winrate",
             "all_debit",

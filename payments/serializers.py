@@ -29,8 +29,8 @@ class UserPaymentOrderSerializer(serializers.ModelSerializer):
             "email",
             "type_payments",
             "sum",
-            "include_service_lava",
-            "lava_link",
+            "include_service",
+            "location",
             "status",
             "created_at",
             "active",
@@ -43,6 +43,11 @@ class UserPaymentOrderSerializer(serializers.ModelSerializer):
         manager = PaymentManager()
         if data["type_payments"] == "lava":
             order = manager._create_lava_payment_order(data)
+        if data["type_payments"] == "freekassa":
+            req = self.context["request"]
+            order = manager._create_freekassa_payment_order(request=req, vals=data)
+        if data["type_payments"] == "yookassa":
+            raise serializers.ValidationError("Недоступный тип оплаты")
         return order
 
 

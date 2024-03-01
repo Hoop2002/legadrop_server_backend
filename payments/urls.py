@@ -1,6 +1,7 @@
 from django.urls import path
 from payments import views
 from rest_framework import routers
+from django.conf import settings
 
 router = routers.DefaultRouter()
 
@@ -50,6 +51,10 @@ router.register(
 )
 
 urlpatterns = [
+    path(
+        f"{settings.FREEKASSA_NOTIFY_PREFIX}/freekassa/notification",
+        views.AdminFreekassaNotifyViewSet.as_view({"post": "notification"}),
+    ),
     path(
         "ref/<str:code_data>",
         views.RefLinksViewSet.as_view({"get": "ref_link"}),
