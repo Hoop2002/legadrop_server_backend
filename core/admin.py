@@ -28,5 +28,16 @@ class GenericSettingsAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        ("Базовые настройки", {"fields": ("domain_url", "redirect_domain")}),
+        (
+            "Базовые настройки",
+            {
+                "fields": (
+                    "domain_url",
+                    "redirect_domain",
+                    "notify_domain",
+                    "free_kassa_success_url",
+                    "free_kassa_failure_url",
+                )
+            },
+        ),
     )

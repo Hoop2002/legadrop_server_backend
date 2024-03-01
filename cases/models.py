@@ -195,16 +195,10 @@ class Item(models.Model):
     #    verbose_name="Закупочная цена в рублях", default=0, null=False
     # )
 
-    @property
-    def purchase_price_rub(self):
-        from gateways.economia_api import get_currency
-
-        currency = float(get_currency()["USDRUB"]["high"])
-        return round(self.purchase_price * currency, 2)
-
     @cached_property
     def purchase_price(self):
         from payments.models import CompositeItems
+        from gateways.economia_api import get_currency
 
         price = 0.0
 
@@ -236,7 +230,8 @@ class Item(models.Model):
         if price == 0.0:
             price += 0.1
 
-        return round(price, 2)
+        currency = float(get_currency()["USDRUB"]["high"])
+        return round(price * currency, 2)
 
     is_output = models.BooleanField(
         verbose_name="Выводимый предмет с сервиса", null=False, default=True

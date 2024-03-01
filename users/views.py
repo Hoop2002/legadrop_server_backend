@@ -374,6 +374,7 @@ class AdminUsersViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     http_method_names = ["post", "get", "put"]
     lookup_field = "user_id"
+    ordering_fields = ["user_id"]
 
     def get_serializer_class(self):
         if self.action == "list":

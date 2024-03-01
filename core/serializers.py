@@ -38,4 +38,7 @@ class AdminGenericSettingsSerializer(serializers.ModelSerializer):
             "base_upgrade_percent",
             "minimal_price_upgrade",
             "base_upper_ratio",
+            "notify_domain",
+            "free_kassa_success_url",
+            "free_kassa_failure_url",
         )

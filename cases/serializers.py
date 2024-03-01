@@ -64,8 +64,24 @@ class ItemListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Item
-        fields = ("item_id", "name", "price", "image", "rarity_category")
-        read_only_fields = ("item_id", "name", "price", "image", "rarity_category")
+        fields = (
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "rarity_category",
+            "type",
+            "created_at",
+        )
+        read_only_fields = (
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "rarity_category",
+            "type",
+            "created_at",
+        )
 
 
 class UserItemSerializer(serializers.ModelSerializer):
@@ -98,7 +114,6 @@ class UserItemSerializer(serializers.ModelSerializer):
 class ItemsAdminSerializer(serializers.ModelSerializer):
     price = serializers.FloatField(required=True)
     purchase_price = serializers.FloatField(read_only=True)
-    purchase_price_rub = serializers.FloatField(read_only=True)
     image = Base64ImageField(
         required=False, max_length=None, use_url=True, allow_null=True
     )
@@ -126,7 +141,6 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
             "service",
             "is_output",
             "purchase_price",
-            "purchase_price_rub",
             "sale_price",
             "percent_price",
             "sale",
