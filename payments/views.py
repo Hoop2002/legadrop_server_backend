@@ -390,9 +390,7 @@ class AdminFreekassaNotifyViewSet(GenericViewSet):
 
     def notification(self, request, *args, **kwargs):
         data = request.data
-        order = PaymentOrder.objects.filter(
-            order_id=data["MERCHANT_ORDER_ID"]
-        ).first()
+        order = PaymentOrder.objects.filter(order_id=data["MERCHANT_ORDER_ID"]).first()
         order.active = True
         order.status = PaymentOrder.SUCCESS
         order.save()

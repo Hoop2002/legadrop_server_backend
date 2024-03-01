@@ -438,3 +438,7 @@ class AdminUserPaymentHistoryViewSet(GenericViewSet):
         paginated = self.paginate_queryset(queryset)
         serializer = self.get_serializer(paginated, many=True)
         return self.get_paginated_response(serializer.data)
+
+
+# @extend_schema(tags=[""])
+# class UserVerificationViewSet()
