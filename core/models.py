@@ -43,6 +43,17 @@ class GenericSettings(models.Model):
         default="https://legadrop.org",
     )
 
+    email_verify_url_redirect = models.CharField(
+        "Домен для переадресации после подтверждения email",
+        max_length=256,
+        default="https://legadrop.org",
+    )
+    email_verify_url = models.CharField(
+        "Домен для подтверждения",
+        max_length=256,
+        default="https://legadrop.org/verifyed/",
+    )
+
     default_mark_up_case = models.FloatField(
         verbose_name="Дефолтная наценка на кейсы",
         default=0.1,

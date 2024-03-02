@@ -41,4 +41,6 @@ class AdminGenericSettingsSerializer(serializers.ModelSerializer):
             "notify_domain",
             "free_kassa_success_url",
             "free_kassa_failure_url",
+            "email_verify_url_redirect",
+            "email_verify_url",
         )

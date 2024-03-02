@@ -4,7 +4,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
 from core.models import GenericSettings
-from users.models import UserProfile, UserItems
+from users.models import UserProfile, UserItems, UserVerify
 from payments.models import PaymentOrder, Calc, RefLinks
 from cases.models import Item
 
@@ -413,3 +413,11 @@ class AdminUserPaymentHistorySerializer(serializers.ModelSerializer):
 class SuccessSignUpSerializer(serializers.Serializer):
     next = serializers.CharField()
     token = serializers.CharField()
+
+class AdminUserVerifySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserVerify
+        fields = "__all__"
+
+class UserVerifycationSerializer(serializers.Serializer):
+    email = serializers.EmailField()
