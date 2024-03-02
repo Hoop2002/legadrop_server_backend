@@ -13,7 +13,7 @@ from drf_spectacular.utils import extend_schema
 
 from rest_framework.response import Response
 
-from users.models import UserProfile, UserItems, UserUpgradeHistory
+from users.models import UserProfile, UserItems, UserUpgradeHistory, UserVerify
 from core.models import GenericSettings
 from cases.models import Item
 from cases.serializers import ItemListSerializer
@@ -32,11 +32,14 @@ from users.serializers import (
     SuccessSignUpSerializer,
     UpgradeItemSerializer,
     MinimalValuesSerializer,
+    UserVerifycationSerializer
 )
 from payments.models import PaymentOrder, RefLinks
 
 from gateways.enka import get_genshin_account
-
+from legaemail.models import SendMail
+import uuid
+import re
 
 @extend_schema(tags=["main"])
 class AuthViewSet(GenericViewSet):
@@ -440,5 +443,70 @@ class AdminUserPaymentHistoryViewSet(GenericViewSet):
         return self.get_paginated_response(serializer.data)
 
 
-# @extend_schema(tags=[""])
-# class UserVerificationViewSet()
+@extend_schema(tags=["verify"])
+class UserVerificationViewSet(ModelViewSet):
+    http_method_names = ["post", "get"]
+    serializer_class = UserVerifycationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def verify(self, request, *args, **kwargs):
+        if request.user.profile.verified:
+            return Response({"message": "Вы уже верефицированный пользователь!"}, status=400)
+
+
+        from datetime import timedelta
+        from django.utils import timezone
+        serializer = self.get_serializer(request.data)
+        data = serializer.data
+        
+        pattern0 = re.compile(r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$')
+        if not pattern0.match(data['email']):
+            return Response({"message": "Некорректный email"}, status=400)
+        
+        verify_check = UserVerify.objects.filter(email=data["email"], active=True)
+
+        if verify_check:
+            return Response({"message": f"Уже существует заявка на верификацию, проверьте почту {data['email']}"}, status=400)
+        
+        verify = UserVerify.objects.create(
+            email=data['email'],
+            access_token=str(uuid.uuid4()),
+            active=True,
+            to_date=timezone.localtime() + timedelta(minutes=15),
+            user=request.user
+        )
+
+        generic = GenericSettings.objects.first()
+
+        domain = generic.email_verify_url + verify.access_token
+
+        email = SendMail.objects.create(
+            to_email=data["email"],
+            type=SendMail.VERIFY,
+            text=f"""Здравствуйте! \n Чтобы подтвердить ваш аккаунт перейдите по ссылке {domain}"""
+        )
+ 
+        return Response({"message": f"Заявка создана, проверьте почту {verify.email}"}, status=200)
+
+    def verify_user(self, request, access_token: str, *args, **kwargs):
+        verify = UserVerify.objects.filter(access_token=access_token, active=True)
+        
+        if not verify:
+            return Response({"message": "Некорректный access token"}, status=400)
+        
+        verify = verify.get()
+        
+        if verify.user == request.user:
+            user = request.user
+            user.profile.verified = True
+            user.email = verify.email
+
+            user.profile.save()
+            user.save()
+
+            verify.active = False
+            verify.save()
+
+            return Response({"message": "Поздравляем! Вы верефицированный пользователь"}, status=200)
+        else: 
+            return Response({"message": "Некорректный access token"}, status=400) 

@@ -39,6 +39,10 @@ class UserProfile(models.Model):
         verbose_name="Разрешение на вывод", default=True
     )
 
+    def verify(self):
+        self.verified = True
+        self.save()
+
     @cached_property
     def winrate(self) -> float:
         win = self.user.opened_cases.filter(win=True).count()
@@ -357,3 +361,25 @@ class ContestsWinners(models.Model):
     class Meta:
         verbose_name = "Победитель конкурса"
         verbose_name_plural = "Победители конкурсов"
+
+
+class UserVerify(models.Model):
+    user = models.ForeignKey(
+        verbose_name="Верификация",
+        to=User,
+        on_delete=models.PROTECT,
+        related_name="user_verifys",
+    )
+
+    access_token = models.CharField(verbose_name="Токен", max_length=256)
+    email = models.CharField(verbose_name="Имэйл", max_length=256)
+    
+    active = models.BooleanField(verbose_name="Активно", default=True)
+    to_date = models.DateTimeField(verbose_name="Действует до", blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Верификация пользователя"
+        verbose_name_plural = "Верификации пользователей"
