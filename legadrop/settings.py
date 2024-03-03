@@ -218,11 +218,10 @@ GATEWAYS_SETTINGS = {
 BASE_URL = env("BASE_URL_APP")
 BACK_URL_LAVA = env("BACK_URL_LAVA")
 
-import ssl
 
 # email settings
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.yandex.ru"  # env("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_HOST_USER = (
     "rgvr2017@yandex.ru"  # env("EMAIL_HOST_USER", default="test@gmail.com")
 )
