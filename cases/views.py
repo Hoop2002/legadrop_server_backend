@@ -23,7 +23,7 @@ from cases.serializers import (
 )
 from cases.models import Case, Item, RarityCategory, ConditionCase, Contests, Category
 from utils.serializers import SuccessSerializer
-
+from utils.functions.write_redis_items import write_items_in_redis
 
 @extend_schema(tags=["contests"])
 class ContestsViewSet(ModelViewSet):
@@ -114,12 +114,17 @@ class CasesViewSet(GenericViewSet):
             )
 
         items = []
+        r_items = []
 
         for _ in range(count):
-            item = case.open_case(request.user)
+            item, user_item = case.open_case(request.user)
             items.append(item)
+            r_items.append((item, user_item))
 
         serializer = self.get_serializer(items, many=True)
+
+        write_items_in_redis(request.user, r_items)
+        
         return Response(serializer.data)
 
 
@@ -281,7 +286,8 @@ class ShopItemsViewSet(ModelViewSet):
         user = self.request.user
         serializer = self.get_serializer(data={"item": item.id, "user": user.id})
         if serializer.is_valid(raise_exception=True):
-            serializer.save()
+            user_item = serializer.save()
+            write_items_in_redis(user=user, items=[(item, user_item)])
             return Response(ItemListSerializer(item).data)
 
 

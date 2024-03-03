@@ -498,8 +498,9 @@ class Case(models.Model):
                 user=user,
                 comment=f"Открытие кейса {self.name}",
             )
-        UserItems.objects.create(user=user, item=item, from_case=True, case=self)
-        return item
+        user_item = UserItems.objects.create(user=user, item=item, from_case=True, case=self)
+
+        return item, user_item
 
     def __str__(self):
         return self.name

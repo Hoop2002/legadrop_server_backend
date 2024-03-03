@@ -3,6 +3,6 @@ from users.consumers import OnlineUsersConsumer
 from cases.consumers import LiveTapeConsumer
 
 websocket_urlpatterns = [
-    path("ws/online/", OnlineUsersConsumer.as_asgi()),
-    path("ws/live-tape", LiveTapeConsumer.as_asgi()),
+    path("ws/online", OnlineUsersConsumer.as_asgi()),
+    path("ws/live", LiveTapeConsumer.as_asgi()),
 ]

@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
-
+from django.http import HttpResponse
 from rest_framework.response import Response
 
 from users.models import UserProfile, UserItems, UserUpgradeHistory, UserVerify
@@ -140,7 +140,15 @@ class AuthViewSet(GenericViewSet):
         if not ref:
             return None
         return ref.first()
-
+    
+    @extend_schema(request=None, responses={301: None})
+    def sign_up_telegram(self, request, *args, **kwargs):
+        print(request.data)
+        print(request.COOKIES)
+        print(args)
+        print(kwargs)
+        return Response()
+    
 
 @extend_schema(tags=["user"])
 class UserProfileViewSet(ModelViewSet):
