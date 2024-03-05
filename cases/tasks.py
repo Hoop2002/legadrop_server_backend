@@ -8,6 +8,7 @@ import redis
 import time
 import json
 
+
 @shared_task
 def get_winner_contest():
     """Таска должна бежать рвз в 10 секунд"""
@@ -34,13 +35,12 @@ def get_winner_contest():
         contest.set_new_award()
         contest.set_next_start(force=True)
 
+
 @shared_task
 def clear_live_tape():
-    list_key = 'live_tape'
+    list_key = "live_tape"
     expire_time = 24 * 60 * 60
     current_time = time.time()
-    
-    
 
     r = redis.from_url(settings.REDIS_CONNECTION_STRING)
 
@@ -51,7 +51,6 @@ def clear_live_tape():
 
     for i in items:
         i_dict = json.loads(i.decode("utf-8"))
-        element_timestamp = float(i_dict['timestamp'])
+        element_timestamp = float(i_dict["timestamp"])
         if current_time - element_timestamp > expire_time:
             r.lrem(list_key, 0, i)
-    

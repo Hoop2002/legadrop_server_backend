@@ -1,5 +1,6 @@
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 from colorfield.fields import ColorField
 from django.contrib.auth.models import User
@@ -12,6 +13,11 @@ from utils.functions import (
     transliterate,
     find_combination,
 )
+
+from social_django.models import UserSocialAuth
+
+import requests
+import json
 
 
 class Contests(models.Model):
@@ -287,10 +293,13 @@ class Category(models.Model):
 class ConditionCase(models.Model):
     CALC = "calc"
     TIME = "time"
+    GROUP_SUBSCRIBE_VK = "group_vk"
     CONDITION_TYPES_CHOICES = (
         (CALC, "Начисление"),
         (TIME, "Время"),
+        (GROUP_SUBSCRIBE_VK, "Подписка на группу VK"),
     )
+
     name = models.CharField(max_length=256, unique=True)
     description = models.TextField(
         verbose_name="Описание для пользователя", blank=True, null=True
@@ -302,6 +311,12 @@ class ConditionCase(models.Model):
     price = models.FloatField(verbose_name="Сумма внесения", null=True, blank=True)
     time = models.TimeField(verbose_name="Глубина проверки", null=True, blank=True)
     time_reboot = models.TimeField(verbose_name="Снова открыть кейс через")
+
+    group_id_vk = models.CharField(
+        verbose_name="ID группы 'vk.com' формат club########",
+        max_length=1024,
+        null=True,
+    )
 
     def __str__(self):
         return self.name
@@ -386,6 +401,32 @@ class Case(models.Model):
                         f"До следующего открытия этого кейса {timedelta_reboot - (now - opened.last().open_date)}",
                         False,
                     )
+
+                if condition.type_condition == ConditionCase.GROUP_SUBSCRIBE_VK:
+                    auth_vk = UserSocialAuth.objects.filter(
+                        user=user, provider="vk-oauth2"
+                    ).first()
+                    if not auth_vk:
+                        return (
+                            "Для открытия этого кейса вам необходимо привязать страницу vk.com",
+                            False,
+                        )
+
+                    vk_user_id = auth_vk.extra_data["id"]
+
+                    response = requests.get(
+                        f"https://api.vk.com/method/groups.getMembers?group_id={condition.group_id_vk}&access_token={settings.VK_APP_ACCESS_TOKEN}&v=5.131"
+                    )
+
+                    users_in_group = json.loads(response.content.decode("utf-8"))[
+                        "response"
+                    ]["items"]
+
+                    if not vk_user_id in users_in_group:
+                        return (
+                            "Для открытия этого кейса вам необходимо подписаться на все указанные группы vk.com",
+                            False,
+                        )
 
                 if condition.type_condition == ConditionCase.CALC:
                     amount = (
@@ -498,7 +539,9 @@ class Case(models.Model):
                 user=user,
                 comment=f"Открытие кейса {self.name}",
             )
-        user_item = UserItems.objects.create(user=user, item=item, from_case=True, case=self)
+        user_item = UserItems.objects.create(
+            user=user, item=item, from_case=True, case=self
+        )
 
         return item, user_item
 

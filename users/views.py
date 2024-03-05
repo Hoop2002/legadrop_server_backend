@@ -32,7 +32,7 @@ from users.serializers import (
     SuccessSignUpSerializer,
     UpgradeItemSerializer,
     MinimalValuesSerializer,
-    UserVerifycationSerializer
+    UserVerifycationSerializer,
 )
 from payments.models import PaymentOrder, RefLinks
 
@@ -40,6 +40,7 @@ from gateways.enka import get_genshin_account
 from legaemail.models import SendMail
 import uuid
 import re
+
 
 @extend_schema(tags=["main"])
 class AuthViewSet(GenericViewSet):
@@ -140,7 +141,7 @@ class AuthViewSet(GenericViewSet):
         if not ref:
             return None
         return ref.first()
-    
+
     @extend_schema(request=None, responses={301: None})
     def sign_up_telegram(self, request, *args, **kwargs):
         print(request.data)
@@ -148,7 +149,7 @@ class AuthViewSet(GenericViewSet):
         print(args)
         print(kwargs)
         return Response()
-    
+
 
 @extend_schema(tags=["user"])
 class UserProfileViewSet(ModelViewSet):
@@ -459,29 +460,36 @@ class UserVerificationViewSet(ModelViewSet):
 
     def verify(self, request, *args, **kwargs):
         if request.user.profile.verified:
-            return Response({"message": "Вы уже верефицированный пользователь!"}, status=400)
-
+            return Response(
+                {"message": "Вы уже верефицированный пользователь!"}, status=400
+            )
 
         from datetime import timedelta
         from django.utils import timezone
+
         serializer = self.get_serializer(request.data)
         data = serializer.data
-        
-        pattern0 = re.compile(r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$')
-        if not pattern0.match(data['email']):
+
+        pattern0 = re.compile(r"^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$")
+        if not pattern0.match(data["email"]):
             return Response({"message": "Некорректный email"}, status=400)
-        
+
         verify_check = UserVerify.objects.filter(email=data["email"], active=True)
 
         if verify_check:
-            return Response({"message": f"Уже существует заявка на верификацию, проверьте почту {data['email']}"}, status=400)
-        
+            return Response(
+                {
+                    "message": f"Уже существует заявка на верификацию, проверьте почту {data['email']}"
+                },
+                status=400,
+            )
+
         verify = UserVerify.objects.create(
-            email=data['email'],
+            email=data["email"],
             access_token=str(uuid.uuid4()),
             active=True,
             to_date=timezone.localtime() + timedelta(minutes=15),
-            user=request.user
+            user=request.user,
         )
 
         generic = GenericSettings.objects.first()
@@ -491,19 +499,21 @@ class UserVerificationViewSet(ModelViewSet):
         email = SendMail.objects.create(
             to_email=data["email"],
             type=SendMail.VERIFY,
-            text=f"""Здравствуйте! \n Чтобы подтвердить ваш аккаунт перейдите по ссылке {domain}"""
+            text=f"""Здравствуйте! \n Чтобы подтвердить ваш аккаунт перейдите по ссылке {domain}""",
         )
- 
-        return Response({"message": f"Заявка создана, проверьте почту {verify.email}"}, status=200)
+
+        return Response(
+            {"message": f"Заявка создана, проверьте почту {verify.email}"}, status=200
+        )
 
     def verify_user(self, request, access_token: str, *args, **kwargs):
         verify = UserVerify.objects.filter(access_token=access_token, active=True)
-        
+
         if not verify:
             return Response({"message": "Некорректный access token"}, status=400)
-        
+
         verify = verify.get()
-        
+
         if verify.user == request.user:
             user = request.user
             user.profile.verified = True
@@ -515,6 +525,8 @@ class UserVerificationViewSet(ModelViewSet):
             verify.active = False
             verify.save()
 
-            return Response({"message": "Поздравляем! Вы верефицированный пользователь"}, status=200)
-        else: 
-            return Response({"message": "Некорректный access token"}, status=400) 
+            return Response(
+                {"message": "Поздравляем! Вы верефицированный пользователь"}, status=200
+            )
+        else:
+            return Response({"message": "Некорректный access token"}, status=400)

@@ -40,6 +40,7 @@ class ConditionSerializer(serializers.ModelSerializer):
             "price",
             "time",
             "time_reboot",
+            "group_id_vk",
         )
         read_only_fields = ("condition_id",)
 
