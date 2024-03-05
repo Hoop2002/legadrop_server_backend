@@ -415,14 +415,14 @@ class Case(models.Model):
                     vk_user_id = auth_vk.extra_data["id"]
 
                     response = requests.get(
-                        f"https://api.vk.com/method/groups.getMembers?group_id={condition.group_id_vk}&access_token={settings.VK_APP_ACCESS_TOKEN}&v=5.131"
+                        f"https://api.vk.com/method/groups.isMember?group_id={condition.group_id_vk}&access_token={settings.VK_APP_ACCESS_TOKEN}&user_id={vk_user_id}&v=5.199"
                     )
 
-                    users_in_group = json.loads(response.content.decode("utf-8"))[
-                        "response"
-                    ]["items"]
+                    user_in_group = int(
+                        json.loads(response.content.decode("utf-8"))["response"]
+                    )
 
-                    if not vk_user_id in users_in_group:
+                    if user_in_group == 0:
                         return (
                             "Для открытия этого кейса вам необходимо подписаться на все указанные группы vk.com",
                             False,
