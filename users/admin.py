@@ -8,7 +8,7 @@ from users.models import (
     ActivatedLinks,
     ContestsWinners,
     UserUpgradeHistory,
-    UserVerify
+    UserVerify,
 )
 from django.utils.safestring import mark_safe
 from django.urls import reverse
@@ -16,6 +16,7 @@ from django.urls import reverse
 
 admin.site.unregister(User)
 admin.site.register(UserVerify)
+
 
 @admin.register(UserUpgradeHistory)
 class UserUpgradeHistoryAdmin(admin.ModelAdmin):

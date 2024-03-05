@@ -25,6 +25,7 @@ from cases.models import Case, Item, RarityCategory, ConditionCase, Contests, Ca
 from utils.serializers import SuccessSerializer
 from utils.functions.write_redis_items import write_items_in_redis
 
+
 @extend_schema(tags=["contests"])
 class ContestsViewSet(ModelViewSet):
     queryset = Contests.objects.filter(active=True, removed=False)
@@ -124,7 +125,7 @@ class CasesViewSet(GenericViewSet):
         serializer = self.get_serializer(items, many=True)
 
         write_items_in_redis(request.user, r_items)
-        
+
         return Response(serializer.data)
 
 

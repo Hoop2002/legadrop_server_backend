@@ -7,12 +7,24 @@ router = routers.DefaultRouter()
 router.register(r"upgrade", views.UpgradeItem, basename="users_upgrade")
 
 urlpatterns = [
-    path("verifyed/", views.UserVerificationViewSet.as_view({"post": "verify"}), name="verify"),
-    path("verifyed/<str:access_token>", views.UserVerificationViewSet.as_view({"get": "verify_user"}), name="verify"),
+    path(
+        "verifyed/",
+        views.UserVerificationViewSet.as_view({"post": "verify"}),
+        name="verify",
+    ),
+    path(
+        "verifyed/<str:access_token>",
+        views.UserVerificationViewSet.as_view({"get": "verify_user"}),
+        name="verify",
+    ),
     path(
         "get_token", views.AuthViewSet.as_view({"get": "get_token"}), name="get_token"
     ),
-    path("sign_in/tg", views.AuthViewSet.as_view({"post": "sign_up_telegram"}), name="sign_in"),
+    path(
+        "sign_in/tg",
+        views.AuthViewSet.as_view({"post": "sign_up_telegram"}),
+        name="sign_in",
+    ),
     path("sign_in", views.AuthViewSet.as_view({"post": "sign_in"}), name="sign_in"),
     path("sign_up", views.AuthViewSet.as_view({"post": "sign_up"}), name="sign_up"),
     path(

@@ -414,10 +414,12 @@ class SuccessSignUpSerializer(serializers.Serializer):
     next = serializers.CharField()
     token = serializers.CharField()
 
+
 class AdminUserVerifySerializer(serializers.ModelSerializer):
     class Meta:
         model = UserVerify
         fields = "__all__"
+
 
 class UserVerifycationSerializer(serializers.Serializer):
     email = serializers.EmailField()

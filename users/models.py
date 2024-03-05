@@ -373,10 +373,10 @@ class UserVerify(models.Model):
 
     access_token = models.CharField(verbose_name="Токен", max_length=256)
     email = models.CharField(verbose_name="Имэйл", max_length=256)
-    
+
     active = models.BooleanField(verbose_name="Активно", default=True)
     to_date = models.DateTimeField(verbose_name="Действует до", blank=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
