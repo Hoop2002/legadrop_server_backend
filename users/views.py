@@ -12,7 +12,8 @@ from rest_framework import status
 from drf_spectacular.utils import extend_schema
 from django.http import HttpResponse
 from rest_framework.response import Response
-
+from django.conf import settings
+from django.contrib.auth.models import User
 from users.models import UserProfile, UserItems, UserUpgradeHistory, UserVerify
 from core.models import GenericSettings
 from cases.models import Item
@@ -35,17 +36,22 @@ from users.serializers import (
     UserVerifycationSerializer,
 )
 from payments.models import PaymentOrder, RefLinks
-
 from gateways.enka import get_genshin_account
 from legaemail.models import SendMail
+from utils.functions.sort_dict import SortDict
 import uuid
 import re
+import hmac
+import hashlib
+import pprint
+
+
 
 
 @extend_schema(tags=["main"])
 class AuthViewSet(GenericViewSet):
     queryset = UserProfile.objects
-
+    
     def get_permissions(self):
         if self.action == "get_token":
             self.permission_classes = [IsAuthenticated]
@@ -142,14 +148,62 @@ class AuthViewSet(GenericViewSet):
             return None
         return ref.first()
 
-    @extend_schema(request=None, responses={301: None})
-    def sign_up_telegram(self, request, *args, **kwargs):
-        print(request.data)
-        print(request.COOKIES)
-        print(args)
-        print(kwargs)
-        return Response()
+    @extend_schema(request=None)
+    def sign_up_in_telegram(self, request, *args, **kwargs):
+        
+        data = request.data
 
+        if not data.get("hash", False):
+            return Response({"message": "Некорректные данные"}, status=400)
+        else:
+            hash_req = data.pop("hash")
+        
+
+        sort_data = SortDict(data=data)
+        message = "\n".join([f"{key}={value}" for key, value in sort_data.items()])
+        
+        hash_key = hashlib.sha256(settings.TELEGRAM_BOT_TOKEN.encode()).digest()
+        check_hash = hmac.new(key=hash_key, msg=message.encode(), digestmod=hashlib.sha256).hexdigest()
+       
+        
+        if hash_req == check_hash:
+            user = request.user
+            exist_user = UserProfile.objects.filter(telegram_id=data['id']).first()
+
+            if exist_user and not user.is_authenticated:
+                next_url = request.build_absolute_uri(reverse("shopitems_list"))
+                token = AccessToken.for_user(exist_user.user)
+                request.session.clear()
+                return Response({"next": next_url,"token": str(token)}, status=200)
+
+            if user.is_authenticated:
+                if not user.profile.telegram_id:
+                    user.profile.telegram_id = int(data['id'])
+                    if not user.first_name:
+                        user.first_name = str(data['first_name'])
+                    user.save()
+                    user.profile.save()
+
+                    return Response({"message": "Аккаунт успешно привязан."}, status=200)
+                else:
+                    return Response({"message": f"Аккаунт {data['username']} уже привязан."})
+
+            if not user.is_authenticated and not exist_user:
+                next_url = request.build_absolute_uri(reverse("shopitems_list"))
+                user_cr = User.objects.create_user(username=data["username"], first_name=data.get('first_name', ""))
+                user_cr.profile.telegram_id = int(data['id'])
+                user_cr.profile.save()
+
+                token = AccessToken.for_user(user_cr)
+
+                request.session.clear()
+                return Response({"next": next_url,"token": str(token)}, status=200)
+
+
+        else:
+            return Response({"message": "Некорректные данные"}, status=400)
+
+        return Response({"message": "Вы уже авторизованы"}, status=400)
 
 @extend_schema(tags=["user"])
 class UserProfileViewSet(ModelViewSet):

@@ -39,6 +39,8 @@ class UserProfile(models.Model):
         verbose_name="Разрешение на вывод", default=True
     )
 
+    telegram_id = models.BigIntegerField(null=True, blank=True)
+    
     def verify(self):
         self.verified = True
         self.save()
