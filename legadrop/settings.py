@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "users",
     "payments",
     "legaemail",
+    "django_telegram_login"
 ]
 
 CHANNELS_REDIS_HOST = env.str("REDIS_HOST", "localhost")
@@ -240,6 +241,7 @@ AUTHENTICATION_BACKENDS = (
     "social_core.backends.google.GoogleOAuth2",
     "django.contrib.auth.backends.ModelBackend",
     "social_core.backends.vk.VKOAuth2",
+    "social_core.backends.telegram.TelegramAuth",
 )
 SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.social_auth.social_details",
@@ -294,3 +296,7 @@ FREEKASSA_API_KEY = env("FREEKASSA_API_KEY")
 FREEKASSA_SECRET_KEY_ONE = env("FREEKASSA_SECRET_KEY_ONE")
 FREEKASSA_SECRET_KEY_TWO = env("FREEKASSA_SECRET_KEY_TWO")
 FREEKASSA_SHOP_ID = env("FREEKASSA_SHOP_ID")
+
+TELEGRAM_BOT_NAME = 'legadrop_sign_up'
+TELEGRAM_BOT_TOKEN = '6644848018:AAEbCHYz52eKKxbkqIBqk0QDDl7ySvAD4P8'
+TELEGRAM_LOGIN_REDIRECT_URL = 'https://legadrop.org'

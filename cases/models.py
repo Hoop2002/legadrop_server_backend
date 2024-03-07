@@ -294,10 +294,12 @@ class ConditionCase(models.Model):
     CALC = "calc"
     TIME = "time"
     GROUP_SUBSCRIBE_VK = "group_vk"
+    GROUP_SUBSCRIBE_TG = "group_tg"
     CONDITION_TYPES_CHOICES = (
         (CALC, "Начисление"),
         (TIME, "Время"),
         (GROUP_SUBSCRIBE_VK, "Подписка на группу VK"),
+        (GROUP_SUBSCRIBE_TG, "Подписка на канал Telegram")
     )
 
     name = models.CharField(max_length=256, unique=True)
@@ -316,6 +318,14 @@ class ConditionCase(models.Model):
         verbose_name="ID группы 'vk.com' формат club########",
         max_length=1024,
         null=True,
+        blank=False
+    )
+
+    group_id_tg = models.CharField(
+        verbose_name="ID канала 'telegram.com' формат '-1009999999'",
+        max_length=1024,
+        null=True,
+        blank=False
     )
 
     def __str__(self):

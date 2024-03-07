@@ -20,7 +20,7 @@ class UserProfile(models.Model):
     verified = models.BooleanField(verbose_name="Верифицирован", default=False)
     individual_percent = models.FloatField(
         verbose_name="Индивидуальный процент",
-        default=0,
+        default=1,
         validators=[MinValueValidator(-1)],
     )
     demo = models.BooleanField(verbose_name="Демо пользователь", default=False)
@@ -39,6 +39,8 @@ class UserProfile(models.Model):
         verbose_name="Разрешение на вывод", default=True
     )
 
+    telegram_id = models.BigIntegerField(null=True, blank=True)
+    
     def verify(self):
         self.verified = True
         self.save()
