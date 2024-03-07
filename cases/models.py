@@ -420,17 +420,21 @@ class Case(models.Model):
                         return (
                             "Для открытия этого кейса вам необходимо привязать аккаунт telegram.org",
                             False,
-                        )                        
-                    
+                        )
+
                     generic = GenericSettings.objects.first()
 
-                    is_member = is_member_chanel(chat_id=condition.group_id_tg, user_id=tg_id, token=generic.telegram_verify_bot_token)
+                    is_member = is_member_chanel(
+                        chat_id=condition.group_id_tg,
+                        user_id=tg_id,
+                        token=generic.telegram_verify_bot_token,
+                    )
 
                     if not is_member:
                         return (
                             "Для открытия этого кейса вам необходимо подписаться на все указанные сообщества/каналы telegram.org",
                             False,
-                        )                        
+                        )
 
                 if condition.type_condition == ConditionCase.GROUP_SUBSCRIBE_VK:
                     auth_vk = UserSocialAuth.objects.filter(

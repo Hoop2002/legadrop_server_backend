@@ -39,7 +39,7 @@ class GenericSettingsAdmin(admin.ModelAdmin):
                     "free_kassa_failure_url",
                     "email_verify_url_redirect",
                     "email_verify_url",
-                    "telegram_verify_bot_token"
+                    "telegram_verify_bot_token",
                 )
             },
         ),

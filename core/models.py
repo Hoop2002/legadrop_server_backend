@@ -55,11 +55,8 @@ class GenericSettings(models.Model):
     )
 
     telegram_verify_bot_token = models.CharField(
-        "Токен телеграмм бота для подтверждения подписок",
-        max_length=512, 
-        null=True
+        "Токен телеграмм бота для подтверждения подписок", max_length=512, null=True
     )
-
 
     default_mark_up_case = models.FloatField(
         verbose_name="Дефолтная наценка на кейсы",
@@ -81,7 +78,6 @@ class GenericSettings(models.Model):
         default=1.25,
         validators=[MinValueValidator(1)],
     )
-
 
     def save(self, *args, **kwargs):
         self.pk = 1

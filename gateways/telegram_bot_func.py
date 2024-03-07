@@ -1,5 +1,6 @@
 import telebot
 
+
 def is_member_chanel(chat_id, user_id, token):
     """
     True - подписан
@@ -10,7 +11,11 @@ def is_member_chanel(chat_id, user_id, token):
     result = bot.get_chat_member(chat_id, user_id)
 
     try:
-        if result.status == "member" or result.status == "owner" or result.status == "creator":
+        if (
+            result.status == "member"
+            or result.status == "owner"
+            or result.status == "creator"
+        ):
             return True
         else:
             return False
