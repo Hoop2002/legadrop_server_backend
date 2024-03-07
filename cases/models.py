@@ -5,6 +5,8 @@ from django.utils import timezone
 from colorfield.fields import ColorField
 from django.contrib.auth.models import User
 from django.utils.functional import cached_property
+from gateways.telegram_bot_func import is_member_chanel
+from core.models import GenericSettings
 from random import choices
 
 from utils.functions import (
@@ -299,7 +301,7 @@ class ConditionCase(models.Model):
         (CALC, "Начисление"),
         (TIME, "Время"),
         (GROUP_SUBSCRIBE_VK, "Подписка на группу VK"),
-        (GROUP_SUBSCRIBE_TG, "Подписка на канал Telegram")
+        (GROUP_SUBSCRIBE_TG, "Подписка на канал Telegram"),
     )
 
     name = models.CharField(max_length=256, unique=True)
@@ -318,14 +320,14 @@ class ConditionCase(models.Model):
         verbose_name="ID группы 'vk.com' формат club########",
         max_length=1024,
         null=True,
-        blank=False
+        blank=False,
     )
 
     group_id_tg = models.CharField(
         verbose_name="ID канала 'telegram.com' формат '-1009999999'",
         max_length=1024,
         null=True,
-        blank=False
+        blank=False,
     )
 
     def __str__(self):
@@ -411,6 +413,28 @@ class Case(models.Model):
                         f"До следующего открытия этого кейса {timedelta_reboot - (now - opened.last().open_date)}",
                         False,
                     )
+                if condition.type_condition == ConditionCase.GROUP_SUBSCRIBE_TG:
+                    tg_id = user.profile.telegram_id
+
+                    if not tg_id:
+                        return (
+                            "Для открытия этого кейса вам необходимо привязать аккаунт telegram.org",
+                            False,
+                        )
+
+                    generic = GenericSettings.objects.first()
+
+                    is_member = is_member_chanel(
+                        chat_id=condition.group_id_tg,
+                        user_id=tg_id,
+                        token=generic.telegram_verify_bot_token,
+                    )
+
+                    if not is_member:
+                        return (
+                            "Для открытия этого кейса вам необходимо подписаться на все указанные сообщества/каналы telegram.org",
+                            False,
+                        )
 
                 if condition.type_condition == ConditionCase.GROUP_SUBSCRIBE_VK:
                     auth_vk = UserSocialAuth.objects.filter(

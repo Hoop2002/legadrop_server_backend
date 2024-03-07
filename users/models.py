@@ -40,7 +40,7 @@ class UserProfile(models.Model):
     )
 
     telegram_id = models.BigIntegerField(null=True, blank=True)
-    
+
     def verify(self):
         self.verified = True
         self.save()

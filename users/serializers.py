@@ -353,6 +353,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             "winrate",
             "all_debit",
             "all_output",
+            "telegram_id",
         )
 
 
