@@ -52,9 +52,9 @@ class AdminAnalyticsAverageCheck(serializers.Serializer):
     date = serializers.DateField()
 
 
-class AdminAnalyticsCountUser(serializers.Serializer):
-    pass
-
+class AdminAnalyticsCountRegUser(serializers.Serializer):
+    count = serializers.IntegerField()
+    date = serializers.DateField()
 
 class AdminAnalyticsIncomeByCaseType(serializers.Serializer):
     type = serializers.CharField()

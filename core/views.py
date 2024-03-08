@@ -26,6 +26,7 @@ from core.serializers import (
     AdminAnalyticsClearProfit,
     AdminAnalyticsAverageCheck,
     AdminAnalyticsCountOpenCases,
+    AdminAnalyticsCountRegUser
 )
 
 from payments.models import PaymentOrder
@@ -59,6 +60,7 @@ class AdminAnalyticsViewSet(ModelViewSet):
             "graphic_clear_profit": AdminAnalyticsClearProfit,
             "graphic_average_check": AdminAnalyticsAverageCheck,
             "graphic_count_open_cases": AdminAnalyticsCountOpenCases,
+            "graphic_count_reg_users": AdminAnalyticsCountRegUser,
         }
         return serializer[self.action]
 
@@ -332,8 +334,28 @@ class AdminAnalyticsViewSet(ModelViewSet):
     @extend_schema(
         description="Формат даты YYYY-MM-DD. По дефолту будет отдавать данные за неделю"
     )
-    def graphic_count_users(self, request, *args, **kwargs):
-        pass
+    def graphic_count_reg_users(self, request, *args, **kwargs):
+        current_date = datetime.datetime.today()
+        seven_days_ago = current_date - datetime.timedelta(days=7)
+
+        kw_start_date = kwargs.get("start_date", seven_days_ago.strftime("%Y-%m-%d"))
+        kw_end_date = kwargs.get("end_date", current_date.strftime("%Y-%m-%d"))
+
+        start_date = datetime.datetime.strptime(kw_start_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(kw_end_date, "%Y-%m-%d")
+
+        users = User.objects.filter(date_joined__range=[start_date, end_date])
+
+        records = []
+
+        cur_date = start_date
+        while cur_date <= end_date:
+            records.append({"count": users.filter(date_joined__date=cur_date.date()).count(), "date": cur_date.date()})
+            cur_date += datetime.timedelta(days=1)
+
+        serializer = self.get_serializer(records, many=True)
+
+        return Response(serializer.data)               
 
     @extend_schema(
         description="Формат даты YYYY-MM-DD. По дефолту будет отдавать данные за неделю"
