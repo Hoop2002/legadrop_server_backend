@@ -21,9 +21,17 @@ from core.serializers import (
     AdminAnalyticsCommonData,
     FooterSerializer,
     AdminGenericSettingsSerializer,
+    AdminAnalyticsIncome,
+    AdminAnalyticsOutlay,
+    AdminAnalyticsClearProfit,
+    AdminAnalyticsAverageCheck,
+    AdminAnalyticsCountOpenCases,
 )
 
+from payments.models import PaymentOrder
+
 import redis
+import datetime
 
 
 class BaseDateFilter(filters.FilterSet):
@@ -46,6 +54,11 @@ class AdminAnalyticsViewSet(ModelViewSet):
         serializer = {
             "list": AdminAnalyticsSerializer,
             "common_data": AdminAnalyticsCommonData,
+            "graphic_income": AdminAnalyticsIncome,
+            "graphic_outlay": AdminAnalyticsOutlay,
+            "graphic_clear_profit": AdminAnalyticsClearProfit,
+            "graphic_average_check": AdminAnalyticsAverageCheck,
+            "graphic_count_open_cases": AdminAnalyticsCountOpenCases,
         }
         return serializer[self.action]
 
@@ -122,6 +135,219 @@ class AdminAnalyticsViewSet(ModelViewSet):
             }
         )
         return Response(serializer.data)
+
+    ### graphics views ###
+
+    @extend_schema(
+        description="Формат даты YYYY-MM-DD. По дефолту будет отдавать данные за неделю"
+    )
+    def graphic_income(self, request, *args, **kwargs):
+        current_date = datetime.datetime.today()
+        seven_days_ago = current_date - datetime.timedelta(days=7)
+
+        kw_start_date = kwargs.get("start_date", seven_days_ago.strftime("%Y-%m-%d"))
+        kw_end_date = kwargs.get("end_date", current_date.strftime("%Y-%m-%d"))
+
+        start_date = datetime.datetime.strptime(kw_start_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(kw_end_date, "%Y-%m-%d")
+
+        payments = PaymentOrder.objects.filter(
+            created_at__range=(start_date, end_date), status=PaymentOrder.SUCCESS
+        )
+        records = []
+
+        cur_date = start_date
+        while cur_date <= end_date:
+            next_date = cur_date + datetime.timedelta(days=1)
+            income = (
+                payments.filter(created_at__date=cur_date.date()).aggregate(Sum("sum"))[
+                    "sum__sum"
+                ]
+                or 0
+            )
+            records.append({"income": income, "date": cur_date.date()})
+            cur_date = next_date
+
+        serializer = self.get_serializer(records, many=True)
+
+        return Response(serializer.data)
+
+    @extend_schema(
+        description="Формат даты YYYY-MM-DD. По дефолту будет отдавать данные за неделю"
+    )
+    def graphic_outlay(self, request, *args, **kwargs):
+        current_date = datetime.datetime.today()
+        seven_days_ago = current_date - datetime.timedelta(days=7)
+
+        kw_start_date = kwargs.get("start_date", seven_days_ago.strftime("%Y-%m-%d"))
+        kw_end_date = kwargs.get("end_date", current_date.strftime("%Y-%m-%d"))
+
+        start_date = datetime.datetime.strptime(kw_start_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(kw_end_date, "%Y-%m-%d")
+
+        outputs = Output.objects.filter(
+            created_at__range=(start_date, end_date), status=Output.COMPLETED
+        )
+
+        records = []
+        cur_date = start_date
+        while cur_date <= end_date:
+
+            sum_ = 0.0
+            next_date = cur_date + datetime.timedelta(days=1)
+            outlays = outputs.filter(created_at__date=cur_date.date()).all()
+
+            for outlay in outlays:
+                sum_ += outlay.cost_withdrawal_of_items_in_rub
+
+            records.append({"outlay": sum_, "date": cur_date.date()})
+
+            cur_date = next_date
+
+        serializer = self.get_serializer(records, many=True)
+
+        return Response(serializer.data)
+
+    @extend_schema(
+        description="Формат даты YYYY-MM-DD. По дефолту будет отдавать данные за неделю"
+    )
+    def graphic_clear_profit(self, request, *args, **kwargs):
+        current_date = datetime.datetime.today()
+        seven_days_ago = current_date - datetime.timedelta(days=7)
+
+        kw_start_date = kwargs.get("start_date", seven_days_ago.strftime("%Y-%m-%d"))
+        kw_end_date = kwargs.get("end_date", current_date.strftime("%Y-%m-%d"))
+
+        start_date = datetime.datetime.strptime(kw_start_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(kw_end_date, "%Y-%m-%d")
+
+        outputs = Output.objects.filter(
+            created_at__range=(start_date, end_date), status=Output.COMPLETED
+        )
+        payments = PaymentOrder.objects.filter(
+            created_at__range=(start_date, end_date), status=PaymentOrder.SUCCESS
+        )
+
+        records = []
+        cur_date = start_date
+        while cur_date <= end_date:
+            outlay_sum = 0.0
+
+            next_date = cur_date + datetime.timedelta(days=1)
+
+            income = (
+                payments.filter(created_at__date=cur_date.date()).aggregate(Sum("sum"))[
+                    "sum__sum"
+                ]
+                or 0
+            )
+
+            outlays = outputs.filter(created_at__date=cur_date.date()).all()
+
+            for outlay in outlays:
+                outlay_sum += outlay.cost_withdrawal_of_items_in_rub
+
+            if outlay_sum == 0.0:
+                profit = income
+            else:
+                profit = float(income) - outlay_sum
+
+            records.append({"profit": profit, "date": cur_date.date()})
+
+            cur_date = next_date
+
+        serializer = self.get_serializer(records, many=True)
+
+        return Response(serializer.data)
+
+    @extend_schema(
+        description="Формат даты YYYY-MM-DD. По дефолту будет отдавать данные за неделю"
+    )
+    def graphic_count_open_cases(self, request, *args, **kwargs):
+        current_date = datetime.datetime.today()
+        seven_days_ago = current_date - datetime.timedelta(days=7)
+
+        kw_start_date = kwargs.get("start_date", seven_days_ago.strftime("%Y-%m-%d"))
+        kw_end_date = kwargs.get("end_date", current_date.strftime("%Y-%m-%d"))
+
+        start_date = datetime.datetime.strptime(kw_start_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(kw_end_date, "%Y-%m-%d")
+
+        open_cases = OpenedCases.objects.filter(open_date__range=(start_date, end_date))
+
+        records = []
+
+        cur_date = start_date
+        while cur_date <= end_date:
+            records.append(
+                {
+                    "count": open_cases.filter(open_date__date=cur_date.date()).count(),
+                    "date": cur_date.date(),
+                }
+            )
+            cur_date += datetime.timedelta(days=1)
+
+        serializer = self.get_serializer(records, many=True)
+
+        return Response(serializer.data)
+
+    @extend_schema(
+        description="Формат даты YYYY-MM-DD. По дефолту будет отдавать данные за неделю"
+    )
+    def graphic_average_check(self, request, *args, **kwargs):
+        current_date = datetime.datetime.today()
+        seven_days_ago = current_date - datetime.timedelta(days=7)
+
+        kw_start_date = kwargs.get("start_date", seven_days_ago.strftime("%Y-%m-%d"))
+        kw_end_date = kwargs.get("end_date", current_date.strftime("%Y-%m-%d"))
+
+        start_date = datetime.datetime.strptime(kw_start_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(kw_end_date, "%Y-%m-%d")
+
+        payments = PaymentOrder.objects.filter(
+            created_at__range=(start_date, end_date), status=PaymentOrder.SUCCESS
+        )
+        records = []
+
+        cur_date = start_date
+        while cur_date <= end_date:
+            next_date = cur_date + datetime.timedelta(days=1)
+
+            payments_cur_date = payments.filter(created_at__date=cur_date.date())
+
+            income = payments_cur_date.aggregate(Sum("sum"))["sum__sum"] or 0
+
+            if income == 0 or payments_cur_date.count() == 0:
+                check = 0
+            else:
+                check = income / payments_cur_date.count()
+
+            records.append({"check": check, "date": cur_date.date()})
+            cur_date = next_date
+
+        serializer = self.get_serializer(records, many=True)
+
+        return Response(serializer.data)
+
+    @extend_schema(
+        description="Формат даты YYYY-MM-DD. По дефолту будет отдавать данные за неделю"
+    )
+    def graphic_count_users(self, request, *args, **kwargs):
+        pass
+
+    @extend_schema(
+        description="Формат даты YYYY-MM-DD. По дефолту будет отдавать данные за неделю"
+    )
+    def graphic_income_by_case_type(self, request, *args, **kwargs):
+        pass
+
+    ### blocks views ###
+
+    def block_top_ref(self, request, *args, **kwargs):
+        pass
+
+    def block_top_users_deposite(self, request, *args, **kwargs):
+        pass
 
 
 @extend_schema(tags=["footer"])
