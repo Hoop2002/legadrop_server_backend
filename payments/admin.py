@@ -22,12 +22,16 @@ class AdminPaymentOrder(admin.ModelAdmin):
     actions = ["approve_payment"]
 
     def user_link(self, instance):
-        return mark_safe(
-            '<a href="{}">{}</a>'.format(
-                reverse("admin:auth_user_change", args=(instance.user.pk,)),
-                instance.user.username,
+        if instance.user:
+            mark = mark_safe(
+                '<a href="{}">{}</a>'.format(
+                    reverse("admin:auth_user_change", args=(instance.user.pk,)),
+                    instance.user.username,
+                )
             )
-        )
+        else:
+            mark = mark_safe("")
+        return mark
 
     user_link.short_description = "Пользователь"
 
@@ -173,12 +177,17 @@ class CalcAdmin(admin.ModelAdmin):
     )
 
     def user_link(self, instance):
-        return mark_safe(
-            '<a href="{}">{}</a>'.format(
-                reverse("admin:auth_user_change", args=(instance.user.pk,)),
-                instance.user.username,
+        if instance.user:
+            mark = mark_safe(
+                '<a href="{}">{}</a>'.format(
+                    reverse("admin:auth_user_change", args=(instance.user.pk,)),
+                    instance.user.username,
+                )
             )
-        )
+        else:
+            mark = mark_safe("")
+
+        return mark
 
     user_link.short_description = "Пользователь"
 

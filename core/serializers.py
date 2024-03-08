@@ -24,6 +24,56 @@ class FooterSerializer(serializers.Serializer):
     total_crystal = serializers.IntegerField()
 
 
+### graphics serializer ###
+
+
+class AdminAnalyticsIncome(serializers.Serializer):
+    income = serializers.FloatField()
+    date = serializers.DateField()
+
+
+class AdminAnalyticsOutlay(serializers.Serializer):
+    outlay = serializers.FloatField()
+    date = serializers.DateField()
+
+
+class AdminAnalyticsClearProfit(serializers.Serializer):
+    profit = serializers.FloatField()
+    date = serializers.DateField()
+
+
+class AdminAnalyticsCountOpenCases(serializers.Serializer):
+    count = serializers.IntegerField()
+    date = serializers.DateField()
+
+
+class AdminAnalyticsAverageCheck(serializers.Serializer):
+    check = serializers.FloatField()
+    date = serializers.DateField()
+
+
+class AdminAnalyticsCountUser(serializers.Serializer):
+    pass
+
+
+class AdminAnalyticsIncomeByCaseType(serializers.Serializer):
+    type = serializers.CharField()
+    type_name = serializers.CharField()
+    count = serializers.IntegerField()
+    date = serializers.DateField()
+
+
+### blocks serializer ###
+
+
+class AdminAnalyticsTopRef(serializers.Serializer):
+    pass
+
+
+class AdminAnalyticsTopUsersDeposite(serializers.Serializer):
+    pass
+
+
 class AdminGenericSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = GenericSettings
