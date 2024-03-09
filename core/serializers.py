@@ -68,11 +68,16 @@ class AdminAnalyticsIncomeByCaseType(serializers.Serializer):
 
 
 class AdminAnalyticsTopRef(serializers.Serializer):
+    id = serializers.IntegerField()
     name = serializers.CharField()
     image = serializers.CharField()
+    count_next = serializers.IntegerField()
+    total_income = serializers.FloatField()
+
 
 
 class AdminAnalyticsTopUsersDeposite(serializers.Serializer):
+    id = serializers.IntegerField()
     name = serializers.CharField()
     image = serializers.CharField()
     payments_price = serializers.FloatField()

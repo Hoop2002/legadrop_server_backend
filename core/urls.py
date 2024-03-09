@@ -61,6 +61,11 @@ urlpatterns = [
         views.AdminAnalyticsViewSet.as_view({"get": "block_top_users_deposite"}),
         name="admin_analytics_top_users_deposite",
     ),
+    path(
+        "6383d341-4d14-4868-81ba-3c6382f2128e/analytics/blocks/top_ref/<int:top>/",
+        views.AdminAnalyticsViewSet.as_view({"get": "block_top_ref"}),
+        name="admin_analytics_top_ref",
+    ),
     path("analytics", views.AnalyticsFooterView.as_view(), name="analytics_footer"),
 ]
 

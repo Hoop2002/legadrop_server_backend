@@ -6,7 +6,7 @@ import threading
 import time
 
 
-def task(user, items):
+def task(user, items, case):
     list_key = "live_tape"
     redis_client = redis.from_url(settings.REDIS_CONNECTION_STRING)
 
@@ -18,12 +18,17 @@ def task(user, items):
         item.update(
             {
                 "user": {
-                    "id": user.id,
+                    "id": user.profile.id,
                     "image": str(user.profile.image),
                     "username": user.username,
                 }
             }
         )
+        if case:
+            item.update({"open_case": {"name": case.name, "translit_name": case.translit_name, "image": str(case.image)}})
+        else:
+            item.update({"open_case": None})
+        
         item.update({"timestamp": time.time()})
         new_items.append(dict(item))
 
@@ -31,6 +36,6 @@ def task(user, items):
         redis_client.rpush(list_key, json.dumps(item))
 
 
-def write_items_in_redis(user, items):
-    th = threading.Thread(target=task, args=(user, items))
+def write_items_in_redis(user, items, case):
+    th = threading.Thread(target=task, args=(user, items, case))
     th.start()
