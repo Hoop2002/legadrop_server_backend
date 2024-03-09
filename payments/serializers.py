@@ -190,7 +190,7 @@ class UserOutputSerializer(serializers.ModelSerializer):
 class AdminListPromoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PromoCode
-        fields = ("id", "name", "type", "code_data")
+        fields = ("id", "name", "type", "code_data", "created_at")
 
 
 class AdminPromoCodeSerializer(AdminListPromoSerializer):

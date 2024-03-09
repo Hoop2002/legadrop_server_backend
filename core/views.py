@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAdminUser
 from core.models import GenericSettings
 from cases.models import OpenedCases, Case
 from payments.models import PaymentOrder, Output, PurchaseCompositeItems
-from users.models import UserItems
+from users.models import UserItems, UserProfile, ActivatedPromo
 
 from legadrop.settings import REDIS_CONNECTION_STRING
 
@@ -29,9 +29,11 @@ from core.serializers import (
     AdminAnalyticsCountRegUser,
     AdminAnalyticsIncomeByCaseType,
     AdminAnalyticsTopUsersDeposite,
+    AdminAnalyticsTopRef
 )
 
 from payments.models import PaymentOrder
+
 
 import redis
 import datetime
@@ -65,6 +67,7 @@ class AdminAnalyticsViewSet(ModelViewSet):
             "graphic_count_reg_users": AdminAnalyticsCountRegUser,
             "graphic_income_by_case_type": AdminAnalyticsIncomeByCaseType,
             "block_top_users_deposite": AdminAnalyticsTopUsersDeposite,
+            "block_top_ref": AdminAnalyticsTopRef
         }
         return serializer[self.action]
 
@@ -402,8 +405,27 @@ class AdminAnalyticsViewSet(ModelViewSet):
         return Response(serializer.data)
 
     ### blocks views ###
+
     def block_top_ref(self, request, *args, **kwargs):
-        pass
+        users = UserProfile.objects.all()
+
+        records = []
+
+        for user in users:
+            count_next = 0
+
+            ref_links = user.ref_links.all()
+
+            for ref in ref_links:
+                ref_activate = ref.activated_links.all()
+                count_next += ref_activate.count()
+
+            records.append({"id": user.id,"name": user.user.username, "image": str(user.image) or None, "count_next": count_next, "total_income": user.total_income})
+        
+        records = sorted(records, key=lambda x: x["total_income"], reverse=True)
+
+        serializer = self.get_serializer(records, many=True)
+        return Response(serializer.data)
 
     def block_top_users_deposite(self, request, *args, **kwargs):
         current_date = datetime.datetime.today()
@@ -411,16 +433,17 @@ class AdminAnalyticsViewSet(ModelViewSet):
 
         top = int(kwargs.get("top"))
 
-        users = User.objects.all()
+        users = UserProfile.objects.all()
 
         records = []
 
         for user in users:
             records.append(
                 {
-                    "name": user.username,
-                    "image": str(user.profile.image) or None,
-                    "payments_price": user.user_payments_orders.filter(
+                    "id": user.id,
+                    "name": user.user.username,
+                    "image": str(user.image) or None,
+                    "payments_price": user.user.user_payments_orders.filter(
                         created_at__range=[back_date, current_date],
                         status=PaymentOrder.SUCCESS,
                     ).aggregate(Sum("sum"))["sum__sum"]

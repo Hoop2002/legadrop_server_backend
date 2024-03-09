@@ -38,6 +38,8 @@ urlpatterns = [
         name="sign_up_vk",
     ),
     path("user", views.UserProfileViewSet.as_view({"get": "retrieve"}), name="user"),
+    path("user/<int:user_id>/", views.UserProfileViewSet.as_view({"get": "retrieve_other_user"}), name="user"),
+    path("user/<int:user_id>/items", views.UserItemsListView.as_view({"get": "other_user_list"}), name="other_user_items_list"),
     path(
         "user/update",
         views.UserProfileViewSet.as_view({"put": "update"}),

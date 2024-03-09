@@ -124,7 +124,7 @@ class CasesViewSet(GenericViewSet):
 
         serializer = self.get_serializer(items, many=True)
 
-        write_items_in_redis(request.user, r_items)
+        write_items_in_redis(request.user, r_items, case)
 
         return Response(serializer.data)
 
@@ -288,7 +288,7 @@ class ShopItemsViewSet(ModelViewSet):
         serializer = self.get_serializer(data={"item": item.id, "user": user.id})
         if serializer.is_valid(raise_exception=True):
             user_item = serializer.save()
-            write_items_in_redis(user=user, items=[(item, user_item)])
+            write_items_in_redis(user=user, items=[(item, user_item)], case=False)
             return Response(ItemListSerializer(item).data)
 
 
