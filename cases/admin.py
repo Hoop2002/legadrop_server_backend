@@ -22,7 +22,7 @@ class ContestsAdmin(admin.ModelAdmin):
 
 @admin.register(OpenedCases)
 class OpenedCasesAdmin(admin.ModelAdmin):
-    list_display = ("case", "user", "open_date")
+    list_display = ("case", "user", "open_date", "item", "win")
     readonly_fields = ("open_date",)
 
 

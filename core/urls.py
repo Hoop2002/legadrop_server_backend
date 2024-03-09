@@ -51,6 +51,11 @@ urlpatterns = [
         views.AdminAnalyticsViewSet.as_view({"get": "graphic_count_reg_users"}),
         name="admin_analytics_count_reg_users",
     ),
+    path(
+        "6383d341-4d14-4868-81ba-3c6382f2128e/analytics/graphics/income_by_case_type/<str:date>/",
+        views.AdminAnalyticsViewSet.as_view({"get": "graphic_income_by_case_type"}),
+        name="admin_analytics_income_by_case_type",
+    ),
     path("analytics", views.AnalyticsFooterView.as_view(), name="analytics_footer"),
 ]
 

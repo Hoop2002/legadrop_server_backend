@@ -560,7 +560,7 @@ class Case(models.Model):
 
         item = self._get_rand_item(user)
         win = item.purchase_price > self.price if not self.case_free else True
-        OpenedCases.objects.create(case=self, user=user, win=win)
+        OpenedCases.objects.create(case=self, user=user, win=win, item=item)
 
         if not self.case_free:
             Calc.objects.create(
@@ -609,6 +609,15 @@ class OpenedCases(models.Model):
         blank=True,
         related_name="opened_cases",
     )
+    item = models.ForeignKey(
+        verbose_name="Выигранный айтем",
+        to=Item,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="item_wins",
+    )
+
     win = models.BooleanField(verbose_name="Предмет дороже кейса", default=False)
 
     def __str__(self):
