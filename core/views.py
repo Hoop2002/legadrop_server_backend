@@ -29,7 +29,7 @@ from core.serializers import (
     AdminAnalyticsCountRegUser,
     AdminAnalyticsIncomeByCaseType,
     AdminAnalyticsTopUsersDeposite,
-    AdminAnalyticsTopRef
+    AdminAnalyticsTopRef,
 )
 
 from payments.models import PaymentOrder
@@ -67,7 +67,7 @@ class AdminAnalyticsViewSet(ModelViewSet):
             "graphic_count_reg_users": AdminAnalyticsCountRegUser,
             "graphic_income_by_case_type": AdminAnalyticsIncomeByCaseType,
             "block_top_users_deposite": AdminAnalyticsTopUsersDeposite,
-            "block_top_ref": AdminAnalyticsTopRef
+            "block_top_ref": AdminAnalyticsTopRef,
         }
         return serializer[self.action]
 
@@ -420,8 +420,16 @@ class AdminAnalyticsViewSet(ModelViewSet):
                 ref_activate = ref.activated_links.all()
                 count_next += ref_activate.count()
 
-            records.append({"id": user.id,"name": user.user.username, "image": str(user.image) or None, "count_next": count_next, "total_income": user.total_income})
-        
+            records.append(
+                {
+                    "id": user.id,
+                    "name": user.user.username,
+                    "image": str(user.image) or None,
+                    "count_next": count_next,
+                    "total_income": user.total_income,
+                }
+            )
+
         records = sorted(records, key=lambda x: x["total_income"], reverse=True)
 
         serializer = self.get_serializer(records, many=True)
