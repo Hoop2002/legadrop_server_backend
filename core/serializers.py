@@ -56,10 +56,11 @@ class AdminAnalyticsCountRegUser(serializers.Serializer):
     count = serializers.IntegerField()
     date = serializers.DateField()
 
+
 class AdminAnalyticsIncomeByCaseType(serializers.Serializer):
-    type = serializers.CharField()
-    type_name = serializers.CharField()
-    count = serializers.IntegerField()
+    category_name = serializers.CharField()
+    count_open = serializers.IntegerField()
+    income = serializers.FloatField()
     date = serializers.DateField()
 
 
@@ -67,11 +68,13 @@ class AdminAnalyticsIncomeByCaseType(serializers.Serializer):
 
 
 class AdminAnalyticsTopRef(serializers.Serializer):
-    pass
+    name = serializers.CharField()
+    image = serializers.CharField()
 
 
 class AdminAnalyticsTopUsersDeposite(serializers.Serializer):
-    pass
+    name = serializers.CharField()
+    image = serializers.CharField()
 
 
 class AdminGenericSettingsSerializer(serializers.ModelSerializer):

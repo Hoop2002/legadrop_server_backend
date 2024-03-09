@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 
 from core.models import GenericSettings
-from cases.models import OpenedCases
+from cases.models import OpenedCases, Category
 from payments.models import PaymentOrder, Output, PurchaseCompositeItems
 from users.models import UserItems
 
@@ -26,7 +26,8 @@ from core.serializers import (
     AdminAnalyticsClearProfit,
     AdminAnalyticsAverageCheck,
     AdminAnalyticsCountOpenCases,
-    AdminAnalyticsCountRegUser
+    AdminAnalyticsCountRegUser,
+    AdminAnalyticsIncomeByCaseType,
 )
 
 from payments.models import PaymentOrder
@@ -61,6 +62,7 @@ class AdminAnalyticsViewSet(ModelViewSet):
             "graphic_average_check": AdminAnalyticsAverageCheck,
             "graphic_count_open_cases": AdminAnalyticsCountOpenCases,
             "graphic_count_reg_users": AdminAnalyticsCountRegUser,
+            "graphic_income_by_case_type": AdminAnalyticsIncomeByCaseType,
         }
         return serializer[self.action]
 
@@ -350,21 +352,58 @@ class AdminAnalyticsViewSet(ModelViewSet):
 
         cur_date = start_date
         while cur_date <= end_date:
-            records.append({"count": users.filter(date_joined__date=cur_date.date()).count(), "date": cur_date.date()})
+            records.append(
+                {
+                    "count": users.filter(date_joined__date=cur_date.date()).count(),
+                    "date": cur_date.date(),
+                }
+            )
             cur_date += datetime.timedelta(days=1)
 
         serializer = self.get_serializer(records, many=True)
 
-        return Response(serializer.data)               
+        return Response(serializer.data)
 
     @extend_schema(
         description="Формат даты YYYY-MM-DD. По дефолту будет отдавать данные за неделю"
     )
     def graphic_income_by_case_type(self, request, *args, **kwargs):
-        pass
+        current_date = datetime.datetime.today()
+
+        categorys = Category.objects.all()
+
+        date = kwargs.get("date", current_date.strftime("%Y-%m-%d"))
+
+        records = []
+
+        for category in categorys:
+            count = 0
+            income = 0.0
+
+            cases = category.cases.all()
+
+            for case in cases:
+                opening = case.users_opening.filter(
+                    open_date__date=datetime.datetime.strptime(date, "%Y-%m-%d")
+                ).all()
+                count += opening.count() or 0
+                for open_ in opening:
+                    income += float(case.price) - float(open_.item.purchase_price)
+
+            records.append(
+                {
+                    "category_name": category.name,
+                    "count_open": count,
+                    "income": round(income, 2),
+                    "date": datetime.datetime.strptime(date, "%Y-%m-%d").date(),
+                }
+            )
+
+        serializer = self.get_serializer(records, many=True)
+
+        return Response(serializer.data)
 
     ### blocks views ###
-
     def block_top_ref(self, request, *args, **kwargs):
         pass
 
