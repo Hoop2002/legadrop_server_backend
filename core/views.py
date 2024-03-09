@@ -28,6 +28,7 @@ from core.serializers import (
     AdminAnalyticsCountOpenCases,
     AdminAnalyticsCountRegUser,
     AdminAnalyticsIncomeByCaseType,
+    AdminAnalyticsTopUsersDeposite,
 )
 
 from payments.models import PaymentOrder
@@ -63,6 +64,7 @@ class AdminAnalyticsViewSet(ModelViewSet):
             "graphic_count_open_cases": AdminAnalyticsCountOpenCases,
             "graphic_count_reg_users": AdminAnalyticsCountRegUser,
             "graphic_income_by_case_type": AdminAnalyticsIncomeByCaseType,
+            "block_top_users_deposite": AdminAnalyticsTopUsersDeposite,
         }
         return serializer[self.action]
 
@@ -404,6 +406,34 @@ class AdminAnalyticsViewSet(ModelViewSet):
         pass
 
     def block_top_users_deposite(self, request, *args, **kwargs):
+        current_date = datetime.datetime.today()
+        back_date = current_date - datetime.timedelta(hours=24)
+
+        top = int(kwargs.get("top"))
+
+        users = User.objects.all()
+
+        records = []
+
+        for user in users:
+            records.append(
+                {
+                    "name": user.username,
+                    "image": str(user.profile.image) or None,
+                    "payments_price": user.user_payments_orders.filter(
+                        created_at__range=[back_date, current_date],
+                        status=PaymentOrder.SUCCESS,
+                    ).aggregate(Sum("sum"))["sum__sum"]
+                    or 0,
+                }
+            )
+
+        sorted_rec = sorted(records, key=lambda x: x["payments_price"], reverse=True)
+        serializer = self.get_serializer(sorted_rec[:top], many=True)
+
+        return Response(serializer.data)
+
+    def get_user_ltv(self, request, *args, **kwargs):
         pass
 
 

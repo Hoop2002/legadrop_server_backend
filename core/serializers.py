@@ -75,6 +75,7 @@ class AdminAnalyticsTopRef(serializers.Serializer):
 class AdminAnalyticsTopUsersDeposite(serializers.Serializer):
     name = serializers.CharField()
     image = serializers.CharField()
+    payments_price = serializers.FloatField()
 
 
 class AdminGenericSettingsSerializer(serializers.ModelSerializer):
