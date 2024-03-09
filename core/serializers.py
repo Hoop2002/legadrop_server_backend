@@ -58,7 +58,7 @@ class AdminAnalyticsCountRegUser(serializers.Serializer):
 
 
 class AdminAnalyticsIncomeByCaseType(serializers.Serializer):
-    category_name = serializers.CharField()
+    case_name = serializers.CharField()
     count_open = serializers.IntegerField()
     income = serializers.FloatField()
     date = serializers.DateField()

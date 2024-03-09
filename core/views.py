@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 
 from core.models import GenericSettings
-from cases.models import OpenedCases, Category
+from cases.models import OpenedCases, Case
 from payments.models import PaymentOrder, Output, PurchaseCompositeItems
 from users.models import UserItems
 
@@ -370,29 +370,25 @@ class AdminAnalyticsViewSet(ModelViewSet):
     def graphic_income_by_case_type(self, request, *args, **kwargs):
         current_date = datetime.datetime.today()
 
-        categorys = Category.objects.all()
-
         date = kwargs.get("date", current_date.strftime("%Y-%m-%d"))
 
         records = []
 
-        for category in categorys:
-            count = 0
+        cases = Case.objects.all()
+
+        for case in cases:
             income = 0.0
 
-            cases = category.cases.all()
-
-            for case in cases:
-                opening = case.users_opening.filter(
-                    open_date__date=datetime.datetime.strptime(date, "%Y-%m-%d")
-                ).all()
-                count += opening.count() or 0
-                for open_ in opening:
-                    income += float(case.price) - float(open_.item.purchase_price)
+            opening = case.users_opening.filter(
+                open_date__date=datetime.datetime.strptime(date, "%Y-%m-%d")
+            ).all()
+            count = opening.count() or 0
+            for open_ in opening:
+                income += float(case.price) - float(open_.item.purchase_price)
 
             records.append(
                 {
-                    "category_name": category.name,
+                    "case_name": case.name,
                     "count_open": count,
                     "income": round(income, 2),
                     "date": datetime.datetime.strptime(date, "%Y-%m-%d").date(),
