@@ -27,7 +27,7 @@ from core.serializers import (
     AdminAnalyticsAverageCheck,
     AdminAnalyticsCountOpenCases,
     AdminAnalyticsCountRegUser,
-    AdminAnalyticsIncomeByCaseType
+    AdminAnalyticsIncomeByCaseType,
 )
 
 from payments.models import PaymentOrder
@@ -62,7 +62,7 @@ class AdminAnalyticsViewSet(ModelViewSet):
             "graphic_average_check": AdminAnalyticsAverageCheck,
             "graphic_count_open_cases": AdminAnalyticsCountOpenCases,
             "graphic_count_reg_users": AdminAnalyticsCountRegUser,
-            "graphic_income_by_case_type": AdminAnalyticsIncomeByCaseType
+            "graphic_income_by_case_type": AdminAnalyticsIncomeByCaseType,
         }
         return serializer[self.action]
 
@@ -373,27 +373,36 @@ class AdminAnalyticsViewSet(ModelViewSet):
         categorys = Category.objects.all()
 
         date = kwargs.get("date", current_date.strftime("%Y-%m-%d"))
-        
+
         records = []
-        
+
         for category in categorys:
             count = 0
             income = 0.0
-            
+
             cases = category.cases.all()
-            
+
             for case in cases:
-                opening = case.users_opening.filter(open_date__date=datetime.datetime.strptime(date, "%Y-%m-%d")).all()
+                opening = case.users_opening.filter(
+                    open_date__date=datetime.datetime.strptime(date, "%Y-%m-%d")
+                ).all()
                 count += opening.count() or 0
                 for open_ in opening:
-                    income += float(case.price) - float(open_.item.purchase_price) 
-                
-            records.append({"category_name": category.name, "count_open": count, "income": round(income, 2), "date": datetime.datetime.strptime(date, "%Y-%m-%d").date()})
+                    income += float(case.price) - float(open_.item.purchase_price)
+
+            records.append(
+                {
+                    "category_name": category.name,
+                    "count_open": count,
+                    "income": round(income, 2),
+                    "date": datetime.datetime.strptime(date, "%Y-%m-%d").date(),
+                }
+            )
 
         serializer = self.get_serializer(records, many=True)
 
-        return Response(serializer.data)    
-    
+        return Response(serializer.data)
+
     ### blocks views ###
     def block_top_ref(self, request, *args, **kwargs):
         pass
