@@ -213,7 +213,7 @@ class AuthViewSet(GenericViewSet):
 class UserProfileViewSet(ModelViewSet):
     queryset = UserProfile.objects
     serializer_class = UserProfileSerializer
-    
+
     def retrieve(self, request, *args, **kwargs):
         serializer = self.get_serializer(request.user.profile)
         return Response(serializer.data)
@@ -240,6 +240,7 @@ class UserItemsListView(ModelViewSet):
     queryset = UserItems.objects
     http_method_names = ["get", "delete"]
     pagination_class = LimitOffsetPagination
+
     def get_serializer_class(self):
         if self.action == "items_history":
             return HistoryItemSerializer
@@ -288,7 +289,6 @@ class UserItemsListView(ModelViewSet):
         response = self.get_paginated_response(serializer.data)
         return response
 
-    
     def other_user_list(self, request, *args, **kwargs):
         user_id = kwargs.get("user_id")
         user = User.objects.filter(profile__id=user_id)
@@ -297,10 +297,11 @@ class UserItemsListView(ModelViewSet):
 
         queryset = self.get_queryset().filter(active=True, user=user.get())
         items = self.paginate_queryset(queryset)
-        
+
         serializer = self.get_serializer(items, many=True)
         response = self.get_paginated_response(serializer.data)
         return response
+
 
 @extend_schema(tags=["upgrade"])
 class UpgradeItem(GenericViewSet):

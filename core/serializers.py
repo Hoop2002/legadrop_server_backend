@@ -75,7 +75,6 @@ class AdminAnalyticsTopRef(serializers.Serializer):
     total_income = serializers.FloatField()
 
 
-
 class AdminAnalyticsTopUsersDeposite(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()

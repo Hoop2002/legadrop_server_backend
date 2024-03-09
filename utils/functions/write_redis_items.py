@@ -25,10 +25,18 @@ def task(user, items, case):
             }
         )
         if case:
-            item.update({"open_case": {"name": case.name, "translit_name": case.translit_name, "image": str(case.image)}})
+            item.update(
+                {
+                    "open_case": {
+                        "name": case.name,
+                        "translit_name": case.translit_name,
+                        "image": str(case.image),
+                    }
+                }
+            )
         else:
             item.update({"open_case": None})
-        
+
         item.update({"timestamp": time.time()})
         new_items.append(dict(item))
 
