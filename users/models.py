@@ -40,6 +40,9 @@ class UserProfile(models.Model):
     )
 
     telegram_id = models.BigIntegerField(null=True, blank=True)
+    telegram_username = models.CharField(
+        verbose_name="Телеграм никнейм", max_length=512, null=True
+    )
 
     def verify(self):
         self.verified = True

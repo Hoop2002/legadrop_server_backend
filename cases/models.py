@@ -8,7 +8,6 @@ from django.utils.functional import cached_property
 from gateways.telegram_bot_func import is_member_chanel
 from core.models import GenericSettings
 from random import choices
-
 from utils.functions import (
     id_generator,
     generate_upload_name,
@@ -496,6 +495,38 @@ class Case(models.Model):
         # высчитываем дефолтный процент для каждого айтема
         for item in items:
             item["percent"] = normalise_kof * items_kfs[item["item_id"]] * 100
+        return items
+
+    def get_admin_items(self):
+        from cases.serializers import RarityCategorySerializer
+
+        generic = GenericSettings.objects.first()
+
+        items = self.items.values(
+            "id",
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "type",
+            "created_at",
+        )
+        # считаем коэффициент для айтемов todo запретить предметам без закупочной цены попадать в кейсы
+        items_kfs = {
+            item["item_id"]: 1
+            / Item.objects.filter(item_id=item["item_id"]).get().purchase_price
+            for item in items
+        }
+        # из полученных коэффициентов выше считаем нормализацию
+        normalise_kof = 1 / sum([items_kfs[item] for item in items_kfs])
+
+        # высчитываем дефолтный процент для каждого айтема
+        for item in items:
+            item["percent"] = normalise_kof * items_kfs[item["item_id"]] * 100
+            item["image"] = f"https://{generic.domain_url}/media/" + item["image"]
+            item["rarity_category"] = RarityCategorySerializer(
+                Item.objects.get(id=item["id"]).rarity_category
+            ).data
         return items
 
     @cached_property
