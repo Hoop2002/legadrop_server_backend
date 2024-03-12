@@ -177,6 +177,7 @@ class AuthViewSet(GenericViewSet):
             if user.is_authenticated:
                 if not user.profile.telegram_id:
                     user.profile.telegram_id = int(data["id"])
+                    user.profile.telegram_username = str(data["username"])
                     if not user.first_name:
                         user.first_name = str(data["first_name"])
                     user.save()
@@ -196,6 +197,7 @@ class AuthViewSet(GenericViewSet):
                     username=data["username"], first_name=data.get("first_name", "")
                 )
                 user_cr.profile.telegram_id = int(data["id"])
+                user_cr.profile.telegram_username = str(data["username"])
                 user_cr.profile.save()
 
                 token = AccessToken.for_user(user_cr)
@@ -487,6 +489,24 @@ class AdminUsersViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status.HTTP_202_ACCEPTED)
+
+
+@extend_schema(tags=["admin/users"])
+class AdminUserItemsListView(ModelViewSet):
+    queryset = UserItems.objects
+    http_method_names = ["get"]
+    permission_classes = [IsAdminUser]
+    pagination_class = LimitOffsetPagination
+    serializer_class = HistoryItemSerializer
+
+    @extend_schema(request=None)
+    def items_history(self, request, *args, **kwargs):
+        user_id = kwargs.get("user_id")
+        queryset = self.get_queryset().filter(active=False, user_id=user_id)
+        items = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(items, many=True)
+        response = self.get_paginated_response(serializer.data)
+        return response
 
 
 @extend_schema(tags=["admin/users"])

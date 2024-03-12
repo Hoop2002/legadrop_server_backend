@@ -5,6 +5,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from core.models import GenericSettings
 from users.models import UserProfile, UserItems, UserVerify
+from social_django.models import UserSocialAuth
 from payments.models import PaymentOrder, Calc, RefLinks
 from cases.models import Item
 
@@ -52,6 +53,12 @@ class UserSerializer(UserCreateSerializer):
     email = serializers.EmailField(required=False)
 
 
+class OtherUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("username",)
+
+
 class UserProfileCreateSerializer(serializers.ModelSerializer):
     user = UserCreateSerializer()
     token = serializers.SerializerMethodField(read_only=True)
@@ -86,7 +93,7 @@ class UserSignInSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    user = UserSerializer(required=False)
+    user = OtherUserSerializer(required=False)
     image = Base64ImageField(required=False, max_length=None, use_url=True)
     ref_link = serializers.SerializerMethodField()
     code_data = serializers.CharField(
@@ -313,12 +320,44 @@ class GetGenshinAccountSerializer(serializers.Serializer):
 
 
 class GameHistorySerializer(serializers.ModelSerializer):
-    item = serializers.CharField(source="item.name")
-    case = serializers.CharField(source="case.name")
+
+    item = serializers.SerializerMethodField()
+    case = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_item(instance):
+        item_ = instance.item
+        return {
+            "item_id": item_.item_id,
+            "name": item_.name,
+            "price": item_.price,
+            "type": item_.type,
+            "purchase_price": item_.purchase_price,
+        }
+
+    @staticmethod
+    def get_case(instance):
+        case_ = instance.case
+        return {
+            "case_id": case_.case_id,
+            "name": case_.name,
+            "translit_name": case_.translit_name,
+            "price": case_.price,
+        }
+
+    @staticmethod
+    def get_status(instance) -> str:
+        if not instance.active and not instance.withdrawn:
+            return "Продан"
+        elif instance.withdrawn:
+            return "Выведен"
+        else:
+            return "На аккаунте"
 
     class Meta:
         model = UserItems
-        fields = ("item", "case")
+        fields = ("id", "item", "case", "status")
 
 
 class AdminUserListSerializer(serializers.ModelSerializer):
@@ -326,6 +365,32 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     all_debit = serializers.SerializerMethodField()
     all_output = serializers.SerializerMethodField()
     username = serializers.CharField(source="user.username")
+    link_vk = serializers.SerializerMethodField()
+    link_tg = serializers.SerializerMethodField()
+    first_name = serializers.CharField(source="user.first_name")
+    last_name = serializers.CharField(source="user.last_name")
+    email = serializers.CharField(source="user.email")
+    profile_id = serializers.IntegerField(source="id")
+    date_joined = serializers.DateTimeField(source="user.date_joined")
+    is_active = serializers.BooleanField(source="user.is_active")
+
+    @staticmethod
+    def get_link_vk(instance):
+        auth_vk = UserSocialAuth.objects.filter(
+            user=instance.user, provider="vk-oauth2"
+        ).first()
+        if not auth_vk:
+            return ""
+        return f"https://vk.com/id{auth_vk.extra_data['id']}"
+
+    @staticmethod
+    def get_link_tg(instance):
+        tg_username = instance.telegram_username
+
+        if not tg_username:
+            return ""
+
+        return f"https://t.me/{tg_username}/"
 
     @staticmethod
     def get_all_output(instance) -> float:
@@ -342,6 +407,12 @@ class AdminUserListSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = (
             "user_id",
+            "profile_id",
+            "first_name",
+            "last_name",
+            "email",
+            "link_vk",
+            "link_tg",
             "image",
             "username",
             "partner_percent",
@@ -354,6 +425,8 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             "all_debit",
             "all_output",
             "telegram_id",
+            "date_joined",
+            "is_active",
         )
 
 
@@ -408,7 +481,18 @@ class AdminUserPaymentHistorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PaymentOrder
-        fields = ("sum", "manually_approved", "status", "created_at", "updated_at")
+        fields = (
+            "id",
+            "order_id",
+            "location",
+            "active",
+            "type_payments",
+            "sum",
+            "manually_approved",
+            "status",
+            "created_at",
+            "updated_at",
+        )
 
 
 class SuccessSignUpSerializer(serializers.Serializer):
