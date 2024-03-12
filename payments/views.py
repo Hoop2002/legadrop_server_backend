@@ -218,7 +218,10 @@ class AdminOutputsViewSet(ModelViewSet):
         return Response({"message": message}, status=success)
 
     def create(self, request, *args, **kwargs):
-        return Response({"detail": "Method Not Allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response(
+            {"detail": "Method Not Allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
 
 @extend_schema(tags=["admin/ref_links"])
 class AdminRefLinkViewSet(ModelViewSet):

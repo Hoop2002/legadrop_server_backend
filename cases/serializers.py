@@ -196,9 +196,6 @@ class CaseCategorySerializer(serializers.ModelSerializer):
         read_only_fields = ("name",)
 
 
-
-
-
 class ListCasesSerializer(serializers.ModelSerializer):
     category = CaseCategorySerializer()
 
@@ -580,9 +577,11 @@ class AdminCategorySerializer(serializers.ModelSerializer):
         fields = ("category_id", "name")
         read_only_fields = ("category_id",)
 
+
 class AdminListCasesSerializer(serializers.ModelSerializer):
     category = CaseCategorySerializer()
     conditions = ListConditionSerializer(many=True, read_only=True)
+
     class Meta:
         model = Case
         fields = (
