@@ -28,6 +28,7 @@ from utils.functions.combinations import find_combination
 
 from payments.models import CompositeItems
 
+
 @extend_schema(tags=["contests"])
 class ContestsViewSet(ModelViewSet):
     queryset = Contests.objects.filter(active=True, removed=False)
@@ -329,17 +330,27 @@ class ItemAdminViewSet(ModelViewSet):
         count = kwargs.get("crystal_castles")
         composites = CompositeItems.objects.all()
         crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
-        value_set = sorted([i.crystals_quantity for i in crystal_composite], key=lambda x: x)
+        value_set = sorted(
+            [i.crystals_quantity for i in crystal_composite], key=lambda x: x
+        )
         combinations = find_combination(count, value_set)
 
         sum_combinations = sum(combinations)
 
         if sum_combinations == count:
-            return Response({"message": f"Колличество кристаллов {count} подходит! Состав: {','.join([str(i) for i in combinations])}"}, status=200)
+            return Response(
+                {
+                    "message": f"Колличество кристаллов {count} подходит! Состав: {','.join([str(i) for i in combinations])}"
+                },
+                status=200,
+            )
 
-        return Response({"message": f"Колличество кристаллов {count} не подходит!!! Рекомендованное количество {sum_combinations}"}, status=400)
-
-
+        return Response(
+            {
+                "message": f"Колличество кристаллов {count} не подходит!!! Рекомендованное количество {sum_combinations}"
+            },
+            status=400,
+        )
 
 
 @extend_schema(tags=["admin/rarity"])

@@ -71,8 +71,8 @@ urlpatterns = [
     path(
         "6383d341-4d14-4868-81ba-3c6382f2128e/recommendation/crystals/<int:crystal_castles>",
         views.ItemAdminViewSet.as_view({"get": "get_crystal_count_recommendation"}),
-        name="crystal_count_recommendation"
-    )
+        name="crystal_count_recommendation",
+    ),
 ]
 
 urlpatterns += router.urls
