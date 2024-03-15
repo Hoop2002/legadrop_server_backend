@@ -441,7 +441,7 @@ class Output(models.Model):
 
         if crystal_items:
             crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
-            value_set = [i.crystals_quantity for i in crystal_composite]
+            value_set = sorted([i.crystals_quantity for i in crystal_composite], key=lambda x: x)
 
             for crystal_item in crystal_items:
                 combination = crystal_item.item.get_crystal_combinations(

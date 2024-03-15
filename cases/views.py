@@ -24,7 +24,9 @@ from cases.serializers import (
 from cases.models import Case, Item, RarityCategory, ConditionCase, Contests, Category
 from utils.serializers import SuccessSerializer
 from utils.functions.write_redis_items import write_items_in_redis
+from utils.functions.combinations import find_combination
 
+from payments.models import CompositeItems
 
 @extend_schema(tags=["contests"])
 class ContestsViewSet(ModelViewSet):
@@ -322,6 +324,22 @@ class ItemAdminViewSet(ModelViewSet):
         if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def get_crystal_count_recommendation(self, request, *args, **kwargs):
+        count = kwargs.get("crystal_castles")
+        composites = CompositeItems.objects.all()
+        crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
+        value_set = sorted([i.crystals_quantity for i in crystal_composite], key=lambda x: x)
+        combinations = find_combination(count, value_set)
+
+        sum_combinations = sum(combinations)
+
+        if sum_combinations == count:
+            return Response({"message": f"Колличество кристаллов {count} подходит! Состав: {','.join([str(i) for i in combinations])}"}, status=200)
+
+        return Response({"message": f"Колличество кристаллов {count} не подходит!!! Рекомендованное количество {sum_combinations}"}, status=200)
+
+
 
 
 @extend_schema(tags=["admin/rarity"])
