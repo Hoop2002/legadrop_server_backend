@@ -441,7 +441,9 @@ class Output(models.Model):
 
         if crystal_items:
             crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
-            value_set = [i.crystals_quantity for i in crystal_composite]
+            value_set = sorted(
+                [i.crystals_quantity for i in crystal_composite], key=lambda x: x
+            )
 
             for crystal_item in crystal_items:
                 combination = crystal_item.item.get_crystal_combinations(
@@ -480,7 +482,7 @@ class Output(models.Model):
                     composite_item=blessing_composite,
                 )
                 blessing_item.withdrawal_process = False
-                crystal_item.withdrawn = True
+                blessing_item.withdrawn = True
                 blessing_item.save()
 
         if ghost_items:
@@ -505,8 +507,8 @@ class Output(models.Model):
                             composite_item=com_item,
                         )
                 ghost_item.withdrawal_process = False
-                crystal_item.withdrawn = True
-                blessing_item.save()
+                ghost_item.withdrawn = True
+                ghost_item.save()
 
         self.approval_user = approval_user
         self.save()
