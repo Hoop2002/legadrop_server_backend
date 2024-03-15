@@ -337,7 +337,7 @@ class ItemAdminViewSet(ModelViewSet):
         if sum_combinations == count:
             return Response({"message": f"Колличество кристаллов {count} подходит! Состав: {','.join([str(i) for i in combinations])}"}, status=200)
 
-        return Response({"message": f"Колличество кристаллов {count} не подходит!!! Рекомендованное количество {sum_combinations}"}, status=200)
+        return Response({"message": f"Колличество кристаллов {count} не подходит!!! Рекомендованное количество {sum_combinations}"}, status=400)
 
 
 
