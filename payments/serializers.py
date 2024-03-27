@@ -29,8 +29,8 @@ class UserPaymentOrderSerializer(serializers.ModelSerializer):
             "email",
             "type_payments",
             "sum",
-            "include_service_lava",
-            "lava_link",
+            "include_service",
+            "location",
             "status",
             "created_at",
             "active",
@@ -43,6 +43,11 @@ class UserPaymentOrderSerializer(serializers.ModelSerializer):
         manager = PaymentManager()
         if data["type_payments"] == "lava":
             order = manager._create_lava_payment_order(data)
+        if data["type_payments"] == "freekassa":
+            req = self.context["request"]
+            order = manager._create_freekassa_payment_order(request=req, vals=data)
+        if data["type_payments"] == "yookassa":
+            raise serializers.ValidationError("Недоступный тип оплаты")
         return order
 
 
@@ -85,9 +90,10 @@ class AdminPurchaseSerializer(serializers.ModelSerializer):
 
 
 class AdminOutputSerializer(AdminListOutputSerializer):
-    stat = Output.OUTPUT_STATUS
     output_items = UserItemSerializer(many=True)
     purchase_ci_outputs = AdminPurchaseSerializer(many=True)
+    cost_withdrawal_of_items = serializers.FloatField()
+    cost_withdrawal_of_items_in_rub = serializers.FloatField()
 
     class Meta:
         model = Output
@@ -184,7 +190,7 @@ class UserOutputSerializer(serializers.ModelSerializer):
 class AdminListPromoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PromoCode
-        fields = ("id", "name", "type", "code_data")
+        fields = "__all__"
 
 
 class AdminPromoCodeSerializer(AdminListPromoSerializer):

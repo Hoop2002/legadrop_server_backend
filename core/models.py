@@ -25,6 +25,38 @@ class GenericSettings(models.Model):
         max_length=256,
         help_text="Вводим только домен, без протокола. По дефолту связывается по https",
     )
+    notify_domain = models.CharField(
+        "Домен для уведомлений. По дефолту связывается по https",
+        default="legadrop.org",
+        max_length=256,
+        help_text="Вводим только домен, без протокола. По дефолту связывается по https",
+    )
+
+    free_kassa_success_url = models.CharField(
+        "Домен для переадресации после оплаты в случае успеха",
+        max_length=256,
+        default="https://legadrop.org",
+    )
+    free_kassa_failure_url = models.CharField(
+        "Домен для переадресации после оплаты в случае неудачи",
+        max_length=256,
+        default="https://legadrop.org",
+    )
+
+    email_verify_url_redirect = models.CharField(
+        "Домен для переадресации после подтверждения email",
+        max_length=256,
+        default="https://legadrop.org",
+    )
+    email_verify_url = models.CharField(
+        "Домен для подтверждения",
+        max_length=256,
+        default="https://legadrop.org/verifyed/",
+    )
+
+    telegram_verify_bot_token = models.CharField(
+        "Токен телеграмм бота для подтверждения подписок", max_length=512, null=True
+    )
 
     default_mark_up_case = models.FloatField(
         verbose_name="Дефолтная наценка на кейсы",

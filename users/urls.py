@@ -8,7 +8,22 @@ router.register(r"upgrade", views.UpgradeItem, basename="users_upgrade")
 
 urlpatterns = [
     path(
+        "verifyed/",
+        views.UserVerificationViewSet.as_view({"post": "verify"}),
+        name="verify",
+    ),
+    path(
+        "verifyed/<str:access_token>",
+        views.UserVerificationViewSet.as_view({"get": "verify_user"}),
+        name="verify",
+    ),
+    path(
         "get_token", views.AuthViewSet.as_view({"get": "get_token"}), name="get_token"
+    ),
+    path(
+        "sign_in/telegram",
+        views.AuthViewSet.as_view({"post": "sign_up_in_telegram"}),
+        name="sign_in",
     ),
     path("sign_in", views.AuthViewSet.as_view({"post": "sign_in"}), name="sign_in"),
     path("sign_up", views.AuthViewSet.as_view({"post": "sign_up"}), name="sign_up"),
@@ -23,6 +38,16 @@ urlpatterns = [
         name="sign_up_vk",
     ),
     path("user", views.UserProfileViewSet.as_view({"get": "retrieve"}), name="user"),
+    path(
+        "user/<int:user_id>/",
+        views.UserProfileViewSet.as_view({"get": "retrieve_other_user"}),
+        name="user",
+    ),
+    path(
+        "user/<int:user_id>/items",
+        views.UserItemsListView.as_view({"get": "other_user_list"}),
+        name="other_user_items_list",
+    ),
     path(
         "user/update",
         views.UserProfileViewSet.as_view({"put": "update"}),
@@ -59,6 +84,10 @@ urlpatterns = [
     path(
         "6383d341-4d14-4868-81ba-3c6382f2128e/users/",
         views.AdminUsersViewSet.as_view({"get": "list"}),
+    ),
+    path(
+        "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/items_history/",
+        views.AdminUserItemsListView.as_view({"get": "items_history"}),
     ),
     path(
         "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/",

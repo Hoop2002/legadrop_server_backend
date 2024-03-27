@@ -24,6 +24,64 @@ class FooterSerializer(serializers.Serializer):
     total_crystal = serializers.IntegerField()
 
 
+### graphics serializer ###
+
+
+class AdminAnalyticsIncome(serializers.Serializer):
+    income = serializers.FloatField()
+    date = serializers.DateField()
+
+
+class AdminAnalyticsOutlay(serializers.Serializer):
+    outlay = serializers.FloatField()
+    date = serializers.DateField()
+
+
+class AdminAnalyticsClearProfit(serializers.Serializer):
+    profit = serializers.FloatField()
+    date = serializers.DateField()
+
+
+class AdminAnalyticsCountOpenCases(serializers.Serializer):
+    count = serializers.IntegerField()
+    date = serializers.DateField()
+
+
+class AdminAnalyticsAverageCheck(serializers.Serializer):
+    check = serializers.FloatField()
+    date = serializers.DateField()
+
+
+class AdminAnalyticsCountRegUser(serializers.Serializer):
+    count = serializers.IntegerField()
+    date = serializers.DateField()
+
+
+class AdminAnalyticsIncomeByCaseType(serializers.Serializer):
+    case_name = serializers.CharField()
+    count_open = serializers.IntegerField()
+    income = serializers.FloatField()
+    date = serializers.DateField()
+
+
+### blocks serializer ###
+
+
+class AdminAnalyticsTopRef(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    image = serializers.CharField()
+    count_next = serializers.IntegerField()
+    total_income = serializers.FloatField()
+
+
+class AdminAnalyticsTopUsersDeposite(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    image = serializers.CharField()
+    payments_price = serializers.FloatField()
+
+
 class AdminGenericSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = GenericSettings
@@ -38,4 +96,10 @@ class AdminGenericSettingsSerializer(serializers.ModelSerializer):
             "base_upgrade_percent",
             "minimal_price_upgrade",
             "base_upper_ratio",
+            "notify_domain",
+            "free_kassa_success_url",
+            "free_kassa_failure_url",
+            "email_verify_url_redirect",
+            "email_verify_url",
+            "telegram_verify_bot_token",
         )

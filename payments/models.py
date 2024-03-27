@@ -45,11 +45,11 @@ class PaymentOrder(models.Model):
     type_payments = models.CharField(max_length=64, choices=PAYMENT_TYPES_CHOICES)
 
     lava_id = models.CharField(max_length=256, null=True)
-    lava_link = models.CharField(max_length=512, null=True)
+    location = models.CharField(max_length=512, null=True)
     lava_expired = models.DateTimeField(null=True)
     project_lava = models.CharField(max_length=256, null=True)
     project_lava_name = models.CharField(max_length=64, null=True)
-    include_service_lava = models.CharField(max_length=128, null=True)
+    include_service = models.CharField(max_length=128, null=True)
 
     user = models.ForeignKey(
         verbose_name="Пользователь",
@@ -201,7 +201,13 @@ class PromoCode(models.Model):
         activation = ActivatedPromo.objects.create(user=user, promo=self)
         activation.calc_promo.add(calc)
         activation.save()
-        return "Успешно активирован", True
+        if self.type == self.BONUS:
+            return (
+                f"Успешно активирован!\n{self.PROMO_TYPES[1][1]} +{(self.percent * 100) - 100}%",
+                True,
+            )
+        if self.type == self.BALANCE:
+            return f"Успешно активирован!\n{self.PROMO_TYPES[0][1]} +{self.summ}р", True
 
     @cached_property
     def activations(self) -> int:
@@ -435,7 +441,9 @@ class Output(models.Model):
 
         if crystal_items:
             crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
-            value_set = [i.crystals_quantity for i in crystal_composite]
+            value_set = sorted(
+                [i.crystals_quantity for i in crystal_composite], key=lambda x: x
+            )
 
             for crystal_item in crystal_items:
                 combination = crystal_item.item.get_crystal_combinations(
@@ -474,7 +482,7 @@ class Output(models.Model):
                     composite_item=blessing_composite,
                 )
                 blessing_item.withdrawal_process = False
-                crystal_item.withdrawn = True
+                blessing_item.withdrawn = True
                 blessing_item.save()
 
         if ghost_items:
@@ -499,8 +507,8 @@ class Output(models.Model):
                             composite_item=com_item,
                         )
                 ghost_item.withdrawal_process = False
-                crystal_item.withdrawn = True
-                blessing_item.save()
+                ghost_item.withdrawn = True
+                ghost_item.save()
 
         self.approval_user = approval_user
         self.save()
@@ -509,6 +517,11 @@ class Output(models.Model):
             f"{self.output_id} одобрен пользователем {approval_user} создано начисление {calc.calc_id}",
             200,
         )
+
+    @cached_property
+    def cost_withdrawal_of_items_in_rub(self) -> float:
+        currency = float(get_currency()["USDRUB"]["high"])
+        return round(self.cost_withdrawal_of_items * currency, 2)
 
     @cached_property
     def cost_withdrawal_of_items(self) -> float:

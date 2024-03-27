@@ -194,6 +194,10 @@ class AdminOutputsViewSet(ModelViewSet):
     @extend_schema(responses={200: SuccessSerializer}, request=None)
     @action(detail=True, methods=["post"])
     def approval(self, request, *args, **kwargs):
+        #return Response(
+        #        {"message": "Такого вывода не существует"},
+        #        status=status.HTTP_404_NOT_FOUND,
+        #    )
         output = self.get_object()
         if not output:
             return Response(
@@ -216,6 +220,11 @@ class AdminOutputsViewSet(ModelViewSet):
         message, success = output.remove(user_remove=request.user)
 
         return Response({"message": message}, status=success)
+
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Method Not Allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
 
 
 @extend_schema(tags=["admin/ref_links"])
@@ -381,3 +390,17 @@ class UserRefOutputViewSet(ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             ref_output = serializer.save()
             return Response(UserRefOutputSerializer(ref_output).data)
+
+
+@extend_schema(tags=["freekassa"])
+class AdminFreekassaNotifyViewSet(GenericViewSet):
+    http_method_names = ["post"]
+    permission_classes = [AllowAny]
+
+    def notification(self, request, *args, **kwargs):
+        data = request.data
+        order = PaymentOrder.objects.filter(order_id=data["MERCHANT_ORDER_ID"]).first()
+        order.active = True
+        order.status = PaymentOrder.SUCCESS
+        order.save()
+        return Response({"message": "OK"})

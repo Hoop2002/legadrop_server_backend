@@ -40,6 +40,8 @@ class ConditionSerializer(serializers.ModelSerializer):
             "price",
             "time",
             "time_reboot",
+            "group_id_vk",
+            "group_id_tg",
         )
         read_only_fields = ("condition_id",)
 
@@ -64,8 +66,56 @@ class ItemListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Item
-        fields = ("item_id", "name", "price", "image", "rarity_category")
-        read_only_fields = ("item_id", "name", "price", "image", "rarity_category")
+        fields = (
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "rarity_category",
+            "purchase_price",
+            "type",
+            "created_at",
+        )
+        read_only_fields = (
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "rarity_category",
+            "purchase_price",
+            "type",
+            "created_at",
+        )
+
+
+class AdminItemListSerializer(serializers.ModelSerializer):
+    item_id = serializers.CharField(max_length=9)
+    image = serializers.CharField()
+    rarity_category = serializers.DictField(read_only=True)
+    percent = serializers.FloatField()
+
+    class Meta:
+        model = Item
+        fields = (
+            "item_id",
+            "name",
+            "price",
+            "percent",
+            "image",
+            "rarity_category",
+            "type",
+            "created_at",
+        )
+        read_only_fields = (
+            "item_id",
+            "name",
+            "price",
+            "percent",
+            "image",
+            "rarity_category",
+            "type",
+            "created_at",
+        )
 
 
 class UserItemSerializer(serializers.ModelSerializer):
@@ -97,7 +147,7 @@ class UserItemSerializer(serializers.ModelSerializer):
 
 class ItemsAdminSerializer(serializers.ModelSerializer):
     price = serializers.FloatField(required=True)
-    purchase_price = serializers.FloatField(required=True)
+    purchase_price = serializers.FloatField(read_only=True)
     image = Base64ImageField(
         required=False, max_length=None, use_url=True, allow_null=True
     )
@@ -120,6 +170,10 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
             "item_id",
             "name",
             "price",
+            "crystals_quantity",
+            "type",
+            "service",
+            "is_output",
             "purchase_price",
             "sale_price",
             "percent_price",
@@ -140,22 +194,6 @@ class CaseCategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ("category_id", "name")
         read_only_fields = ("name",)
-
-
-class AdminListCasesSerializer(serializers.ModelSerializer):
-    category = CaseCategorySerializer()
-
-    class Meta:
-        model = Case
-        fields = (
-            "case_id",
-            "translit_name",
-            "name",
-            "price",
-            "case_free",
-            "image",
-            "category",
-        )
 
 
 class ListCasesSerializer(serializers.ModelSerializer):
@@ -275,7 +313,7 @@ class AdminCasesSerializer(AdminCreateCaseSerializer):
     image = Base64ImageField(max_length=None, use_url=True, required=False)
     category = CaseCategorySerializer(read_only=True)
     category_id = serializers.CharField(max_length=9, write_only=True)
-    items = ItemListSerializer(many=True, read_only=True)
+    items = serializers.SerializerMethodField()
     conditions = ListConditionSerializer(many=True, read_only=True)
     item_ids = serializers.ListSerializer(
         child=serializers.CharField(), write_only=True
@@ -283,6 +321,11 @@ class AdminCasesSerializer(AdminCreateCaseSerializer):
     condition_ids = serializers.ListSerializer(
         child=serializers.CharField(), write_only=True, required=False
     )
+
+    @staticmethod
+    def get_items(instance) -> AdminItemListSerializer:
+        items = instance.get_admin_items()
+        return AdminItemListSerializer(items, many=True).data
 
     def get_fields(self):
         fields = super().get_fields()
@@ -378,6 +421,8 @@ class ContestsSerializer(serializers.ModelSerializer):
             "count_participants",
             "last_winner",
             "conditions",
+            "one_time",
+            "active",
         )
 
 
@@ -531,3 +576,23 @@ class AdminCategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ("category_id", "name")
         read_only_fields = ("category_id",)
+
+
+class AdminListCasesSerializer(serializers.ModelSerializer):
+    category = CaseCategorySerializer()
+    conditions = ListConditionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Case
+        fields = (
+            "case_id",
+            "translit_name",
+            "name",
+            "price",
+            "case_free",
+            "image",
+            "category",
+            "conditions",
+            "created_at",
+            "updated_at",
+        )

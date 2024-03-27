@@ -20,7 +20,7 @@ class UserProfile(models.Model):
     verified = models.BooleanField(verbose_name="Верифицирован", default=False)
     individual_percent = models.FloatField(
         verbose_name="Индивидуальный процент",
-        default=0,
+        default=1,
         validators=[MinValueValidator(-1)],
     )
     demo = models.BooleanField(verbose_name="Демо пользователь", default=False)
@@ -39,6 +39,15 @@ class UserProfile(models.Model):
         verbose_name="Разрешение на вывод", default=True
     )
 
+    telegram_id = models.BigIntegerField(null=True, blank=True)
+    telegram_username = models.CharField(
+        verbose_name="Телеграм никнейм", max_length=512, null=True
+    )
+
+    def verify(self):
+        self.verified = True
+        self.save()
+
     @cached_property
     def winrate(self) -> float:
         win = self.user.opened_cases.filter(win=True).count()
@@ -55,7 +64,7 @@ class UserProfile(models.Model):
         )["balance__sum"]
         if balance is None:
             return 0
-        return balance
+        return round(balance, 2)
 
     @cached_property
     def total_income(self) -> float:
@@ -79,7 +88,10 @@ class UserProfile(models.Model):
 
     @cached_property
     def available_withdrawal(self) -> float:
-        return round(self.total_income - self.total_withdrawal, 2)
+        w = round(self.total_income - self.total_withdrawal, 2)
+        if w <= 0:
+            return 0
+        return w
 
     def all_debit(self) -> float:
         from payments.models import Calc, PaymentOrder
@@ -354,3 +366,25 @@ class ContestsWinners(models.Model):
     class Meta:
         verbose_name = "Победитель конкурса"
         verbose_name_plural = "Победители конкурсов"
+
+
+class UserVerify(models.Model):
+    user = models.ForeignKey(
+        verbose_name="Верификация",
+        to=User,
+        on_delete=models.PROTECT,
+        related_name="user_verifys",
+    )
+
+    access_token = models.CharField(verbose_name="Токен", max_length=256)
+    email = models.CharField(verbose_name="Имэйл", max_length=256)
+
+    active = models.BooleanField(verbose_name="Активно", default=True)
+    to_date = models.DateTimeField(verbose_name="Действует до", blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Верификация пользователя"
+        verbose_name_plural = "Верификации пользователей"

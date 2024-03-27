@@ -1,17 +1,24 @@
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 from colorfield.fields import ColorField
 from django.contrib.auth.models import User
 from django.utils.functional import cached_property
+from gateways.telegram_bot_func import is_member_chanel
+from core.models import GenericSettings
 from random import choices
-
 from utils.functions import (
     id_generator,
     generate_upload_name,
     transliterate,
     find_combination,
 )
+
+from social_django.models import UserSocialAuth
+
+import requests
+import json
 
 
 class Contests(models.Model):
@@ -181,14 +188,58 @@ class Item(models.Model):
         verbose_name="Тип предмета", max_length=32, choices=ITEMS_TYPE, null=True
     )
     service = models.CharField(
-        verbose_name="Тип предмета", max_length=32, choices=SERVICE_TYPES, null=True
+        verbose_name="Сервис", max_length=32, choices=SERVICE_TYPES, null=True
     )
     crystals_quantity = models.IntegerField(
         verbose_name="Количество кристаллов", null=True, default=0
     )
-    purchase_price = models.FloatField(
-        verbose_name="Закупочная цена", default=0, null=False
-    )
+
+    # purchase_price = models.FloatField(
+    #    verbose_name="Закупочная цена", default=0, null=False
+    # )
+
+    # purchase_price_rub = models.FloatField(
+    #    verbose_name="Закупочная цена в рублях", default=0, null=False
+    # )
+
+    @cached_property
+    def purchase_price(self):
+        from payments.models import CompositeItems
+        from gateways.economia_api import get_currency
+
+        price = 0.0
+
+        composites = CompositeItems.objects.all()
+
+        crystal_composite = composites.filter(type=CompositeItems.CRYSTAL)
+        blessing_composite = composites.filter(type=CompositeItems.BLESSING).first()
+
+        if self.type == self.BLESSING:
+            price += blessing_composite.price_dollar
+
+        if self.type == self.CRYSTAL:
+            if self.crystals_quantity < 60:
+                price += self.crystals_quantity * 0.014
+            else:
+                value_set = [i.crystals_quantity for i in crystal_composite]
+                combination = self.get_crystal_combinations(value_set)
+                for com in combination:
+                    com_item = crystal_composite.filter(crystals_quantity=com).get()
+                    price += com_item.price_dollar
+
+        if self.type == self.GHOST_ITEM:
+            value_set = [i.crystals_quantity for i in crystal_composite]
+            combination = self.get_crystal_combinations(value_set)
+            for com in combination:
+                com_item = crystal_composite.filter(crystals_quantity=com).get()
+                price += com_item.price_dollar
+
+        if price == 0.0:
+            price += 0.1
+
+        currency = float(get_currency()["USDRUB"]["high"])
+        return round(price * currency, 2)
+
     is_output = models.BooleanField(
         verbose_name="Выводимый предмет с сервиса", null=False, default=True
     )
@@ -214,7 +265,6 @@ class Item(models.Model):
         blank=True,
     )
     removed = models.BooleanField(verbose_name="Удалено", default=False)
-    is_output = models.BooleanField(verbose_name="Выводимый/Не выводимый", default=True)
 
     def get_crystal_combinations(self, value_set):
         return find_combination(target=self.crystals_quantity, values=value_set)
@@ -244,10 +294,15 @@ class Category(models.Model):
 class ConditionCase(models.Model):
     CALC = "calc"
     TIME = "time"
+    GROUP_SUBSCRIBE_VK = "group_vk"
+    GROUP_SUBSCRIBE_TG = "group_tg"
     CONDITION_TYPES_CHOICES = (
         (CALC, "Начисление"),
         (TIME, "Время"),
+        (GROUP_SUBSCRIBE_VK, "Подписка на группу VK"),
+        (GROUP_SUBSCRIBE_TG, "Подписка на канал Telegram"),
     )
+
     name = models.CharField(max_length=256, unique=True)
     description = models.TextField(
         verbose_name="Описание для пользователя", blank=True, null=True
@@ -259,6 +314,20 @@ class ConditionCase(models.Model):
     price = models.FloatField(verbose_name="Сумма внесения", null=True, blank=True)
     time = models.TimeField(verbose_name="Глубина проверки", null=True, blank=True)
     time_reboot = models.TimeField(verbose_name="Снова открыть кейс через")
+
+    group_id_vk = models.CharField(
+        verbose_name="ID группы 'vk.com' формат club########",
+        max_length=1024,
+        null=True,
+        blank=False,
+    )
+
+    group_id_tg = models.CharField(
+        verbose_name="ID канала 'telegram.com' формат '-1009999999'",
+        max_length=1024,
+        null=True,
+        blank=False,
+    )
 
     def __str__(self):
         return self.name
@@ -343,6 +412,54 @@ class Case(models.Model):
                         f"До следующего открытия этого кейса {timedelta_reboot - (now - opened.last().open_date)}",
                         False,
                     )
+                if condition.type_condition == ConditionCase.GROUP_SUBSCRIBE_TG:
+                    tg_id = user.profile.telegram_id
+
+                    if not tg_id:
+                        return (
+                            "Для открытия этого кейса вам необходимо привязать аккаунт telegram.org",
+                            False,
+                        )
+
+                    generic = GenericSettings.objects.first()
+
+                    is_member = is_member_chanel(
+                        chat_id=condition.group_id_tg,
+                        user_id=tg_id,
+                        token=generic.telegram_verify_bot_token,
+                    )
+
+                    if not is_member:
+                        return (
+                            "Для открытия этого кейса вам необходимо подписаться на все указанные сообщества/каналы telegram.org",
+                            False,
+                        )
+
+                if condition.type_condition == ConditionCase.GROUP_SUBSCRIBE_VK:
+                    auth_vk = UserSocialAuth.objects.filter(
+                        user=user, provider="vk-oauth2"
+                    ).first()
+                    if not auth_vk:
+                        return (
+                            "Для открытия этого кейса вам необходимо привязать страницу vk.com",
+                            False,
+                        )
+
+                    vk_user_id = auth_vk.extra_data["id"]
+
+                    response = requests.get(
+                        f"https://api.vk.com/method/groups.isMember?group_id={condition.group_id_vk}&access_token={settings.VK_APP_ACCESS_TOKEN}&user_id={vk_user_id}&v=5.199"
+                    )
+
+                    user_in_group = int(
+                        json.loads(response.content.decode("utf-8"))["response"]
+                    )
+
+                    if user_in_group == 0:
+                        return (
+                            "Для открытия этого кейса вам необходимо подписаться на все указанные группы vk.com",
+                            False,
+                        )
 
                 if condition.type_condition == ConditionCase.CALC:
                     amount = (
@@ -364,10 +481,14 @@ class Case(models.Model):
     def get_items(self):
         """Возвращает json предметов с проставленными процентами"""
         items = self.items.values(
-            "item_id", "name", "price", "image", "rarity_category", "purchase_price"
+            "item_id", "name", "price", "image", "rarity_category"
         )
         # считаем коэффициент для айтемов todo запретить предметам без закупочной цены попадать в кейсы
-        items_kfs = {item["item_id"]: 1 / item["purchase_price"] for item in items}
+        items_kfs = {
+            item["item_id"]: 1
+            / Item.objects.filter(item_id=item["item_id"]).get().purchase_price
+            for item in items
+        }
         # из полученных коэффициентов выше считаем нормализацию
         normalise_kof = 1 / sum([items_kfs[item] for item in items_kfs])
 
@@ -376,14 +497,46 @@ class Case(models.Model):
             item["percent"] = normalise_kof * items_kfs[item["item_id"]] * 100
         return items
 
+    def get_admin_items(self):
+        from cases.serializers import RarityCategorySerializer
+
+        generic = GenericSettings.objects.first()
+
+        items = self.items.values(
+            "id",
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "type",
+            "created_at",
+        )
+        # считаем коэффициент для айтемов todo запретить предметам без закупочной цены попадать в кейсы
+        items_kfs = {
+            item["item_id"]: 1
+            / Item.objects.filter(item_id=item["item_id"]).get().purchase_price
+            for item in items
+        }
+        # из полученных коэффициентов выше считаем нормализацию
+        normalise_kof = 1 / sum([items_kfs[item] for item in items_kfs])
+
+        # высчитываем дефолтный процент для каждого айтема
+        for item in items:
+            item["percent"] = normalise_kof * items_kfs[item["item_id"]] * 100
+            item["image"] = f"https://{generic.domain_url}/media/" + item["image"]
+            item["rarity_category"] = RarityCategorySerializer(
+                Item.objects.get(id=item["id"]).rarity_category
+            ).data
+        return items
+
     @cached_property
     def recommendation_price(self) -> float:
         from core.models import GenericSettings
 
         generic = GenericSettings.load()
         items = self.items.all()
-        if items.filter(purchase_price=0).exists():
-            items = items.exclude(purchase_price=0)
+        # if items.filter(purchase_price=0).exists():
+        #    items = items.exclude(purchase_price=0)
         if items.count() == 0:
             return 0
         items_kfs = [1 / item.purchase_price for item in items]
@@ -396,8 +549,8 @@ class Case(models.Model):
 
     def _get_rand_item(self, user: User):
         items = self.items.all()
-        if items.filter(purchase_price=0).exists():
-            items = items.exclude(purchase_price=0)
+        # if items.filter(purchase_price=0).exists():
+        #    items = items.exclude(purchase_price=0)
         # считаем коэффициент для айтемов и берём цену для дальнейших вычислений
         items_kfs = {
             item.item_id: {"kof": 1 / item.purchase_price, "price": item.purchase_price}
@@ -438,7 +591,7 @@ class Case(models.Model):
 
         item = self._get_rand_item(user)
         win = item.purchase_price > self.price if not self.case_free else True
-        OpenedCases.objects.create(case=self, user=user, win=win)
+        OpenedCases.objects.create(case=self, user=user, win=win, item=item)
 
         if not self.case_free:
             Calc.objects.create(
@@ -451,8 +604,11 @@ class Case(models.Model):
                 user=user,
                 comment=f"Открытие кейса {self.name}",
             )
-        UserItems.objects.create(user=user, item=item, from_case=True, case=self)
-        return item
+        user_item = UserItems.objects.create(
+            user=user, item=item, from_case=True, case=self
+        )
+
+        return item, user_item
 
     def __str__(self):
         return self.name
@@ -484,6 +640,15 @@ class OpenedCases(models.Model):
         blank=True,
         related_name="opened_cases",
     )
+    item = models.ForeignKey(
+        verbose_name="Выигранный айтем",
+        to=Item,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="item_wins",
+    )
+
     win = models.BooleanField(verbose_name="Предмет дороже кейса", default=False)
 
     def __str__(self):

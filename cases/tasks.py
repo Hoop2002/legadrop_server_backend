@@ -1,8 +1,12 @@
 from django.utils import timezone
-
+from django.conf import settings
 from celery import shared_task
 from cases.models import Contests
 from users.models import ContestsWinners, UserItems
+
+import redis
+import time
+import json
 
 
 @shared_task
@@ -30,3 +34,23 @@ def get_winner_contest():
         contest.participants.set([])
         contest.set_new_award()
         contest.set_next_start(force=True)
+
+
+@shared_task
+def clear_live_tape():
+    list_key = "live_tape"
+    expire_time = 24 * 60 * 60
+    current_time = time.time()
+
+    r = redis.from_url(settings.REDIS_CONNECTION_STRING)
+
+    items = r.lrange(list_key, 0, -1)
+
+    if not items:
+        return "Нет items в лайв ленте"
+
+    for i in items:
+        i_dict = json.loads(i.decode("utf-8"))
+        element_timestamp = float(i_dict["timestamp"])
+        if current_time - element_timestamp > expire_time:
+            r.lrem(list_key, 0, i)

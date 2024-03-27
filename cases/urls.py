@@ -41,6 +41,11 @@ router.register("cases", views.CasesViewSet, basename="cases")
 
 urlpatterns = [
     path(
+        "cases/<str:translit_name>/open_case/<int:count>",
+        views.CasesViewSet.as_view({"post": "open_case"}),
+        name="cases",
+    ),
+    path(
         "contests/",
         views.ContestsViewSet.as_view({"get": "list"}),
         name="contests_list",
@@ -62,6 +67,11 @@ urlpatterns = [
     path(
         "shop/buy/<str:item_id>",
         views.ShopItemsViewSet.as_view({"post": "buy_item"}, name="buy_item"),
+    ),
+    path(
+        "6383d341-4d14-4868-81ba-3c6382f2128e/recommendation/crystals/<int:crystal_castles>",
+        views.ItemAdminViewSet.as_view({"get": "get_crystal_count_recommendation"}),
+        name="crystal_count_recommendation",
     ),
 ]
 

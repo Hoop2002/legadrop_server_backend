@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "cases",
     "users",
     "payments",
+    "legaemail",
 ]
 
 CHANNELS_REDIS_HOST = env.str("REDIS_HOST", "localhost")
@@ -224,7 +225,10 @@ EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="test@gmail.com")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="key")
 EMAIL_PORT = env("EMAIL_PORT", default=587)
-EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=True)
+EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=False)
+EMAIL_USE_SSL = env("EMAIL_USE_SSL", default=False)
+SERVER_EMAIL = env("SERVER_EMAIL")
+EMAIL_ADMIN = env("EMAIL_ADMIN")
 # DEFAULT_FROM_EMAIL = 'default from email'
 
 
@@ -236,6 +240,7 @@ AUTHENTICATION_BACKENDS = (
     "social_core.backends.google.GoogleOAuth2",
     "django.contrib.auth.backends.ModelBackend",
     "social_core.backends.vk.VKOAuth2",
+    "social_core.backends.telegram.TelegramAuth",
 )
 SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.social_auth.social_details",
@@ -267,6 +272,8 @@ SOCIAL_AUTH_VK_OAUTH2_KEY = env(
 SOCIAL_AUTH_VK_OAUTH2_SECRET = env(
     "SOCIAL_AUTH_VK_OAUTH2_SECRET", default="SOCIAL_AUTH_VK_OAUTH2_SECRET"
 )
+VK_APP_ACCESS_TOKEN = env("VK_APP_ACCESS_TOKEN")
+
 
 OAUTH2_PROVIDER = {
     "ACCESS_TOKEN_EXPIRE_SECONDS": 3600 * 24 * 30,
@@ -280,3 +287,13 @@ CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS")
 # todo fix this shit
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8000"]
+
+FREEKASSA_NOTIFY_PREFIX = env(
+    "FREEKASSA_NOTIFY_PREFIX", default="f01ebba8-ca68-4256-9ca6-39ed92ae4d78"
+)
+FREEKASSA_API_KEY = env("FREEKASSA_API_KEY")
+FREEKASSA_SECRET_KEY_ONE = env("FREEKASSA_SECRET_KEY_ONE")
+FREEKASSA_SECRET_KEY_TWO = env("FREEKASSA_SECRET_KEY_TWO")
+FREEKASSA_SHOP_ID = env("FREEKASSA_SHOP_ID")
+
+TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN")
