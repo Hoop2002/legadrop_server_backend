@@ -10,6 +10,7 @@ from payments.models import (
     CompositeItems,
     PurchaseCompositeItems,
     RefLinks,
+    RefOutput,
 )
 from users.models import UserItems
 
@@ -64,6 +65,26 @@ class RefLinkAdmin(admin.ModelAdmin):
         return "---"
 
     user_link.short_description = "Пользователь"
+
+
+@admin.register(RefOutput)
+class AdminRefOutput(admin.ModelAdmin):
+    fields = (
+        "ref_output_id",
+        "type",
+        "user",
+        "sum",
+        "comment",
+        "card_number",
+        "phone",
+        "crypto_number",
+        "status",
+        "active",
+        "created_at",
+        "updated_at",
+        "removed",
+    )
+    readonly_fields = ("updated_at", "created_at")
 
 
 @admin.register(PurchaseCompositeItems)
@@ -138,8 +159,7 @@ class CalcAdmin(admin.ModelAdmin):
     list_display = (
         "calc_id",
         "user_link",
-        "debit",
-        "credit",
+        "balance",
         "comment",
         "created_at",
     )
@@ -148,7 +168,7 @@ class CalcAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Связи", {"fields": ("user", "promo_using", "order", "ref_link")}),
-        ("Деньги", {"fields": ("debit", "credit", "balance", "comment")}),
+        ("Деньги", {"fields": ("balance", "comment")}),
         (None, {"fields": ("created_at", "updated_at", "demo")}),
     )
 

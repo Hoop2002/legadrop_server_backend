@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, REDIRECT_FIELD_NAME
+from django.db.models import Sum
 from social_django.utils import load_backend, load_strategy
 from social_core.actions import do_auth
 from django.urls import reverse
@@ -12,7 +13,11 @@ from drf_spectacular.utils import extend_schema
 
 from rest_framework.response import Response
 
-from users.models import UserProfile, UserItems
+from users.models import UserProfile, UserItems, UserUpgradeHistory
+from core.models import GenericSettings
+from cases.models import Item
+from cases.serializers import ItemListSerializer
+from payments.models import Calc
 from users.serializers import (
     UserProfileCreateSerializer,
     UserSignInSerializer,
@@ -25,6 +30,8 @@ from users.serializers import (
     GameHistorySerializer,
     AdminUserPaymentHistorySerializer,
     SuccessSignUpSerializer,
+    UpgradeItemSerializer,
+    MinimalValuesSerializer,
 )
 from payments.models import PaymentOrder, RefLinks
 
@@ -159,7 +166,9 @@ class UserItemsListView(ModelViewSet):
         return UserItemSerializer
 
     def list(self, request, *args, **kwargs):
-        items = self.paginate_queryset(self.get_queryset().filter(active=True))
+        items = self.paginate_queryset(
+            self.get_queryset().filter(active=True, user=request.user)
+        )
         serializer = self.get_serializer(items, many=True)
         response = self.get_paginated_response(serializer.data)
         return response
@@ -169,6 +178,12 @@ class UserItemsListView(ModelViewSet):
         user_item: UserItems = self.get_object()
         if not user_item.active:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if not request.user == user_item.user:
+            return Response(
+                {"message": "Не ваш предмет"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if user_item.withdrawal_process:
             return Response(
@@ -192,6 +207,145 @@ class UserItemsListView(ModelViewSet):
         serializer = self.get_serializer(items, many=True)
         response = self.get_paginated_response(serializer.data)
         return response
+
+
+@extend_schema(tags=["upgrade"])
+class UpgradeItem(GenericViewSet):
+    queryset = UserItems.objects
+    serializer_class = UpgradeItemSerializer
+    http_method_names = ["get", "post"]
+
+    def get_serializer_class(self):
+        if self.action == "get_minimal_values":
+            return MinimalValuesSerializer
+        if self.action in ["items", "upgrade"]:
+            return ItemListSerializer
+        return UpgradeItemSerializer
+
+    @extend_schema(responses={200: GameHistorySerializer(many=True)})
+    @action(detail=False, pagination_class=LimitOffsetPagination)
+    def items(self, request, *args, **kwargs):
+        items = Item.objects.filter(upgrade=True, removed=False).exclude(price=0)
+        paginated = self.paginate_queryset(items)
+        serializer = self.get_serializer(paginated, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    @action(detail=False, methods=["post"])
+    def get_minimal_values(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = self._get_min_values(serializer.validated_data["upgraded_items"])
+        return Response(data)
+
+    @action(detail=False, methods=["post"])
+    def get_upgrade_data(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        message, _status = self._check_conditions(data)
+        if not _status:
+            return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+        upgrade_ratio, upgrade_percent = message
+
+        return Response(
+            {
+                "upgrade_ratio": round(upgrade_ratio, 4),
+                "upgrade_percent": round(upgrade_percent, 4),
+            }
+        )
+
+    @extend_schema(responses={200: ItemListSerializer, 204: None})
+    @action(detail=False, methods=["post"])
+    def upgrade_items(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        message, _status = self._check_conditions(data)
+        if not _status:
+            return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        if "balance" in data:
+            _status, items = UserItems.upgrade_item(
+                user=request.user,
+                balance=data["balance"],
+                upgraded=data["upgraded_items"],
+            )
+            history = UserUpgradeHistory.objects.create(
+                user=request.user,
+                balance=data["balance"],
+            )
+            history.desired.set(data["upgraded_items"])
+            Calc.objects.create(
+                balance=-data["balance"], user=request.user, comment="Апгрейд"
+            )
+            if not _status:
+                if items == "Проигрыш":
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            history.success = True
+            history.save()
+            UserItems.objects.bulk_create(
+                UserItems(item=item, user=request.user) for item in items
+            )
+            return Response(ItemListSerializer(items, many=True).data)
+        else:
+            _status, items = UserItems.upgrade_item(
+                user=request.user,
+                upgrade=data["upgrade_items"],
+                upgraded=data["upgraded_items"],
+            )
+            history = UserUpgradeHistory.objects.create(
+                user=request.user,
+            )
+            history.upgraded.set(data["upgrade_items"])
+            history.desired.set(data["upgraded_items"])
+            data["upgrade_items"].update(active=False)
+            if not _status:
+                if items == "Проигрыш":
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
+            history.success = True
+            history.save()
+            UserItems.objects.bulk_create(
+                UserItems(item=item, user=request.user) for item in items
+            )
+            return Response(ItemListSerializer(items, many=True).data)
+
+    def _check_conditions(self, data) -> (str, bool) or ((float, float), bool):
+        generic = GenericSettings.load()
+        if data.get("upgrade_items"):
+            cost = data.get("upgrade_items").aggregate(sum=Sum("item__price"))["sum"]
+        else:
+            cost = data.get("balance")
+        upgraded_cost = data.get("upgraded_items").aggregate(sum=Sum("price"))["sum"]
+        default_data = self._get_min_values(data.get("upgraded_items"))
+
+        upgrade_ratio = upgraded_cost / cost
+        upgrade_percent = generic.base_upgrade_percent / upgrade_ratio
+
+        if upgrade_ratio < generic.base_upper_ratio:
+            return "Слишком большая ставка", False
+        if (cost < generic.minimal_price_upgrade) or (cost < default_data["min_bet"]):
+            return f"Минимальная ставка от {default_data['min_bet']}", False
+        return (upgrade_ratio, upgrade_percent), True
+
+    @staticmethod
+    def _get_min_values(items) -> dict[str:float]:
+        generic = GenericSettings.load()
+        upgraded_cost = items.aggregate(sum=Sum("price"))["sum"]
+        min_bet = upgraded_cost / (generic.base_upgrade_percent * 100)
+        if generic.minimal_price_upgrade > min_bet:
+            min_bet = generic.minimal_price_upgrade
+        min_ratio = generic.base_upper_ratio
+        max_ratio = upgraded_cost / min_bet
+        max_bet = upgraded_cost / generic.base_upper_ratio
+        return {
+            "min_bet": round(min_bet, 2),
+            "min_ratio": round(min_ratio, 4),
+            "max_bet": round(max_bet, 2),
+            "max_ratio": round(max_ratio, 4),
+        }
 
 
 @extend_schema(tags=["genshin"])

@@ -1,0 +1,2 @@
+celery -A legadrop worker --loglevel=INFO
+celery -A legadrop beat --loglevel=INFO -S django

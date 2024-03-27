@@ -1,9 +1,22 @@
 from rest_framework import serializers
 
-from payments.models import PaymentOrder, PromoCode, Calc, Output, RefLinks
+from payments.models import (
+    PaymentOrder,
+    PromoCode,
+    Calc,
+    Output,
+    RefLinks,
+    RefOutput,
+    PurchaseCompositeItems,
+)
 from payments.manager import PaymentManager
 from users.serializers import AdminUserListSerializer, UserItemSerializer
 from users.models import UserItems
+from datetime import datetime
+from core.models import GenericSettings
+
+import phonenumbers
+import re
 
 
 class UserPaymentOrderSerializer(serializers.ModelSerializer):
@@ -59,7 +72,23 @@ class AdminListOutputSerializer(serializers.ModelSerializer):
         fields = ("id", "output_id", "type", "status")
 
 
+class AdminPurchaseListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurchaseCompositeItems
+        fields = ("id", "ext_id_order", "player_id", "status", "created_at")
+
+
+class AdminPurchaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurchaseCompositeItems
+        fields = "__all__"
+
+
 class AdminOutputSerializer(AdminListOutputSerializer):
+    stat = Output.OUTPUT_STATUS
+    output_items = UserItemSerializer(many=True)
+    purchase_ci_outputs = AdminPurchaseSerializer(many=True)
+
     class Meta:
         model = Output
         fields = "__all__"
@@ -202,7 +231,7 @@ class AdminPromoCodeSerializer(AdminListPromoSerializer):
 class CalcsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Calc
-        fields = ("user_id", "debit", "credit", "created_at")
+        fields = ("user_id", "balance", "created_at")
 
 
 class RefLinksAdminSerializer(serializers.ModelSerializer):
@@ -211,3 +240,123 @@ class RefLinksAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = RefLinks
         fields = ("code_data", "from_user", "active", "created_at")
+
+
+class AdminGetBalanceMoogoldSerializer(serializers.Serializer):
+    balance = serializers.FloatField()
+    date = serializers.DateTimeField(default=datetime.now)
+
+
+class AdminRefOutputListSerializer(serializers.ModelSerializer):
+    user = AdminUserListSerializer(read_only=True, source="user.profile")
+
+    class Meta:
+        model = RefOutput
+        fields = ("ref_output_id", "user", "sum", "status", "active")
+
+
+class AdminRefOutputSerializer(serializers.ModelSerializer):
+    user = AdminUserListSerializer(read_only=True, source="user.profile")
+
+    class Meta:
+        model = RefOutput
+        fields = "__all__"
+
+
+class UserRefOutputListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RefOutput
+        fields = ("ref_output_id", "sum", "status", "type")
+
+
+class UserRefOutputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RefOutput
+        fields = (
+            "ref_output_id",
+            "sum",
+            "status",
+            "type",
+            "comment",
+            "card_number",
+            "phone",
+            "crypto_number",
+            "created_at",
+        )
+
+
+class UserRefOutputCreateSerializer(serializers.ModelSerializer):
+
+    def validate(self, attrs):
+        user = self.context.get("request").user
+
+        generic_settings = GenericSettings.objects.first()
+
+        if not "sum" in attrs:
+            raise serializers.ValidationError("Не указана сумма")
+
+        if generic_settings.min_ref_output > attrs["sum"]:
+            raise serializers.ValidationError(
+                f"Сумма вывода не может быть меньше {generic_settings.min_ref_output}"
+            )
+
+        if attrs["sum"] > user.profile.available_withdrawal:
+            raise serializers.ValidationError(
+                f"Сумма вывода не может быть больше доступной к выводу"
+            )
+
+        if not "type" in attrs:
+            raise serializers.ValidationError("Не выбран тип оплаты")
+
+        type_ = attrs["type"]
+
+        if type_ == RefOutput.CARD:
+            if not "card_number" in attrs:
+                raise serializers.ValidationError("Не введен номер карты")
+
+            attrs["card_number"] = attrs["card_number"].strip()
+
+            pattern0 = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{4}$")
+            pattern1 = re.compile(r"^\d{16}$")
+            pattern2 = re.compile(r"^[\d\s-]+$")
+            pattern3 = re.compile(r"^\d{4} \d{4} \d{4} \d{4}$")
+
+            if not pattern2.match(attrs["card_number"]):
+                raise serializers.ValidationError("Номер карты невалиден")
+
+            if (
+                pattern0.match(attrs["card_number"])
+                or pattern1.match(attrs["card_number"])
+                or pattern3.match(attrs["card_number"])
+            ):
+                pass
+            else:
+                raise serializers.ValidationError("Номер карты невалиден")
+
+        if type_ == RefOutput.СRYPTOCURRENCY:
+            if not "crypto_number" in attrs:
+                raise serializers.ValidationError("Не введен номер криптокошелька")
+
+        if type_ == RefOutput.SBP:
+            if not "phone" in attrs:
+                raise serializers.ValidationError("Не введен номер телефона")
+            try:
+                phone_num = phonenumbers.parse(attrs["phone"])
+
+                if phonenumbers.is_valid_number(phone_num):
+                    pass
+                else:
+                    raise serializers.ValidationError("Невалидный номер телефона")
+            except phonenumbers.phonenumberutil.NumberParseException:
+                raise serializers.ValidationError("Невалидный номер телефона")
+
+        attrs["user"] = user
+
+        return attrs
+
+    def create(self, validated_data):
+        return super().create(validated_data)
+
+    class Meta:
+        model = RefOutput
+        fields = ("sum", "comment", "type", "card_number", "phone", "crypto_number")

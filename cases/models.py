@@ -199,6 +199,7 @@ class Item(models.Model):
         validators=[MinValueValidator(0)],
     )
     sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
+    upgrade = models.BooleanField(verbose_name="Доступно в апгрейде", default=True)
     image = models.ImageField(upload_to=generate_upload_name, verbose_name="Картинка")
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
@@ -306,6 +307,12 @@ class Case(models.Model):
     )
     removed = models.BooleanField(verbose_name="Удалено", default=False)
 
+    def set_recommendation_price(self):
+        if not self.id:
+            return
+        self.price = self.recommendation_price
+        self.save()
+
     def save(self, *args, **kwargs):
         if not self.removed:
             self.translit_name = transliterate(self.name)
@@ -359,7 +366,7 @@ class Case(models.Model):
         items = self.items.values(
             "item_id", "name", "price", "image", "rarity_category", "purchase_price"
         )
-        # считаем коэффициент для айтемов
+        # считаем коэффициент для айтемов todo запретить предметам без закупочной цены попадать в кейсы
         items_kfs = {item["item_id"]: 1 / item["purchase_price"] for item in items}
         # из полученных коэффициентов выше считаем нормализацию
         normalise_kof = 1 / sum([items_kfs[item] for item in items_kfs])
@@ -371,17 +378,26 @@ class Case(models.Model):
 
     @cached_property
     def recommendation_price(self) -> float:
+        from core.models import GenericSettings
+
+        generic = GenericSettings.load()
         items = self.items.all()
+        if items.filter(purchase_price=0).exists():
+            items = items.exclude(purchase_price=0)
+        if items.count() == 0:
+            return 0
         items_kfs = [1 / item.purchase_price for item in items]
         normalise_kof = 1 / sum(items_kfs)
         price = len(items_kfs) * normalise_kof
-        price = price + price * 0.1
+        price = price + price * generic.default_mark_up_case
         return round(price, 2)
 
     recommendation_price.short_description = "Рекомендованная минимальная цена"
 
     def _get_rand_item(self, user: User):
         items = self.items.all()
+        if items.filter(purchase_price=0).exists():
+            items = items.exclude(purchase_price=0)
         # считаем коэффициент для айтемов и берём цену для дальнейших вычислений
         items_kfs = {
             item.item_id: {"kof": 1 / item.purchase_price, "price": item.purchase_price}
@@ -424,20 +440,15 @@ class Case(models.Model):
         win = item.purchase_price > self.price if not self.case_free else True
         OpenedCases.objects.create(case=self, user=user, win=win)
 
-        debit = self.price - item.purchase_price
         if not self.case_free:
             Calc.objects.create(
                 user=user,
                 balance=-self.price,
-                debit=debit,
-                credit=debit * -1,
                 comment=f"Открытие кейса {self.name}",
             )
         else:
             Calc.objects.create(
                 user=user,
-                debit=item.purchase_price,
-                credit=item.purchase_price * -1,
                 comment=f"Открытие кейса {self.name}",
             )
         UserItems.objects.create(user=user, item=item, from_case=True, case=self)

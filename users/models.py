@@ -1,3 +1,4 @@
+from random import choices
 from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -60,13 +61,25 @@ class UserProfile(models.Model):
     def total_income(self) -> float:
         links = self.ref_links.filter(active=True, removed=False)
         activated = ActivatedLinks.objects.filter(bonus_using=True, link__in=links)
-        amounts = activated.aggregate(
-            debit=models.Sum("calc_link__debit"), credit=models.Sum("calc_link__credit")
-        )
-        service_credit = amounts["credit"] or 0
-        service_debit = amounts["debit"] or 0
-        income = (service_credit + service_debit) * self.partner_income
+        amounts = activated.aggregate(income=models.Sum("calc_link__order__sum"))
+        service_income = amounts["income"] or 0
+        income = float(service_income) * self.partner_income
         return round(float(income), 2)
+
+    @cached_property
+    def total_withdrawal(self) -> float:
+        refs = self.user.user_ref_outputs.filter(
+            models.Q(status="created") | models.Q(status="completed"),
+            models.Q(removed=False),
+        )
+        amount = refs.aggregate(total=models.Sum("sum"))["total"]
+        if not amount:
+            amount = 0.0
+        return round(float(amount), 2)
+
+    @cached_property
+    def available_withdrawal(self) -> float:
+        return round(self.total_income - self.total_withdrawal, 2)
 
     def all_debit(self) -> float:
         from payments.models import Calc, PaymentOrder
@@ -150,17 +163,12 @@ class UserItems(models.Model):
         self.active = False
         if item.sale_price != 0:
             sale_price = item.sale_price
-            credit = (item.price - (item.price - item.sale_price)) - item.purchase_price
         elif item.percent_price != 0:
             sale_price = item.price * item.percent_price
-            credit = sale_price - item.purchase_price
         else:
             sale_price = item.purchase_price
-            credit = sale_price - item.purchase_price
         calc = Calc.objects.create(
             user=self.user,
-            credit=credit,
-            debit=credit * -1,
             balance=sale_price,
             comment=f"Продажа пользовательского предмета {self.id}",
         )
@@ -168,9 +176,84 @@ class UserItems(models.Model):
         self.save()
         return
 
+    @classmethod
+    def upgrade_item(
+        cls,
+        user: User,
+        upgrade: models.QuerySet["UserItems"] = None,
+        upgraded: models.QuerySet[Item] = None,
+        balance: float = None,
+    ) -> models.QuerySet[Item] or None:
+        from core.models import GenericSettings
+
+        generic = GenericSettings.load()
+
+        if not upgrade and not balance:
+            return False, "Неверные параметры"
+        if upgraded and upgraded.count() == 0:
+            return False, "Неверные параметры"
+        if upgraded and upgraded.filter(price=0).exists():
+            return False, "Неверные параметры"
+        if upgrade and upgrade.count() == 0 and not balance:
+            return False, "Неверные параметры"
+        if upgrade and upgrade.filter(item__price=0).exists():
+            return False, "Неверные параметры"
+
+        price_items = upgraded.aggregate(sum=models.Sum("price"))["sum"]
+
+        if upgrade:
+            cost = upgrade.aggregate(sum=models.Sum("item__price"))["sum"]
+        else:
+            cost = balance
+
+        upgrade_kof = price_items / cost
+        upgrade_percent = generic.base_upgrade_percent / upgrade_kof
+        upgrade_percent_normalised = upgrade_percent
+        lose = 1 - upgrade_percent
+        lose_normalised = lose
+        if user.profile.individual_percent != 0:
+            upgrade_percent = upgrade_percent * user.profile.individual_percent
+            upgrade_percent_normalised = upgrade_percent / (lose + upgrade_percent)
+            lose_normalised = lose / (lose + upgrade_percent)
+        result = choices(
+            ["lose", "win"], weights=[lose_normalised, upgrade_percent_normalised]
+        )[0]
+        if result == "lose":
+            return False, "Проигрыш"
+        return True, upgraded
+
     class Meta:
         verbose_name = "Предмет пользователя"
         verbose_name_plural = "Предметы пользователей"
+
+
+class UserUpgradeHistory(models.Model):
+    user = models.ForeignKey(
+        verbose_name="Пользователь",
+        to=User,
+        related_name="upgrade_history",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    upgraded = models.ManyToManyField(
+        verbose_name="Возвышаемый предмет",
+        to=UserItems,
+        related_name="upgraded_item",
+        blank=True,
+    )
+    balance = models.FloatField(
+        verbose_name="Баланс", default=None, null=True, blank=True
+    )
+    desired = models.ManyToManyField(
+        verbose_name="Желаемый предмет",
+        to=Item,
+        related_name="Предмет",
+        blank=True,
+    )
+    success = models.BooleanField(verbose_name="Успешный", default=False)
+    created_at = models.DateTimeField(verbose_name="Создан", auto_now=True)
+    updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now_add=True)
 
 
 class ActivatedPromo(models.Model):
@@ -236,12 +319,13 @@ class ActivatedLinks(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        if not self.link.active:
-            self.bonus_using = True
-        if self.calc_link.exists():
-            self.bonus_using = True
+        if self.id:
+            if not self.link.active:
+                self.bonus_using = True
+            if self.calc_link.exists():
+                self.bonus_using = True
 
-        super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Переход по реф ссылке"

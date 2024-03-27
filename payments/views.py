@@ -7,10 +7,17 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAdminUser, AllowAny
-
+from payments.manager import PaymentManager
 
 from core.models import GenericSettings
-from payments.models import PaymentOrder, PromoCode, RefLinks, Output
+from payments.models import (
+    PaymentOrder,
+    PromoCode,
+    RefLinks,
+    Output,
+    RefOutput,
+    PurchaseCompositeItems,
+)
 from payments.serializers import (
     UserPaymentOrderSerializer,
     AdminPaymentOrderSerializer,
@@ -23,6 +30,14 @@ from payments.serializers import (
     UserListOutputSerializer,
     UserOutputSerializer,
     UserCreateOutputSerializer,
+    AdminGetBalanceMoogoldSerializer,
+    AdminRefOutputListSerializer,
+    AdminRefOutputSerializer,
+    UserRefOutputListSerializer,
+    UserRefOutputSerializer,
+    UserRefOutputCreateSerializer,
+    AdminPurchaseListSerializer,
+    AdminPurchaseSerializer,
 )
 from utils.serializers import SuccessSerializer
 
@@ -231,9 +246,6 @@ class AdminRefLinkViewSet(ModelViewSet):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-from payments.models import PurchaseCompositeItems
-
-
 @extend_schema(tags=["output"])
 class UserOutputsViewSet(ModelViewSet):
     queryset = Output.objects.filter(removed=False)
@@ -266,3 +278,106 @@ class UserOutputsViewSet(ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             output = serializer.save()
             return Response(UserOutputSerializer(output).data)
+
+
+@extend_schema(tags=["admin/analytics"])
+class AdminBalanceInMoogoldViewSet(GenericViewSet):
+    http_method_names = ["get"]
+    serializer_class = AdminGetBalanceMoogoldSerializer
+    permission_classes = [IsAdminUser]
+
+    @action(detail=False)
+    def balance(self, request, manager=PaymentManager()):
+        balance = manager._get_moogold_balance()
+        return Response(AdminGetBalanceMoogoldSerializer({"balance": balance}).data)
+
+
+@extend_schema(tags=["admin/ref_outputs"])
+class AdminRefOutputViewSet(ModelViewSet):
+    http_method_names = ["get", "post", "delete"]
+    queryset = RefOutput.objects.filter(removed=False)
+    serializer_class = AdminRefOutputSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = "ref_output_id"
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return AdminRefOutputListSerializer
+        return AdminRefOutputSerializer
+
+    @extend_schema(responses={200: SuccessSerializer}, request=None)
+    def destroy(self, request, *args, **kwargs):
+        ref_output = self.get_object()
+        if not ref_output:
+            return Response(
+                {"message": "Такого вывода не существует"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        message, success = ref_output.remove()
+
+        return Response({"message": message}, status=success)
+
+    @extend_schema(responses={200: SuccessSerializer}, request=None)
+    @action(detail=True, methods=["post"])
+    def completed(self, request, *args, **kwargs):
+        ref_output = self.get_object()
+        if not ref_output:
+            return Response(
+                {"message": "Такого вывода не существует"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        message, success = ref_output.completed()
+
+        return Response({"message": message}, status=success)
+
+    @extend_schema(responses={200: SuccessSerializer}, request=None)
+    @action(detail=True, methods=["post"])
+    def canceled(self, request, *args, **kwargs):
+        ref_output = self.get_object()
+        if not ref_output:
+            return Response(
+                {"message": "Такого вывода не существует"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        message, success = ref_output.cancel()
+
+        return Response({"message": message}, status=success)
+
+
+@extend_schema(tags=["admin/purchase"])
+class AdminPurchaseViewSet(ModelViewSet):
+    http_method_names = ["get"]
+    queryset = PurchaseCompositeItems.objects.filter(removed=False)
+    serializer_class = AdminPurchaseSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = "id"
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return AdminPurchaseListSerializer
+        return AdminPurchaseSerializer
+
+
+@extend_schema(tags=["ref_outputs"])
+class UserRefOutputViewSet(ModelViewSet):
+    http_method_names = ["get", "post"]
+    queryset = RefOutput.objects.filter(removed=False)
+    lookup_field = "ref_output_id"
+    serializer_class = UserRefOutputSerializer
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return UserRefOutputListSerializer
+        if self.action == "create":
+            return UserRefOutputCreateSerializer
+        return UserRefOutputSerializer
+
+    def create(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            ref_output = serializer.save()
+            return Response(UserRefOutputSerializer(ref_output).data)

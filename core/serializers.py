@@ -30,7 +30,12 @@ class AdminGenericSettingsSerializer(serializers.ModelSerializer):
         fields = (
             "opened_cases_buff",
             "users_buff",
+            "min_ref_output",
             "online_buff",
             "purchase_buff",
             "output_crystal_buff",
+            "default_mark_up_case",
+            "base_upgrade_percent",
+            "minimal_price_upgrade",
+            "base_upper_ratio",
         )

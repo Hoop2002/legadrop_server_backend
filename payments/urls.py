@@ -26,10 +26,28 @@ router.register(
     views.AdminRefLinkViewSet,
     basename="ref_links_admin",
 )
+router.register(
+    "6383d341-4d14-4868-81ba-3c6382f2128e/ref_outputs",
+    views.AdminRefOutputViewSet,
+    basename="admin_refoutputs",
+)
+router.register(
+    "6383d341-4d14-4868-81ba-3c6382f2128e/purchase",
+    viewset=views.AdminPurchaseViewSet,
+    basename="purchase",
+)
+
 
 router.register("payments", views.UserPaymentOrderViewSet, basename="user_payments")
 router.register("outputs", views.UserOutputsViewSet, basename="user_outputs")
+router.register("ref_output", views.UserRefOutputViewSet, basename="user_ref_outputs")
 router.register("promo", views.PromoViewSet, basename="user_promo")
+
+router.register(
+    "6383d341-4d14-4868-81ba-3c6382f2128e/moogold",
+    viewset=views.AdminBalanceInMoogoldViewSet,
+    basename="moogold_balance",
+)
 
 urlpatterns = [
     path(

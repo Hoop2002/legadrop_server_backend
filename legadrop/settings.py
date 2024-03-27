@@ -58,6 +58,23 @@ INSTALLED_APPS = [
     "payments",
 ]
 
+CHANNELS_REDIS_HOST = env.str("REDIS_HOST", "localhost")
+CHANNELS_REDIS_PORT = env.int("REDIS_PORT", 6379)
+CHANNELS_REDIS_DB = env.int("REDIS_DATABASE", 0)
+
+REDIS_CONNECTION_STRING = (
+    f"redis://{CHANNELS_REDIS_HOST}:{CHANNELS_REDIS_PORT}/{CHANNELS_REDIS_DB}"
+)
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_CONNECTION_STRING],
+        },
+    },
+}
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -202,10 +219,10 @@ BACK_URL_LAVA = env("BACK_URL_LAVA")
 
 
 # email settings
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = env("EMAIL_HOST", default='smtp.gmail.com')
-EMAIL_HOST_USER = env("EMAIL_HOST_USER", default='test@gmail.com')
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default='key')
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="test@gmail.com")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="key")
 EMAIL_PORT = env("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=True)
 # DEFAULT_FROM_EMAIL = 'default from email'

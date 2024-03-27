@@ -60,19 +60,14 @@ def verify_payment_order(lava=LavaApi()):
                     if activate_promo:
                         comment = f'Пополнение с использованием промокода {activate_promo.promo.name} \
                                    f"{activate_promo.promo.code_data}" пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: NONE\nОдобрен вручную'
-                        credit = float(order.sum) * float(activate_promo.promo.percent)
+                        balance = float(order.sum) * float(activate_promo.promo.percent)
                     else:
                         comment = f'Пополнение с использованием реферальной ссылки {activated_link.link.code_data} \
                                     "{activated_link.link.code_data}" пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: NONE\nОдобрен вручную'
-                        credit = float(order.sum) * float(activated_link.link.bonus)
-
-                    debit = (credit - float(order.sum)) * -1
-                    balance = credit
+                        balance = float(order.sum) * float(activated_link.link.bonus)
 
                     calc = Calc.objects.create(
                         user=user,
-                        credit=credit,
-                        debit=debit,
                         balance=balance,
                         comment=comment,
                         demo=user.profile.demo,
@@ -91,14 +86,10 @@ def verify_payment_order(lava=LavaApi()):
                 else:
                     comment = f"Пополнение пользоватeлем {user.username} на сумму {round(order.sum, 2)} \nService: LAVA"
 
-                    credit = float(order.sum)
-                    debit = 0
-                    balance = credit
+                    balance = float(order.sum)
 
                     calc = Calc.objects.create(
                         user=user,
-                        credit=credit,
-                        debit=debit,
                         balance=balance,
                         comment=comment,
                         demo=user.profile.demo,
@@ -158,14 +149,14 @@ def check_output_status_in_moogold(manager=PaymentManager()):
                     pci.status = pci.REFUNDED
 
             pci.save()
-
-        if (
-            purchase_items.count()
-            == output.purchase_ci_outputs.all()
-            .filter(status=PurchaseCompositeItems.COMPLETED)
-            .count()
-        ):
-            output.status = output.COMPLETED
-            output.active = False
+        if purchase_items.count() != 0:
+            if (
+                purchase_items.count()
+                == output.purchase_ci_outputs.all()
+                .filter(status=PurchaseCompositeItems.COMPLETED)
+                .count()
+            ):
+                output.status = output.COMPLETED
+                output.active = False
 
         output.save()

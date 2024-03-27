@@ -1,5 +1,10 @@
 from django.urls import path
+from rest_framework import routers
 from users import views
+
+router = routers.DefaultRouter()
+
+router.register(r"upgrade", views.UpgradeItem, basename="users_upgrade")
 
 urlpatterns = [
     path(
@@ -60,3 +65,5 @@ urlpatterns = [
         views.AdminUsersViewSet.as_view({"get": "retrieve", "put": "update"}),
     ),
 ]
+
+urlpatterns += router.urls

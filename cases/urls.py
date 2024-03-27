@@ -21,6 +21,11 @@ router.register(
     basename="admin_cases",
 )
 router.register(
+    r"6383d341-4d14-4868-81ba-3c6382f2128e/category",
+    views.AdminCategoryViewSet,
+    basename="admin_category",
+)
+router.register(
     r"6383d341-4d14-4868-81ba-3c6382f2128e/conditions",
     views.AdminConditionsViewSet,
     basename="admin_case_conditions",

@@ -14,6 +14,17 @@ class GenericSettingsAdmin(admin.ModelAdmin):
                     "online_buff",
                     "purchase_buff",
                     "output_crystal_buff",
+                    "default_mark_up_case",
+                )
+            },
+        ),
+        (
+            "Настройки апгрейда",
+            {
+                "fields": (
+                    "base_upgrade_percent",
+                    "minimal_price_upgrade",
+                    "base_upper_ratio",
                 )
             },
         ),
