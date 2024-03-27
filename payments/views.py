@@ -194,7 +194,7 @@ class AdminOutputsViewSet(ModelViewSet):
     @extend_schema(responses={200: SuccessSerializer}, request=None)
     @action(detail=True, methods=["post"])
     def approval(self, request, *args, **kwargs):
-        #return Response(
+        # return Response(
         #        {"message": "Такого вывода не существует"},
         #        status=status.HTTP_404_NOT_FOUND,
         #    )
