@@ -215,6 +215,22 @@ class AdminPromoCodeSerializer(AdminListPromoSerializer):
     limit_for_user = serializers.IntegerField(required=False, default=1)
     bonus_limit = serializers.IntegerField(required=False, default=1)
 
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if "code_data" in attrs:
+            data = attrs["code_data"]
+            if self.instance:
+                promo = PromoCode.objects.filter(code_data=data).exclude(
+                    id=self.instance.id
+                )
+            else:
+                promo = PromoCode.objects.filter(code_data=data)
+            if promo.exists():
+                raise serializers.ValidationError(
+                    {"code_number": "Промокод с таким кодом уже сущесвует!"}
+                )
+        return attrs
+
     def get_fields(self):
         fields = super().get_fields()
         request = self.context.get("request")
