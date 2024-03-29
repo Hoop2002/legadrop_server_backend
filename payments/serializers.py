@@ -91,7 +91,7 @@ class AdminPurchaseSerializer(serializers.ModelSerializer):
 
 class AdminOutputSerializer(AdminListOutputSerializer):
     output_items = UserItemSerializer(many=True)
-    purchase_ci_outputs = AdminPurchaseSerializer(many=True)
+    purchase_ci_outputs = AdminPurchaseListSerializer(many=True)
     cost_withdrawal_of_items = serializers.FloatField()
     cost_withdrawal_of_items_in_rub = serializers.FloatField()
 
@@ -197,6 +197,7 @@ class AdminListPromoSerializer(serializers.ModelSerializer):
             "type",
             "summ",
             "percent",
+            "code_data",
             "limit_activations",
             "to_date",
             "created_at",
