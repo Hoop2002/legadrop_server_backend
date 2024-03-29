@@ -207,7 +207,7 @@ class AdminListPromoSerializer(serializers.ModelSerializer):
 class AdminPromoCodeSerializer(AdminListPromoSerializer):
     type = serializers.ChoiceField(choices=PromoCode.PROMO_TYPES)
     percent = serializers.IntegerField(
-        min_value=0, max_value=100, required=False, default=0
+        min_value=1, max_value=2, required=False, default=0
     )
     summ = serializers.FloatField(required=False)
     to_date = serializers.DateTimeField(required=False)

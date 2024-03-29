@@ -190,7 +190,7 @@ class PromoCode(models.Model):
         if _activated >= self.limit_for_user:
             return "Вы уже использовали этот промокод", False
 
-        calc = None
+        activation = ActivatedPromo.objects.create(user=user, promo=self)
         if self.type == self.BALANCE:
             calc = Calc.objects.create(
                 user=user,
@@ -198,8 +198,8 @@ class PromoCode(models.Model):
                 demo=user.profile.demo,
                 comment=f"Активация промокода {self.name}",
             )
-        activation = ActivatedPromo.objects.create(user=user, promo=self)
-        activation.calc_promo.add(calc)
+            activation.calc_promo.add(calc)
+
         activation.save()
         if self.type == self.BONUS:
             return (
