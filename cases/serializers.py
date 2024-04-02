@@ -409,7 +409,7 @@ class ContestsSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_conditions(instance) -> list[str]:
-        return instance.conditions.values_list("description", flat=True)
+        return instance.conditions.values_list("name", flat=True)
 
     class Meta:
         model = Contests
