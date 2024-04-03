@@ -41,7 +41,7 @@ from payments.serializers import (
     AdminPurchaseListSerializer,
     AdminPurchaseSerializer,
 )
-from utils.serializers import SuccessSerializer
+from utils.serializers import SuccessSerializer, BulkDestroyIntSerializer
 
 
 class UserPaymentOrderViewSet(ModelViewSet):
@@ -170,6 +170,8 @@ class AdminPromoCodeViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == "list":
             return AdminListPromoSerializer
+        if self.action == "bulk_destroyw":
+            return
         return AdminPromoCodeSerializer
 
     @extend_schema(
@@ -196,11 +198,21 @@ class AdminPromoCodeViewSet(ModelViewSet):
         count = (
             self.get_queryset()
             .filter(id=self.kwargs["pk"], removed=False)
-            .update(removed=True)
+            .update(removed=True, active=False)
         )
         if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    @extend_schema(request=BulkDestroyIntSerializer, responses=SuccessSerializer)
+    @action(detail=False, methods=["post"])
+    def bulk_destroy(self, request, *args, **kwargs):
+        ids = request.data.get("ids")
+        queryset = self.get_queryset().filter(id__in=ids)
+        count = queryset.update(removed=True, active=False)
+        return Response(
+            {"message": f"Удалено {count} объектов"}, status=status.HTTP_202_ACCEPTED
+        )
 
 
 @extend_schema(tags=["admin/outputs"])

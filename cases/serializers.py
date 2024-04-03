@@ -86,7 +86,7 @@ class AdminItemListSerializer(serializers.ModelSerializer):
     item_id = serializers.CharField(max_length=9)
     image = serializers.CharField()
     rarity_category = RarityCategorySerializer(read_only=True)
-    purchase_price = serializers.FloatField(source='purchase_price_cached')
+    purchase_price = serializers.FloatField(source="purchase_price_cached")
 
     class Meta:
         model = Item
