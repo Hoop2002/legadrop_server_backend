@@ -4,13 +4,11 @@ from rest_framework import routers
 
 router = routers.DefaultRouter()
 
-router.register(
-    r"6383d341-4d14-4868-81ba-3c6382f2128e/generic_settings",
-    views.GenericSettingsViewSet,
-    basename="generic_settings",
-)
-
 urlpatterns = [
+    path("6383d341-4d14-4868-81ba-3c6382f2128e/generic_settings", views.GenericSettingsViewSet.as_view({
+        "get": "retrieve",
+        "put": "update"
+    }), name="generic_settings"),
     path(
         "6383d341-4d14-4868-81ba-3c6382f2128e/analytics",
         views.AdminAnalyticsViewSet.as_view({"get": "list"}),
