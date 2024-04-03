@@ -152,9 +152,9 @@ class AdminPromoCodeViewSet(ModelViewSet):
     queryset = PromoCode.objects.filter(removed=False)
     serializer_class = AdminPromoCodeSerializer
     permission_classes = [IsAdminUser]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ["active", "type"]
-    ordering_fields = [
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filterset_fields = ("active", "type")
+    ordering_fields = (
         "created_at",
         "active",
         "id",
@@ -164,8 +164,8 @@ class AdminPromoCodeViewSet(ModelViewSet):
         "percent",
         "remaining_activations",
         "type",
-    ]
-    http_method_names = ["get", "post", "delete", "put"]
+    )
+    http_method_names = ("get", "post", "delete", "put")
 
     def get_serializer_class(self):
         if self.action == "list":
