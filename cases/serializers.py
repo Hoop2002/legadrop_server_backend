@@ -72,9 +72,6 @@ class ItemListSerializer(serializers.ModelSerializer):
             "price",
             "image",
             "rarity_category",
-            "purchase_price",
-            "type",
-            "created_at",
         )
         read_only_fields = (
             "item_id",
@@ -82,17 +79,14 @@ class ItemListSerializer(serializers.ModelSerializer):
             "price",
             "image",
             "rarity_category",
-            "purchase_price",
-            "type",
-            "created_at",
         )
 
 
 class AdminItemListSerializer(serializers.ModelSerializer):
     item_id = serializers.CharField(max_length=9)
     image = serializers.CharField()
-    rarity_category = serializers.DictField(read_only=True)
-    percent = serializers.FloatField()
+    rarity_category = RarityCategorySerializer(read_only=True)
+    purchase_price = serializers.FloatField(source='purchase_price_cached')
 
     class Meta:
         model = Item
@@ -100,7 +94,7 @@ class AdminItemListSerializer(serializers.ModelSerializer):
             "item_id",
             "name",
             "price",
-            "percent",
+            "purchase_price",
             "image",
             "rarity_category",
             "type",
@@ -110,7 +104,6 @@ class AdminItemListSerializer(serializers.ModelSerializer):
             "item_id",
             "name",
             "price",
-            "percent",
             "image",
             "rarity_category",
             "type",
