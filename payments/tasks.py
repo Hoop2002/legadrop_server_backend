@@ -1,5 +1,6 @@
 from celery import shared_task
 from django.utils import timezone
+from django.db.models import Q
 from payments.models import (
     PaymentOrder,
     Calc,
@@ -13,13 +14,31 @@ from gateways.lava_api import LavaApi
 from gateways.moogold_api import MoogoldApi
 from payments.manager import PaymentManager
 
+from utils.decorators import single_task
+
 
 @shared_task
 def deactivate_expired_promo():
     now = timezone.localtime()
-    PromoCode.objects.filter(to_date__lte=now, to_date__isnull=False).update(
+    PromoCode.objects.filter(Q(to_date__lte=now) | Q(to_date__isnull=False)).update(
         active=False
     )
+
+
+@shared_task
+@single_task(None)
+def calc_remaining_activations():
+    """Таска для пересчёта остатка активаций промокода.
+    Рассчитана на пересчёт раз в 5-10 минут
+    """
+    now = timezone.localtime()
+    codes = PromoCode.objects.filter(
+        Q(active=True, limit_activations__isnull=False)
+        & (Q(to_date__gte=now) | Q(to_date__isnull=True))
+    ).distinct()
+    for code in codes:
+        code.remaining_activations = code.get_remaining_activations
+        code.save()
 
 
 @shared_task

@@ -182,6 +182,15 @@ class PromoCode(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     removed = models.BooleanField(verbose_name="Удалено", default=False)
 
+    remaining_activations = models.IntegerField(
+        verbose_name="Остаток активаций", default=0
+    )
+
+    @cached_property
+    def get_remaining_activations(self):
+        activations = ActivatedPromo.objects.filter(promo=self).count()
+        return int(self.limit_activations) - activations
+
     def activate_promo(self, user: User) -> (str, bool):
         time = timezone.localtime()
         if not self.active or self.removed or (self.to_date and time >= self.to_date):
@@ -211,8 +220,7 @@ class PromoCode(models.Model):
 
     @cached_property
     def activations(self) -> int:
-        activations = ActivatedPromo.objects.filter(promo=self).count()
-        return activations
+        return ActivatedPromo.objects.filter(promo=self).count()
 
     activations.short_description = "Количество активации"
 
