@@ -256,9 +256,9 @@ class AdminCasesViewSet(ModelViewSet):
 
     @extend_schema(
         description=(
-                "Поля доступные для сортировки списка: `case_id`, `name`, `active`, `category`, `price`, `case_free`, "
-                "`created_at`, . Сортировка от большего к меньшему "
-                '"`case_id`", от меньшего к большему "`-case_id`", работает для всех полей'
+            "Поля доступные для сортировки списка: `case_id`, `name`, `active`, `category`, `price`, `case_free`, "
+            "`created_at`, . Сортировка от большего к меньшему "
+            '"`case_id`", от меньшего к большему "`-case_id`", работает для всех полей'
         )
     )
     def list(self, request, *args, **kwargs):
