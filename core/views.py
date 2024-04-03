@@ -11,8 +11,8 @@ from rest_framework.permissions import IsAdminUser
 
 from core.models import GenericSettings
 from cases.models import OpenedCases, Case
-from payments.models import PaymentOrder, Output, PurchaseCompositeItems
-from users.models import UserItems, UserProfile, ActivatedPromo
+from payments.models import Output, PurchaseCompositeItems
+from users.models import UserItems, UserProfile
 
 from legadrop.settings import REDIS_CONNECTION_STRING
 
@@ -502,18 +502,19 @@ class AnalyticsFooterView(APIView):
 
 
 @extend_schema(tags=["admin/generic"])
-class GenericSettingsViewSet(viewsets.ModelViewSet):
+class GenericSettingsViewSet(viewsets.GenericViewSet):
     serializer_class = AdminGenericSettingsSerializer
     queryset = GenericSettings.objects.all()
     permission_classes = [IsAdminUser]
-    http_method_names = ["get", "post", "put"]
 
-    def create(self, request, *args, **kwargs):
-        if self.get_queryset().exists():
-            return Response(
-                {
-                    "message": "Уже созданы настройки ядра, теперь их можно только изменить"
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return super().create(request, *args, **kwargs)
+    def retrieve(self, request, *args, **kwargs):
+        settings = GenericSettings.load()
+        serializer = self.get_serializer(settings)
+        return Response(serializer.data)
+
+    def update(self, request, *args, **kwargs):
+        settings = GenericSettings.load()
+        serializer = self.get_serializer(settings, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
