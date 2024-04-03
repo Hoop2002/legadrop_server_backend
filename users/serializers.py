@@ -361,7 +361,7 @@ class GameHistorySerializer(serializers.ModelSerializer):
 
 
 class AdminUserListSerializer(serializers.ModelSerializer):
-    image = Base64ImageField(use_url=True, max_length=None)
+    image = Base64ImageField(use_url=True, max_length=None, required=False)
     all_debit = serializers.SerializerMethodField()
     all_output = serializers.SerializerMethodField()
     username = serializers.CharField(source="user.username")
@@ -370,8 +370,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="user.first_name")
     last_name = serializers.CharField(source="user.last_name")
     email = serializers.CharField(source="user.email")
-    profile_id = serializers.IntegerField(source="id")
-    date_joined = serializers.DateTimeField(source="user.date_joined")
+    date_joined = serializers.DateTimeField(source="user.date_joined", read_only=True)
     is_active = serializers.BooleanField(source="user.is_active")
 
     @staticmethod
@@ -407,7 +406,6 @@ class AdminUserListSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = (
             "user_id",
-            "profile_id",
             "first_name",
             "last_name",
             "email",
@@ -428,10 +426,14 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             "date_joined",
             "is_active",
         )
+        read_only_fields = ("date_joined",)
 
 
 class AdminUserSerializer(AdminUserListSerializer):
     balance = serializers.FloatField(required=False)
+    partner_percent = serializers.FloatField(min_value=1, max_value=2)
+    partner_income = serializers.FloatField(min_value=0, max_value=1)
+    individual_percent = serializers.FloatField(min_value=-1)
 
     def validate(self, attrs):
         if "balance" in attrs:
@@ -442,10 +444,20 @@ class AdminUserSerializer(AdminUserListSerializer):
         return attrs
 
     def update(self, instance, validated_data):
-        if "user" in validated_data and "username" in validated_data["user"]:
+        if "user" in validated_data:
             user = validated_data.pop("user")
-            instance.user.username = user["username"]
+            if "username" in user:
+                instance.user.username = user.pop("username")
+            if "first_name" in user:
+                instance.user.first_name = user.pop("first_name")
+            if "last_name" in user:
+                instance.user.last_name = user.pop("last_name")
+            if "email" in user:
+                instance.user.email = user.pop("email")
+            if "is_active" in user:
+                instance.user.is_active = user.pop("is_active")
             instance.user.save()
+
         if "balance" in validated_data:
             balance = validated_data.pop("balance")
             user_balance = instance.balance
@@ -473,7 +485,19 @@ class AdminUserSerializer(AdminUserListSerializer):
             "demo",
             "verified",
         )
-        read_only_fields = ("all_debit", "all_output")
+        read_only_fields = (
+            "all_debit",
+            "all_output",
+            "date_joined",
+            "link_vk",
+            "link_tg",
+            "total_income",
+            "total_withdrawal",
+            "available_withdrawal",
+            "winrate",
+            "all_debit",
+            "all_output",
+        )
 
 
 class AdminUserPaymentHistorySerializer(serializers.ModelSerializer):
