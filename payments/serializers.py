@@ -193,11 +193,12 @@ class AdminListPromoSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "name",
+            "code_data",
             "activations",
             "type",
             "summ",
             "percent",
-            "limit_activations",
+            "remaining_activations",
             "to_date",
             "created_at",
         )
@@ -214,6 +215,9 @@ class AdminPromoCodeSerializer(AdminListPromoSerializer):
     code_data = serializers.CharField(max_length=128, required=False)
     limit_for_user = serializers.IntegerField(required=False, default=1)
     bonus_limit = serializers.IntegerField(required=False, default=1)
+    remaining_activations = serializers.IntegerField(
+        source="get_remaining_activations", read_only=True
+    )
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -251,6 +255,7 @@ class AdminPromoCodeSerializer(AdminListPromoSerializer):
             "summ",
             "percent",
             "limit_activations",
+            "remaining_activations",
             "limit_for_user",
             "bonus_limit",
             "to_date",
