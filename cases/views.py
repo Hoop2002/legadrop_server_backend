@@ -22,9 +22,10 @@ from cases.serializers import (
     AdminListCasesSerializer,
     TestOpenCaseSerializer,
     AdminCategorySerializer,
+    AdminItemListSerializer,
 )
 from cases.models import Case, Item, RarityCategory, ConditionCase, Contests, Category
-from utils.serializers import SuccessSerializer
+from utils.serializers import SuccessSerializer, BulkDestroySerializer
 from utils.functions.write_redis_items import write_items_in_redis
 from utils.functions.combinations import find_combination
 
@@ -151,6 +152,17 @@ class AdminConditionsViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
+    @extend_schema(request=BulkDestroySerializer, responses=SuccessSerializer)
+    @action(detail=False, methods=["post"])
+    def bulk_destroy(self, request, *args, **kwargs):
+        ids = request.data.get("ids")
+        queryset = self.get_queryset().filter(condition_id__in=ids)
+        count = queryset.delete()
+        return Response(
+            {"message": f"Удалено {count[1].get('cases.ConditionCase') or 0} объектов"},
+            status=status.HTTP_202_ACCEPTED,
+        )
+
 
 @extend_schema(tags=["admin/category"])
 class AdminCategoryViewSet(ModelViewSet):
@@ -165,9 +177,9 @@ class AdminCategoryViewSet(ModelViewSet):
 class AdminCasesViewSet(ModelViewSet):
     queryset = Case.objects.filter(removed=False)
     permission_classes = [IsAdminUser]
-    filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
-    filterset_fields = ["active", "category"]
-    ordering_fields = [
+    filter_backends = (filters.OrderingFilter, DjangoFilterBackend)
+    filterset_fields = ("active", "category")
+    ordering_fields = (
         "case_id",
         "name",
         "active",
@@ -175,9 +187,9 @@ class AdminCasesViewSet(ModelViewSet):
         "price",
         "case_free",
         "created_at",
-    ]
+    )
     lookup_field = "case_id"
-    http_method_names = ["get", "post", "delete", "put"]
+    http_method_names = ("get", "post", "delete", "put")
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -283,6 +295,16 @@ class AdminCasesViewSet(ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
+    @extend_schema(request=BulkDestroySerializer, responses=SuccessSerializer)
+    @action(detail=False, methods=["post"])
+    def bulk_destroy(self, request, *args, **kwargs):
+        ids = request.data.get("ids")
+        queryset = self.get_queryset().filter(case_id__in=ids)
+        count = queryset.update(removed=True, active=False)
+        return Response(
+            {"message": f"Удалено {count} объектов"}, status=status.HTTP_202_ACCEPTED
+        )
+
 
 class ShopItemsViewSet(ModelViewSet):
     serializer_class = ItemListSerializer
@@ -323,12 +345,38 @@ class ItemAdminViewSet(ModelViewSet):
     queryset = Item.objects.filter(removed=False)
     permission_classes = [IsAdminUser]
     lookup_field = "item_id"
-    http_method_names = ["get", "post", "delete", "put"]
+    http_method_names = ("get", "post", "delete", "put")
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filterset_fields = ("rarity_category",)
+    ordering_fields = (
+        "item_id",
+        "name",
+        "rarity_category",
+        "type",
+        "price",
+        "created_at",
+    )
 
     def get_serializer_class(self):
         if self.action == "list":
-            return ItemListSerializer
+            return AdminItemListSerializer
         return ItemsAdminSerializer
+
+    @extend_schema(
+        description=(
+            "Поля доступные для сортировки списка: `item_id`, `name`, `rarity_category`, `type`, "
+            "`price`, `created_at`. Сортировка от большего к меньшему "
+            '"`item_id`", от меньшего к большему "`-item_id`", работает для всех полей'
+        )
+    )
+    def list(self, request, *args, **kwargs):
+        # data = request.GET.copy()
+        # if 'ordering' in data and 'purchase_price' in data['ordering']:
+        #     data['ordering'] = data['ordering'].replace('purchase_price', 'purchase_price_cached')
+        #     request.GET = data
+        # print(data)
+        # print(request.GET)
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(
         description=(
@@ -348,6 +396,16 @@ class ItemAdminViewSet(ModelViewSet):
         if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    @extend_schema(request=BulkDestroySerializer, responses=SuccessSerializer)
+    @action(detail=False, methods=["post"])
+    def bulk_destroy(self, request, *args, **kwargs):
+        ids = request.data.get("ids")
+        queryset = self.get_queryset().filter(item_id__in=ids)
+        count = queryset.update(removed=True, active=False)
+        return Response(
+            {"message": f"Удалено {count} объектов"}, status=status.HTTP_202_ACCEPTED
+        )
 
     def get_crystal_count_recommendation(self, request, *args, **kwargs):
         count = kwargs.get("crystal_castles")
@@ -416,6 +474,16 @@ class AdminContestViewSet(ModelViewSet):
         if count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    @extend_schema(request=BulkDestroySerializer, responses=SuccessSerializer)
+    @action(detail=False, methods=["post"])
+    def bulk_destroy(self, request, *args, **kwargs):
+        ids = request.data.get("ids")
+        queryset = self.get_queryset().filter(contest_id__in=ids)
+        count = queryset.update(removed=True, active=False)
+        return Response(
+            {"message": f"Удалено {count} объектов"}, status=status.HTTP_202_ACCEPTED
+        )
 
     @extend_schema(request=None)
     @action(detail=True, methods=["post"])
