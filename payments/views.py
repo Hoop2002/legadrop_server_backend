@@ -1,6 +1,8 @@
 from django.http.response import HttpResponseRedirect, HttpResponseBadRequest
 from drf_spectacular.utils import extend_schema
 
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
@@ -150,12 +152,35 @@ class AdminPromoCodeViewSet(ModelViewSet):
     queryset = PromoCode.objects.filter(removed=False)
     serializer_class = AdminPromoCodeSerializer
     permission_classes = [IsAdminUser]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["active", "type"]
+    ordering_fields = [
+        "created_at",
+        "active",
+        "id",
+        "name",
+        "code_data",
+        "summ",
+        "percent",
+        "remaining_activations",
+        "type",
+    ]
     http_method_names = ["get", "post", "delete", "put"]
 
     def get_serializer_class(self):
         if self.action == "list":
             return AdminListPromoSerializer
         return AdminPromoCodeSerializer
+
+    @extend_schema(
+        description=(
+            "Поля доступные для сортировки списка: `created_at`, `active`, `id`, `name`, `code_data`, `summ`, "
+            "`percent`, `remaining_activations`, `type`. "
+            'Сортировка от больше к меньшему "`id`", от меньшего к большему "`-id`", работает для всех полей'
+        )
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(
         description=(
