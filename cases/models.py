@@ -130,6 +130,7 @@ class Contests(models.Model):
         return self.name
 
     class Meta:
+        ordering = ('id', )
         verbose_name = "Конкурс"
         verbose_name_plural = "Конкурсы"
 
@@ -146,6 +147,7 @@ class RarityCategory(models.Model):
         return self.name
 
     class Meta:
+        ordering = ('id', )
         verbose_name = "Категория редкости"
         verbose_name_plural = "Категории редкости"
 
@@ -197,6 +199,31 @@ class Item(models.Model):
     purchase_price_cached = models.FloatField(
         verbose_name="Закупочная цена в базе", default=0, null=False
     )
+    is_output = models.BooleanField(
+        verbose_name="Выводимый предмет с сервиса", null=False, default=True
+    )
+    sale_price = models.FloatField(verbose_name="Цена продажи", default=0)
+    percent_price = models.FloatField(
+        verbose_name="Процент от начальной цены при продаже",
+        default=0,
+        validators=[MinValueValidator(0)],
+    )
+    sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
+    upgrade = models.BooleanField(verbose_name="Доступно в апгрейде", default=True)
+    image = models.ImageField(upload_to=generate_upload_name, verbose_name="Картинка")
+    created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
+    step_down_factor = models.FloatField(verbose_name="Понижающий фактор", default=1)
+    rarity_category = models.ForeignKey(
+        verbose_name="Категория уникальности",
+        to="RarityCategory",
+        to_field="rarity_id",
+        related_name="items",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    removed = models.BooleanField(verbose_name="Удалено", default=False)
 
     @cached_property
     def purchase_price(self):
@@ -236,32 +263,6 @@ class Item(models.Model):
         currency = float(get_currency()["USDRUB"]["high"])
         return round(price * currency, 2)
 
-    is_output = models.BooleanField(
-        verbose_name="Выводимый предмет с сервиса", null=False, default=True
-    )
-    sale_price = models.FloatField(verbose_name="Цена продажи", default=0)
-    percent_price = models.FloatField(
-        verbose_name="Процент от начальной цены при продаже",
-        default=0,
-        validators=[MinValueValidator(0)],
-    )
-    sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
-    upgrade = models.BooleanField(verbose_name="Доступно в апгрейде", default=True)
-    image = models.ImageField(upload_to=generate_upload_name, verbose_name="Картинка")
-    created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
-    updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
-    step_down_factor = models.FloatField(verbose_name="Понижающий фактор", default=1)
-    rarity_category = models.ForeignKey(
-        verbose_name="Категория уникальности",
-        to="RarityCategory",
-        to_field="rarity_id",
-        related_name="items",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-    )
-    removed = models.BooleanField(verbose_name="Удалено", default=False)
-
     def get_crystal_combinations(self, value_set):
         return find_combination(target=self.crystals_quantity, values=value_set)
 
@@ -269,6 +270,7 @@ class Item(models.Model):
         return self.name
 
     class Meta:
+        ordering = ('id', )
         verbose_name = "Предмет"
         verbose_name_plural = "Предметы"
 
@@ -283,6 +285,7 @@ class Category(models.Model):
         return self.name
 
     class Meta:
+        ordering = ('id', )
         verbose_name = "Категория"
         verbose_name_plural = "Категории"
 
@@ -329,6 +332,7 @@ class ConditionCase(models.Model):
         return self.name
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Условие"
         verbose_name_plural = "Условия"
 
@@ -610,6 +614,7 @@ class Case(models.Model):
         return self.name
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Кейс"
         verbose_name_plural = "Кейсы"
 
@@ -651,5 +656,6 @@ class OpenedCases(models.Model):
         return f"{self.user} открыл {self.case}"
 
     class Meta:
+        ordering = ('id', )
         verbose_name = "Открытый кейс"
         verbose_name_plural = "Открытые кейсы"
