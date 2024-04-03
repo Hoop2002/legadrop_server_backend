@@ -297,7 +297,11 @@ class ActivatedPromo(models.Model):
                 and self.promo.bonus_limit >= self.calc_promo.count()
             ):
                 self.bonus_using = True
-            if self.created_at and self.promo.to_date and self.promo.to_date >= self.created_at:
+            if (
+                self.created_at
+                and self.promo.to_date
+                and self.promo.to_date >= self.created_at
+            ):
                 self.bonus_using = True
 
         super(ActivatedPromo, self).save(*args, **kwargs)
