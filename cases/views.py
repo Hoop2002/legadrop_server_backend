@@ -1,9 +1,11 @@
 from rest_framework import status
+from rest_framework import filters
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema
+from django_filters.rest_framework import DjangoFilterBackend
 
 from cases.serializers import (
     CaseSerializer,
@@ -163,6 +165,17 @@ class AdminCategoryViewSet(ModelViewSet):
 class AdminCasesViewSet(ModelViewSet):
     queryset = Case.objects.filter(removed=False)
     permission_classes = [IsAdminUser]
+    filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
+    filterset_fields = ["active", "category"]
+    ordering_fields = [
+        "case_id",
+        "name",
+        "active",
+        "category",
+        "price",
+        "case_free",
+        "created_at",
+    ]
     lookup_field = "case_id"
     http_method_names = ["get", "post", "delete", "put"]
 
@@ -240,6 +253,16 @@ class AdminCasesViewSet(ModelViewSet):
             instance.set_recommendation_price()
         serializer = AdminCasesSerializer(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        description=(
+            "Поля доступные для сортировки списка: `case_id`, `name`, `active`, `category`, `price`, `case_free`, "
+            "`created_at`, . Сортировка от большего к меньшему "
+            '"`case_id`", от меньшего к большему "`-case_id`", работает для всех полей'
+        )
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(
         description=(

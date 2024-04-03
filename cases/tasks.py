@@ -1,12 +1,26 @@
-from django.utils import timezone
-from django.conf import settings
-from celery import shared_task
-from cases.models import Contests
-from users.models import ContestsWinners, UserItems
-
 import redis
 import time
 import json
+
+from django.utils import timezone
+from django.conf import settings
+from celery import shared_task
+from cases.models import Contests, Item
+from users.models import ContestsWinners, UserItems
+
+from utils.decorators import single_task
+
+
+@shared_task
+@single_task(None)
+def get_purchase_price_items():
+    """Таска для получения закупочной цены предмета.
+    Рассчитана на пересчёт раз в 5-10 минут
+    """
+    items = Item.objects.filter(removed=False)
+    for item in items:
+        item.purchase_price_cached = item.purchase_price
+        item.save()
 
 
 @shared_task

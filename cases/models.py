@@ -194,13 +194,9 @@ class Item(models.Model):
         verbose_name="Количество кристаллов", null=True, default=0
     )
 
-    # purchase_price = models.FloatField(
-    #    verbose_name="Закупочная цена", default=0, null=False
-    # )
-
-    # purchase_price_rub = models.FloatField(
-    #    verbose_name="Закупочная цена в рублях", default=0, null=False
-    # )
+    purchase_price_cached = models.FloatField(
+        verbose_name="Закупочная цена в базе", default=0, null=False
+    )
 
     @cached_property
     def purchase_price(self):

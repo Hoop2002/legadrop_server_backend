@@ -33,7 +33,7 @@ def calc_remaining_activations():
     """
     now = timezone.localtime()
     codes = PromoCode.objects.filter(
-        Q(active=True, limit_activations__isnull=False)
+        Q(active=True, limit_activations__isnull=False, removed=False)
         & (Q(to_date__gte=now) | Q(to_date__isnull=True))
     ).distinct()
     for code in codes:
