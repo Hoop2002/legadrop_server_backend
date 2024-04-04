@@ -146,6 +146,7 @@ class PaymentOrder(models.Model):
         )
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Пополнение"
         verbose_name_plural = "Пополнения"
 
@@ -228,6 +229,7 @@ class PromoCode(models.Model):
         return f"{self.name}_{self.code_data}"
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Промокод"
         verbose_name_plural = "Промокоды"
 
@@ -343,6 +345,7 @@ class Calc(models.Model):
         return f"Начисление {self.calc_id}"
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Начисление"
         verbose_name_plural = "Начисления"
 
@@ -578,6 +581,7 @@ class Output(models.Model):
         return f"{self.output_id} удален пользователем {self.remove_user}", 200
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Вывод предмета"
         verbose_name_plural = "Выводы предметов"
 
@@ -633,6 +637,7 @@ class CompositeItems(models.Model):
         return round(currency * self.price_dollar)
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Составной предмет"
         verbose_name_plural = "Составные предметов"
 
@@ -721,6 +726,7 @@ class PurchaseCompositeItems(models.Model):
         return f"Закупка {self.pci_id} на {self.output}"
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Закупка на сторонем сервисе"
         verbose_name_plural = "Закупки на стороних сервисах"
 
@@ -804,5 +810,6 @@ class RefOutput(models.Model):
         return f"Запрос на вывод средств {self.sum}  партнером {self.user}"
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Вывод с реферальной программы"
         verbose_name_plural = "Выводы с реферальных программ"

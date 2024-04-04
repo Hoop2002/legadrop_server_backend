@@ -235,6 +235,7 @@ class UserItems(models.Model):
         return True, upgraded
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Предмет пользователя"
         verbose_name_plural = "Предметы пользователей"
 
@@ -266,6 +267,9 @@ class UserUpgradeHistory(models.Model):
     success = models.BooleanField(verbose_name="Успешный", default=False)
     created_at = models.DateTimeField(verbose_name="Создан", auto_now=True)
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now_add=True)
+
+    class Meta:
+        ordering = ("id",)
 
 
 class ActivatedPromo(models.Model):
@@ -307,6 +311,7 @@ class ActivatedPromo(models.Model):
         super(ActivatedPromo, self).save(*args, **kwargs)
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Активированный промокод"
         verbose_name_plural = "Активированные промокоды"
 
@@ -344,6 +349,7 @@ class ActivatedLinks(models.Model):
         return super().save(*args, **kwargs)
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Переход по реф ссылке"
         verbose_name_plural = "Переходы по реф ссылкам"
 
@@ -368,6 +374,7 @@ class ContestsWinners(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Победитель конкурса"
         verbose_name_plural = "Победители конкурсов"
 
@@ -390,5 +397,6 @@ class UserVerify(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ("id",)
         verbose_name = "Верификация пользователя"
         verbose_name_plural = "Верификации пользователей"
