@@ -520,10 +520,14 @@ class AdminContestsSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        if 'timer' in validated_data:
-            diff = validated_data['timer'] - instance.timer
-            if diff.total_seconds() != 0 and instance.next_start is not None and not validated_data.get('next_start'):
-                validated_data['next_start'] = instance.next_start + diff
+        if "timer" in validated_data:
+            diff = validated_data["timer"] - instance.timer
+            if (
+                diff.total_seconds() != 0
+                and instance.next_start is not None
+                and not validated_data.get("next_start")
+            ):
+                validated_data["next_start"] = instance.next_start + diff
 
         if "current_award" in validated_data:
             if "items" in validated_data:

@@ -362,8 +362,8 @@ class GameHistorySerializer(serializers.ModelSerializer):
 
 class AdminUserListSerializer(serializers.ModelSerializer):
     image = Base64ImageField(use_url=True, max_length=None, required=False)
-    all_debit = serializers.SerializerMethodField()
-    all_output = serializers.SerializerMethodField()
+    all_debit = serializers.FloatField(source="debit_save")
+    all_output = serializers.FloatField(source="output_save")
     username = serializers.CharField(source="user.username")
     link_vk = serializers.SerializerMethodField()
     link_tg = serializers.SerializerMethodField()
@@ -372,6 +372,8 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     email = serializers.CharField(source="user.email")
     date_joined = serializers.DateTimeField(source="user.date_joined", read_only=True)
     is_active = serializers.BooleanField(source="user.is_active")
+    balance = serializers.FloatField(source="balance_save")
+    winrate = serializers.FloatField(source="winrate_save")
 
     @staticmethod
     def get_link_vk(instance):
@@ -390,17 +392,6 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             return ""
 
         return f"https://t.me/{tg_username}/"
-
-    @staticmethod
-    def get_all_output(instance) -> float:
-        all_ = instance.user.user_outputs.filter(
-            active=False, status="completed"
-        ).aggregate(Sum("withdrawal_price"))
-        return all_["withdrawal_price__sum"] or 0
-
-    @staticmethod
-    def get_all_debit(instance) -> float:
-        return instance.all_debit()
 
     class Meta:
         model = UserProfile
@@ -431,6 +422,9 @@ class AdminUserListSerializer(serializers.ModelSerializer):
 
 class AdminUserSerializer(AdminUserListSerializer):
     balance = serializers.FloatField(required=False)
+    all_debit = serializers.FloatField(read_only=True)
+    all_output = serializers.FloatField(read_only=True)
+    winrate = serializers.FloatField(read_only=True)
     partner_percent = serializers.FloatField(min_value=1, max_value=2)
     partner_income = serializers.FloatField(min_value=0, max_value=1)
     individual_percent = serializers.FloatField(min_value=-1)

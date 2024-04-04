@@ -44,6 +44,13 @@ class UserProfile(models.Model):
         verbose_name="Телеграм никнейм", max_length=512, null=True
     )
 
+    balance_save = models.FloatField(verbose_name="Сохранённый баланс", default=0)
+    winrate_save = models.FloatField(
+        verbose_name="Сохранённый процент побед", default=0
+    )
+    debit_save = models.FloatField(verbose_name="Сохранённый депозит", default=0)
+    output_save = models.FloatField(verbose_name="Сохранённый вывод", default=0)
+
     def verify(self):
         self.verified = True
         self.save()
@@ -92,6 +99,12 @@ class UserProfile(models.Model):
         if w <= 0:
             return 0
         return w
+
+    def all_output(self) -> float:
+        all_ = self.user.user_outputs.filter(
+            active=False, status="completed"
+        ).aggregate(models.Sum("withdrawal_price"))
+        return all_["withdrawal_price__sum"] or 0
 
     def all_debit(self) -> float:
         from payments.models import Calc, PaymentOrder

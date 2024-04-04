@@ -1,24 +1,33 @@
+import uuid
+import re
+import hmac
+import hashlib
+
 from django.contrib.auth import authenticate, login, REDIRECT_FIELD_NAME
 from django.db.models import Sum
-from social_django.utils import load_backend, load_strategy
-from social_core.actions import do_auth
 from django.urls import reverse
+from django.conf import settings
+from django.contrib.auth.models import User
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import action
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework import status
-from drf_spectacular.utils import extend_schema
-from django.http import HttpResponse
 from rest_framework.response import Response
-from django.conf import settings
-from django.contrib.auth.models import User
+
+from rest_framework_simplejwt.tokens import AccessToken
+from social_django.utils import load_backend, load_strategy
+from social_core.actions import do_auth
+from drf_spectacular.utils import extend_schema
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet, BooleanFilter
+
 from users.models import UserProfile, UserItems, UserUpgradeHistory, UserVerify
 from core.models import GenericSettings
 from cases.models import Item
-from cases.serializers import ItemListSerializer
+from payments.models import PaymentOrder, RefLinks
+from legaemail.models import SendMail
 from payments.models import Calc
+from cases.serializers import ItemListSerializer
 from users.serializers import (
     UserProfileCreateSerializer,
     UserSignInSerializer,
@@ -35,14 +44,9 @@ from users.serializers import (
     MinimalValuesSerializer,
     UserVerifycationSerializer,
 )
-from payments.models import PaymentOrder, RefLinks
 from gateways.enka import get_genshin_account
-from legaemail.models import SendMail
+from utils.default_filters import CustomOrderFilter
 from utils.functions.sort_dict import SortDict
-import uuid
-import re
-import hmac
-import hashlib
 
 
 @extend_schema(tags=["main"])
@@ -463,18 +467,64 @@ class GetGenshinAccountView(GenericViewSet):
         return Response({"result": rdata}, status=status.HTTP_200_OK)
 
 
+class UserCustomOrderFilter(CustomOrderFilter):
+    allowed_custom_filters = (
+        "user_id",
+        "username",
+        "balance",
+        "winrate",
+        "all_output",
+        "all_debit",
+        "is_active",
+    )
+    fields_related = {
+        "username": "user__username",
+        "is_active": "user__is_active",
+        "balance": "balance_save",
+        "winrate": "winrate_save",
+        "all_debit": "debit_save",
+        "all_output": "output_save",
+    }
+
+
+class UsersFilter(FilterSet):
+    is_active = BooleanFilter(field_name="user__is_active")
+    individual_percent = BooleanFilter(
+        field_name="individual_percent", method="filter_individual_percent"
+    )
+
+    @staticmethod
+    def filter_individual_percent(queryset, name, value):
+        if value is True:
+            return queryset.exclude(individual_percent=0)
+        if value is False:
+            return queryset.filter(individual_percent=0)
+        return queryset
+
+
 @extend_schema(tags=["admin/users"])
 class AdminUsersViewSet(ModelViewSet):
     queryset = UserProfile.objects.all()
     permission_classes = [IsAdminUser]
     http_method_names = ["post", "get", "put"]
     lookup_field = "user_id"
-    ordering_fields = ["user_id"]
+    filter_backends = (DjangoFilterBackend, UserCustomOrderFilter)
+    filterset_class = UsersFilter
 
     def get_serializer_class(self):
         if self.action == "list":
             return AdminUserListSerializer
         return AdminUserSerializer
+
+    @extend_schema(
+        description=(
+            "Поля доступные для сортировки списка: `user_id`, `username`, `balance`, `winrate`, "
+            "`all_output`, `all_debit`, `is_active`. Сортировка от большего к меньшему "
+            '"`-user_id`", от меньшего к большему "`user_id`", работает для всех полей'
+        )
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(
         description=(

@@ -25,6 +25,7 @@ from cases.serializers import (
     AdminItemListSerializer,
 )
 from cases.models import Case, Item, RarityCategory, ConditionCase, Contests, Category
+from utils.default_filters import CustomOrderFilter
 from utils.serializers import SuccessSerializer, BulkDestroySerializer
 from utils.functions.write_redis_items import write_items_in_redis
 from utils.functions.combinations import find_combination
@@ -340,22 +341,27 @@ class ShopItemsViewSet(ModelViewSet):
             return Response(ItemListSerializer(item).data)
 
 
+class ItemsCustomOrderFilter(CustomOrderFilter):
+    allowed_custom_filters = (
+        "item_id",
+        "name",
+        "rarity_category",
+        "type",
+        "price",
+        "purchase_price",
+        "created_at",
+    )
+    fields_related = {"purchase_price": "purchase_price_cached"}
+
+
 @extend_schema(tags=["admin/items"])
 class ItemAdminViewSet(ModelViewSet):
     queryset = Item.objects.filter(removed=False)
     permission_classes = [IsAdminUser]
     lookup_field = "item_id"
     http_method_names = ("get", "post", "delete", "put")
-    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filter_backends = (DjangoFilterBackend, ItemsCustomOrderFilter)
     filterset_fields = ("rarity_category",)
-    ordering_fields = (
-        "item_id",
-        "name",
-        "rarity_category",
-        "type",
-        "price",
-        "created_at",
-    )
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -365,18 +371,11 @@ class ItemAdminViewSet(ModelViewSet):
     @extend_schema(
         description=(
             "Поля доступные для сортировки списка: `item_id`, `name`, `rarity_category`, `type`, "
-            "`price`, `created_at`. Сортировка от большего к меньшему "
-            '"`item_id`", от меньшего к большему "`-item_id`", работает для всех полей'
+            "`price`, `created_at`, `purchase_price`. Сортировка от большего к меньшему "
             '"`-item_id`", от меньшего к большему "`item_id`", работает для всех полей'
         )
     )
     def list(self, request, *args, **kwargs):
-        # data = request.GET.copy()
-        # if 'ordering' in data and 'purchase_price' in data['ordering']:
-        #     data['ordering'] = data['ordering'].replace('purchase_price', 'purchase_price_cached')
-        #     request.GET = data
-        # print(data)
-        # print(request.GET)
         return super().list(request, *args, **kwargs)
 
     @extend_schema(
