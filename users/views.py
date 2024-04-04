@@ -473,7 +473,6 @@ class UserCustomOrderFilter(CustomOrderFilter):
         "username",
         "balance",
         "winrate",
-        "price",
         "all_output",
         "all_debit",
         "is_active",
@@ -516,6 +515,16 @@ class AdminUsersViewSet(ModelViewSet):
         if self.action == "list":
             return AdminUserListSerializer
         return AdminUserSerializer
+
+    @extend_schema(
+        description=(
+            "Поля доступные для сортировки списка: `user_id`, `username`, `balance`, `winrate`, "
+            "`all_output`, `all_debit`, `is_active`. Сортировка от большего к меньшему "
+            '"`-user_id`", от меньшего к большему "`user_id`", работает для всех полей'
+        )
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(
         description=(
