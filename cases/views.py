@@ -376,12 +376,6 @@ class ItemAdminViewSet(ModelViewSet):
         )
     )
     def list(self, request, *args, **kwargs):
-        # data = request.GET.copy()
-        # if 'ordering' in data and 'purchase_price' in data['ordering']:
-        #     data['ordering'] = data['ordering'].replace('purchase_price', 'purchase_price_cached')
-        #     request.GET = data
-        # print(data)
-        # print(request.GET)
         return super().list(request, *args, **kwargs)
 
     @extend_schema(
