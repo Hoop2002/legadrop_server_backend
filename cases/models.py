@@ -130,7 +130,7 @@ class Contests(models.Model):
         return self.name
 
     class Meta:
-        ordering = ("id",)
+        ordering = ("-id",)
         verbose_name = "Конкурс"
         verbose_name_plural = "Конкурсы"
 
@@ -147,7 +147,7 @@ class RarityCategory(models.Model):
         return self.name
 
     class Meta:
-        ordering = ("id",)
+        ordering = ("-id",)
         verbose_name = "Категория редкости"
         verbose_name_plural = "Категории редкости"
 
@@ -270,7 +270,7 @@ class Item(models.Model):
         return self.name
 
     class Meta:
-        ordering = ("id",)
+        ordering = ("-id",)
         verbose_name = "Предмет"
         verbose_name_plural = "Предметы"
 
@@ -285,7 +285,7 @@ class Category(models.Model):
         return self.name
 
     class Meta:
-        ordering = ("id",)
+        ordering = ("-id",)
         verbose_name = "Категория"
         verbose_name_plural = "Категории"
 
@@ -332,7 +332,7 @@ class ConditionCase(models.Model):
         return self.name
 
     class Meta:
-        ordering = ("id",)
+        ordering = ("-id",)
         verbose_name = "Условие"
         verbose_name_plural = "Условия"
 
@@ -614,7 +614,7 @@ class Case(models.Model):
         return self.name
 
     class Meta:
-        ordering = ("id",)
+        ordering = ("-id",)
         verbose_name = "Кейс"
         verbose_name_plural = "Кейсы"
 
@@ -656,6 +656,6 @@ class OpenedCases(models.Model):
         return f"{self.user} открыл {self.case}"
 
     class Meta:
-        ordering = ("id",)
+        ordering = ("-id",)
         verbose_name = "Открытый кейс"
         verbose_name_plural = "Открытые кейсы"

@@ -270,7 +270,7 @@ class AdminCasesViewSet(ModelViewSet):
         description=(
             "Поля доступные для сортировки списка: `case_id`, `name`, `active`, `category`, `price`, `case_free`, "
             "`created_at`, . Сортировка от большего к меньшему "
-            '"`case_id`", от меньшего к большему "`-case_id`", работает для всех полей'
+            '"`-case_id`", от меньшего к большему "`case_id`", работает для всех полей'
         )
     )
     def list(self, request, *args, **kwargs):
@@ -367,6 +367,7 @@ class ItemAdminViewSet(ModelViewSet):
             "Поля доступные для сортировки списка: `item_id`, `name`, `rarity_category`, `type`, "
             "`price`, `created_at`. Сортировка от большего к меньшему "
             '"`item_id`", от меньшего к большему "`-item_id`", работает для всех полей'
+            '"`-item_id`", от меньшего к большему "`item_id`", работает для всех полей'
         )
     )
     def list(self, request, *args, **kwargs):

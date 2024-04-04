@@ -178,7 +178,7 @@ class AdminPromoCodeViewSet(ModelViewSet):
         description=(
             "Поля доступные для сортировки списка: `created_at`, `active`, `id`, `name`, `code_data`, `summ`, "
             "`percent`, `remaining_activations`, `type`. "
-            'Сортировка от большего к меньшему "`id`", от меньшего к большему "`-id`", работает для всех полей'
+            'Сортировка от большего к меньшему "`-id`", от меньшего к большему "`id`", работает для всех полей'
         )
     )
     def list(self, request, *args, **kwargs):
