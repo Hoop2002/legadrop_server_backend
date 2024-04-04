@@ -23,7 +23,7 @@ class CustomOrderFilter(OrderingFilter):
         if ordering:
             for field in ordering:
                 symbol = "-" if "-" in field else ""
-                if field not in self.fields_related.keys():
+                if field.lstrip('-') not in self.fields_related.keys():
                     order_fields.append(field)
                 else:
                     order_fields.append(symbol + self.fields_related[field.lstrip("-")])
