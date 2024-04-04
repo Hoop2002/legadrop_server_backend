@@ -19,7 +19,12 @@ from rest_framework_simplejwt.tokens import AccessToken
 from social_django.utils import load_backend, load_strategy
 from social_core.actions import do_auth
 from drf_spectacular.utils import extend_schema
-from django_filters.rest_framework import DjangoFilterBackend, FilterSet, BooleanFilter
+from django_filters.rest_framework import (
+    DjangoFilterBackend,
+    FilterSet,
+    BooleanFilter,
+    ChoiceFilter,
+)
 
 from users.models import UserProfile, UserItems, UserUpgradeHistory, UserVerify
 from core.models import GenericSettings
@@ -540,22 +545,41 @@ class AdminUsersViewSet(ModelViewSet):
         return Response(serializer.data, status.HTTP_202_ACCEPTED)
 
 
-@extend_schema(tags=["admin/users"])
-class AdminUserItemsListView(ModelViewSet):
-    queryset = UserItems.objects
-    http_method_names = ["get"]
-    permission_classes = [IsAdminUser]
-    pagination_class = LimitOffsetPagination
-    serializer_class = HistoryItemSerializer
+class UserItemsOrdering(CustomOrderFilter):
+    allowed_custom_filters = (
+        "id",
+        "case_name",
+        "open_date",
+        "case_price",
+        "item_price",
+    )
+    fields_related = {
+        "case_name": "case__name",
+        "open_date": "created_at",
+        "case_price": "case__price",
+        "item_price": "item__price",
+    }
 
-    @extend_schema(request=None)
-    def items_history(self, request, *args, **kwargs):
-        user_id = kwargs.get("user_id")
-        queryset = self.get_queryset().filter(active=False, user_id=user_id)
-        items = self.paginate_queryset(queryset)
-        serializer = self.get_serializer(items, many=True)
-        response = self.get_paginated_response(serializer.data)
-        return response
+
+class UserItemsFilter(FilterSet):
+    ITEM_STATUSES = (
+        ("active", "На аккаунте"),
+        ("inactive", "Продан"),
+        ("withdrawn", "Выведен"),
+    )
+    status = ChoiceFilter(
+        field_name="status", method="filter_status", choices=ITEM_STATUSES
+    )
+
+    @staticmethod
+    def filter_status(queryset, name, value):
+        if value == "active":
+            return queryset.filter(active=True, withdrawn=False)
+        if value == "inactive":
+            return queryset.filter(active=False, withdrawn=False)
+        if value == "withdrawn":
+            return queryset.filter(withdrawn=True)
+        return queryset
 
 
 @extend_schema(tags=["admin/users"])
@@ -563,17 +587,30 @@ class AdminUserHistoryGamesViewSet(GenericViewSet):
     queryset = UserItems.objects
     permission_classes = [IsAdminUser]
     http_method_names = ["get"]
+    filter_backends = (DjangoFilterBackend, UserItemsOrdering)
+    filterset_class = UserItemsFilter
 
     def get_serializer_class(self):
         if self.action == "games":
             return GameHistorySerializer
+        if self.action == "items_history":
+            return HistoryItemSerializer
         return UserItemSerializer
 
-    @extend_schema(responses={200: GameHistorySerializer(many=True)})
+    @extend_schema(
+        responses={200: GameHistorySerializer(many=True)},
+        description=(
+            "Поля доступные для сортировки списка: `id`, `case_name`, `open_date`, `case_price`, "
+            "`item_price`. Сортировка от большего к меньшему "
+            '"`-id`", от меньшего к большему "`id`", работает для всех полей'
+        ),
+    )
     @action(detail=False, pagination_class=LimitOffsetPagination)
     def games(self, request, *args, **kwargs) -> GameHistorySerializer(many=True):
         user_id = kwargs.get("user_id")
-        queryset = self.get_queryset().filter(user_id=user_id, from_case=True)
+        queryset = self.filter_queryset(
+            self.get_queryset().filter(user_id=user_id, from_case=True)
+        )
         paginated = self.paginate_queryset(queryset)
         serializer = self.get_serializer(paginated, many=True)
         return self.get_paginated_response(serializer.data)
@@ -586,6 +623,16 @@ class AdminUserHistoryGamesViewSet(GenericViewSet):
         paginated = self.paginate_queryset(queryset)
         serializer = self.get_serializer(paginated, many=True)
         return self.get_paginated_response(serializer.data)
+
+    @extend_schema(responses={200: HistoryItemSerializer(many=True)})
+    @action(detail=False, pagination_class=LimitOffsetPagination)
+    def items_history(self, request, *args, **kwargs):
+        user_id = kwargs.get("user_id")
+        queryset = self.get_queryset().filter(active=False, user_id=user_id)
+        items = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(items, many=True)
+        response = self.get_paginated_response(serializer.data)
+        return response
 
 
 @extend_schema(tags=["admin/users"])

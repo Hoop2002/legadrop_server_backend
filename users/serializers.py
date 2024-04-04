@@ -1,3 +1,4 @@
+import typing
 from django.contrib.auth.models import User
 from django.db.models import Sum
 from rest_framework import serializers
@@ -326,18 +327,39 @@ class GameHistorySerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
 
     @staticmethod
-    def get_item(instance):
+    def get_item(
+        instance,
+    ) -> typing.TypedDict(
+        "item",
+        {
+            "item_id": str,
+            "name": str,
+            "price": float,
+            "type": str,
+            "purchase_price": float,
+        },
+    ):
         item_ = instance.item
         return {
             "item_id": item_.item_id,
             "name": item_.name,
             "price": item_.price,
             "type": item_.type,
-            "purchase_price": item_.purchase_price,
+            "purchase_price": item_.purchase_price_cached,
         }
 
     @staticmethod
-    def get_case(instance):
+    def get_case(
+        instance,
+    ) -> typing.TypedDict(
+        "item",
+        {
+            "case_id": str,
+            "name": str,
+            "translit_name": float,
+            "price": str,
+        },
+    ):
         case_ = instance.case
         return {
             "case_id": case_.case_id,
