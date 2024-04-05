@@ -12,8 +12,9 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
-from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.filters import OrderingFilter
+from rest_framework import status
 
 from rest_framework_simplejwt.tokens import AccessToken
 from social_django.utils import load_backend, load_strategy
@@ -552,12 +553,14 @@ class UserItemsOrdering(CustomOrderFilter):
         "open_date",
         "case_price",
         "item_price",
+        "item_name",
     )
     fields_related = {
         "case_name": "case__name",
         "open_date": "created_at",
         "case_price": "case__price",
         "item_price": "item__price",
+        "item_name": "item__name",
     }
 
 
@@ -615,20 +618,36 @@ class AdminUserHistoryGamesViewSet(GenericViewSet):
         serializer = self.get_serializer(paginated, many=True)
         return self.get_paginated_response(serializer.data)
 
-    @extend_schema(responses={200: UserItemSerializer(many=True)})
+    @extend_schema(
+        responses={200: UserItemSerializer(many=True)},
+        description=(
+            "Поля доступные для сортировки списка: `id`, `item_price`, `item_name`."
+            " Сортировка от большего к меньшему "
+            '"`-id`", от меньшего к большему "`id`", работает для всех полей'
+        ),
+    )
     @action(detail=False, pagination_class=LimitOffsetPagination)
     def items(self, request, *args, **kwargs):
         user_id = kwargs.get("user_id")
-        queryset = self.get_queryset().filter(user_id=user_id)
+        queryset = self.filter_queryset(self.get_queryset().filter(user_id=user_id))
         paginated = self.paginate_queryset(queryset)
         serializer = self.get_serializer(paginated, many=True)
         return self.get_paginated_response(serializer.data)
 
-    @extend_schema(responses={200: HistoryItemSerializer(many=True)})
+    @extend_schema(
+        responses={200: HistoryItemSerializer(many=True)},
+        description=(
+            "Поля доступные для сортировки списка: `id`, `item_price`, `item_name`."
+            " Сортировка от большего к меньшему "
+            '"`-id`", от меньшего к большему "`id`", работает для всех полей'
+        ),
+    )
     @action(detail=False, pagination_class=LimitOffsetPagination)
     def items_history(self, request, *args, **kwargs):
         user_id = kwargs.get("user_id")
-        queryset = self.get_queryset().filter(active=False, user_id=user_id)
+        queryset = self.filter_queryset(
+            self.get_queryset().filter(active=False, user_id=user_id)
+        )
         items = self.paginate_queryset(queryset)
         serializer = self.get_serializer(items, many=True)
         response = self.get_paginated_response(serializer.data)
@@ -641,10 +660,20 @@ class AdminUserPaymentHistoryViewSet(GenericViewSet):
     serializer_class = AdminUserPaymentHistorySerializer
     permission_classes = [IsAdminUser]
     http_method_names = ["get"]
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    ordering_fields = (("id", "type_payments", "created_at", "sum", "status"),)
+    filterset_fields = ("type_payments", "status")
 
+    @extend_schema(
+        description=(
+            "Поля доступные для сортировки списка: `id`, `type_payments`, `created_at`, `sum`, `status`."
+            " Сортировка от большего к меньшему "
+            '"`-id`", от меньшего к большему "`id`", работает для всех полей'
+        ),
+    )
     def list(self, request, *args, **kwargs):
         user_id = kwargs.get("user_id")
-        queryset = self.get_queryset().filter(user_id=user_id)
+        queryset = self.filter_queryset(self.get_queryset().filter(user_id=user_id))
         paginated = self.paginate_queryset(queryset)
         serializer = self.get_serializer(paginated, many=True)
         return self.get_paginated_response(serializer.data)
