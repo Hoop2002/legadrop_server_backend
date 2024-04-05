@@ -87,7 +87,7 @@ urlpatterns = [
     ),
     path(
         "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/items_history/",
-        views.AdminUserItemsListView.as_view({"get": "items_history"}),
+        views.AdminUserHistoryGamesViewSet.as_view({"get": "items_history"}),
     ),
     path(
         "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/",
