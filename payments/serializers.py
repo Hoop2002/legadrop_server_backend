@@ -10,7 +10,11 @@ from payments.models import (
     PurchaseCompositeItems,
 )
 from payments.manager import PaymentManager
-from users.serializers import AdminUserListSerializer, UserItemSerializer
+from users.serializers import (
+    AdminUserListSerializer,
+    UserItemSerializer,
+    OtherUserSerializer,
+)
 from users.models import UserItems
 from datetime import datetime
 from core.models import GenericSettings
@@ -66,15 +70,27 @@ class ActivatePromoCodeSerializer(serializers.ModelSerializer):
 
 
 class AdminPaymentOrderSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = PaymentOrder
         fields = "__all__"
 
 
 class AdminListOutputSerializer(serializers.ModelSerializer):
+    user = OtherUserSerializer()
+
     class Meta:
         model = Output
-        fields = ("id", "output_id", "type", "status")
+        fields = (
+            "id",
+            "output_id",
+            "user",
+            "type",
+            "status",
+            "withdrawal_price",
+            "created_at",
+            "active",
+        )
 
 
 class AdminPurchaseListSerializer(serializers.ModelSerializer):
@@ -94,6 +110,7 @@ class AdminOutputSerializer(AdminListOutputSerializer):
     purchase_ci_outputs = AdminPurchaseListSerializer(many=True)
     cost_withdrawal_of_items = serializers.FloatField()
     cost_withdrawal_of_items_in_rub = serializers.FloatField()
+    user = OtherUserSerializer()
 
     class Meta:
         model = Output
@@ -276,7 +293,7 @@ class RefLinksAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RefLinks
-        fields = ("code_data", "from_user", "active", "created_at")
+        fields = ("id", "code_data", "from_user", "active", "created_at")
 
 
 class AdminGetBalanceMoogoldSerializer(serializers.Serializer):

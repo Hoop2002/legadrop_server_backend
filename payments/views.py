@@ -9,6 +9,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAdminUser, AllowAny
+from utils.default_filters import CustomOrderFilter
 from payments.manager import PaymentManager
 
 from core.models import GenericSettings
@@ -66,6 +67,26 @@ class AdminPaymentOrderViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     lookup_field = "order_id"
     http_method_names = ["get", "post"]
+    filter_backends = (filters.OrderingFilter, DjangoFilterBackend)
+    ordering_fields = (
+        "order_id",
+        "user",
+        "email",
+        "type_payments",
+        "created_at",
+        "status",
+    )
+    filterset_fields = ("status", "type_payments")
+
+    @extend_schema(
+        description=(
+            "Поля доступные для сортировки списка: `order_id`, `user`, `email`, `type_payments`, `created_at`, `status`"
+            ". Сортировка от большего к меньшему "
+            '"`-order_id`", от меньшего к большему "`order_id`", работает для всех полей'
+        )
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(responses={200: SuccessSerializer}, request=None)
     @action(detail=True, methods=["post"])
@@ -222,11 +243,34 @@ class AdminOutputsViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     http_method_names = ["get", "post", "delete"]
     lookup_field = "output_id"
+    filter_backends = (
+        filters.OrderingFilter,
+        DjangoFilterBackend,
+        filters.SearchFilter,
+    )
+    ordering_fields = (
+        "output_id",
+        "status",
+        "created_at",
+        "withdrawal_price",
+        "active",
+    )
+    filterset_fields = ("status", "user")
+    # search_fields = ("output_id", )
 
     def get_serializer_class(self):
         if self.action == "list":
             return AdminListOutputSerializer
         return AdminOutputSerializer
+
+    @extend_schema(
+        description=(
+            "Поля доступные для сортировки списка: `output_id`, `status`, `user`, `created_at`, `withdrawal_price`, `active`."
+            'Сортировка от большего к меньшему "`-output_id`", от меньшего к большему "`output_id`", работает для всех полей'
+        )
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(responses={200: SuccessSerializer}, request=None)
     @action(detail=True, methods=["post"])
@@ -264,6 +308,33 @@ class AdminOutputsViewSet(ModelViewSet):
         )
 
 
+class RefLinksCustomOrderFilter(CustomOrderFilter):
+    allowed_custom_filters = (
+        "from_user",
+        "partner_percent",
+        "partner_income",
+        "code_data",
+        "created_at",
+        # "total_income",
+        # "total_withdrawal",
+        # "available_withdrawal",
+        "all_debit",
+        "all_output",
+        "date_joined",
+    )
+
+    fields_related = {
+        "partner_percent": "from_user__partner_percent",
+        "partner_income": "from_user__partner_income",
+        # "total_income": "from_user__total_income",
+        # "total_withdrawal": "from_user__total_withdrawal",
+        # "available_withdrawal": "from_user__available_withdrawal",
+        "all_debit": "from_user__debit_save",
+        "all_output": "from_user__output_save",
+        "date_joined": "from_user__user__date_joined",
+    }
+
+
 @extend_schema(tags=["admin/ref_links"])
 class AdminRefLinkViewSet(ModelViewSet):
     queryset = RefLinks.objects.filter(removed=False)
@@ -271,6 +342,18 @@ class AdminRefLinkViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     lookup_field = "code_data"
     http_method_names = ["get", "put", "delete"]
+
+    filter_backends = (DjangoFilterBackend, RefLinksCustomOrderFilter)
+
+    @extend_schema(
+        description=(
+            "Поля доступные для сортировки списка: `from_user`, `partner_percent`, `partner_income`, `code_data`, `created_at`, `created_at`, `all_debit`, `all_output`, `date_joined`"
+            ". Сортировка от большего к меньшему "
+            '"`-from_user`", от меньшего к большему "`from_user`", работает для всех полей'
+        )
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(
         description=(
@@ -345,6 +428,25 @@ class AdminRefOutputViewSet(ModelViewSet):
     serializer_class = AdminRefOutputSerializer
     permission_classes = [IsAdminUser]
     lookup_field = "ref_output_id"
+
+    filter_backends = (filters.OrderingFilter, DjangoFilterBackend)
+    ordering_fields = (
+        "ref_output_id",
+        "sum",
+        "status",
+        "created_at",
+    )
+    filterset_fields = ("status",)
+
+    @extend_schema(
+        description=(
+            "Поля доступные для сортировки списка: `ref_output_id`, `sum`, `status`, `created_at`"
+            ". Сортировка от большего к меньшему "
+            '"`-ref_output_id`", от меньшего к большему "`ref_output_id`", работает для всех полей'
+        )
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
