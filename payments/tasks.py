@@ -24,6 +24,14 @@ def deactivate_expired_promo():
         active=False
     )
 
+@shared_task
+@single_task(None)
+def withdrawal_price_output():
+    outputs_orders = Output.objects.all()
+    for out in outputs_orders:
+        out.withdrawal_price = out.cost_withdrawal_of_items_in_rub
+        out.save()
+
 
 @shared_task
 @single_task(None)
@@ -42,6 +50,7 @@ def calc_remaining_activations():
 
 
 @shared_task
+@single_task(None)
 def verify_payment_order(lava=LavaApi()):
     payments_orders = PaymentOrder.objects.filter(active=True).all()
     for order in payments_orders:
