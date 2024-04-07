@@ -362,11 +362,14 @@ class Output(models.Model):
     COMPLETED = "completed"
     PROCCESS = "proccess"
     TECHNICAL_ERR = "technical-error"
+    CANCELED = "canceled"
+
 
     OUTPUT_STATUS = (
         (COMPLETED, "Завершенный"),
         (PROCCESS, "В процессе"),
         (TECHNICAL_ERR, "Техническая ошибка"),
+        (CANCELED, "Отменен")
     )
 
     output_id = models.CharField(
@@ -424,6 +427,15 @@ class Output(models.Model):
         null=True,
         blank=True,
         related_name="user_remove_outputs",
+    )
+
+    user_cancel = models.ForeignKey(
+        verbose_name="Отменивший пользователь",
+        to=User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_cancel_outputs",
     )
 
     def __str__(self):
@@ -580,6 +592,14 @@ class Output(models.Model):
         self.save()
         return f"{self.output_id} удален пользователем {self.remove_user}", 200
 
+    def canceled(self, user_cancel: User):
+        self.status = self.CANCELED
+        self.user_cancel = user_cancel
+        self.active = False
+        self.save()
+
+        return f"{self.output_id} отменен пользователем {self.user_cancel}", 200
+        
     class Meta:
         ordering = ("-id",)
         verbose_name = "Вывод предмета"

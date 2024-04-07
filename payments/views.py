@@ -307,6 +307,24 @@ class AdminOutputsViewSet(ModelViewSet):
             {"detail": "Method Not Allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
 
+    @extend_schema(responses={200: SuccessSerializer}, request=None)
+    @action(detail=True, methods=["post"])
+    def canceled(self, request, *args, **kwargs):
+        output = self.get_object()
+        if not output:
+            return Response(
+                {"message": "Такого вывода не существует"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if output.status == Output.CANCELED:
+            return Response(
+                {"message": "Вывод уже отменен"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )    
+
+        message, success = output.canceled(user_cancel=request.user)
+        return Response({"message": message}, status=success)           
 
 class RefLinksCustomOrderFilter(CustomOrderFilter):
     allowed_custom_filters = (
