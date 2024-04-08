@@ -87,6 +87,13 @@ class AdminItemListSerializer(serializers.ModelSerializer):
     image = serializers.CharField()
     rarity_category = RarityCategorySerializer(read_only=True)
     purchase_price = serializers.FloatField(source="purchase_price_cached")
+    percent = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_percent(instance):
+        if isinstance(instance, dict) and "percent" in instance.keys():
+            return instance["percent"]
+        return 0
 
     class Meta:
         model = Item
@@ -99,6 +106,7 @@ class AdminItemListSerializer(serializers.ModelSerializer):
             "rarity_category",
             "type",
             "created_at",
+            "percent",
         )
         read_only_fields = (
             "item_id",

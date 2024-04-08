@@ -25,7 +25,7 @@ class Contests(models.Model):
     contest_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )
-    name = models.CharField(verbose_name="Название", max_length=256)
+    name = models.CharField(verbose_name="Название", max_length=256, db_index=True)
     timer = models.DurationField(
         verbose_name="Промежуток",
         default=timezone.timedelta(seconds=3600 * 24),
@@ -137,9 +137,12 @@ class Contests(models.Model):
 
 class RarityCategory(models.Model):
     rarity_id = models.CharField(
-        default=id_generator, max_length=9, editable=False, unique=True
+        default=id_generator,
+        max_length=9,
+        editable=False,
+        unique=True,
     )
-    name = models.CharField(verbose_name="Название", max_length=256)
+    name = models.CharField(verbose_name="Название", max_length=256, db_index=True)
     rarity_color = ColorField(default="#FF0000", verbose_name="Цвет категории")
     category_percent = models.FloatField(default=1, null=False)
 
@@ -184,7 +187,7 @@ class Item(models.Model):
     item_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )
-    name = models.CharField(verbose_name="Название", max_length=256)
+    name = models.CharField(verbose_name="Название", max_length=256, db_index=True)
     price = models.FloatField(verbose_name="Стоимость", default=0, null=False)
     type = models.CharField(
         verbose_name="Тип предмета", max_length=32, choices=ITEMS_TYPE, null=True
@@ -279,7 +282,7 @@ class Category(models.Model):
     category_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )
-    name = models.CharField(verbose_name="Название", max_length=256)
+    name = models.CharField(verbose_name="Название", max_length=256, db_index=True)
 
     def __str__(self):
         return self.name
@@ -302,9 +305,12 @@ class ConditionCase(models.Model):
         (GROUP_SUBSCRIBE_TG, "Подписка на канал Telegram"),
     )
 
-    name = models.CharField(max_length=256, unique=True)
+    name = models.CharField(max_length=256, unique=True, db_index=True)
     description = models.TextField(
-        verbose_name="Описание для пользователя", blank=True, null=True
+        verbose_name="Описание для пользователя",
+        blank=True,
+        null=True,
+        db_index=True,
     )
     condition_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
@@ -341,7 +347,9 @@ class Case(models.Model):
     case_id = models.CharField(
         default=id_generator, max_length=9, editable=False, unique=True
     )
-    name = models.CharField(verbose_name="Название", max_length=256, unique=True)
+    name = models.CharField(
+        verbose_name="Название", max_length=256, unique=True, db_index=True
+    )
     translit_name = models.CharField(
         verbose_name="Транслитерация названия",
         default="name",
@@ -510,6 +518,7 @@ class Case(models.Model):
             "image",
             "type",
             "created_at",
+            "purchase_price_cached",
         )
         # считаем коэффициент для айтемов todo запретить предметам без закупочной цены попадать в кейсы
         items_kfs = {

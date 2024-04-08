@@ -142,7 +142,10 @@ class AdminConditionsViewSet(ModelViewSet):
     serializer_class = ConditionSerializer
     permission_classes = [IsAdminUser]
     lookup_field = "condition_id"
-    http_method_names = ["get", "post", "delete", "put"]
+    http_method_names = ("get", "post", "delete", "put")
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ("name", "description")
+    filterset_fields = ("type_condition",)
 
     @extend_schema(
         description=(
@@ -171,14 +174,22 @@ class AdminCategoryViewSet(ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = AdminCategorySerializer
     lookup_field = "category_id"
-    http_method_names = ["get", "post", "delete", "put"]
+    http_method_names = ("get", "post", "delete", "put")
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("name",)
 
 
 @extend_schema(tags=["admin/cases"])
 class AdminCasesViewSet(ModelViewSet):
     queryset = Case.objects.filter(removed=False)
     permission_classes = [IsAdminUser]
-    filter_backends = (filters.OrderingFilter, DjangoFilterBackend)
+    lookup_field = "case_id"
+    http_method_names = ("get", "post", "delete", "put")
+    filter_backends = (
+        filters.OrderingFilter,
+        DjangoFilterBackend,
+        filters.SearchFilter,
+    )
     filterset_fields = ("active", "category")
     ordering_fields = (
         "case_id",
@@ -189,8 +200,7 @@ class AdminCasesViewSet(ModelViewSet):
         "case_free",
         "created_at",
     )
-    lookup_field = "case_id"
-    http_method_names = ("get", "post", "delete", "put")
+    search_fields = ("name", "category__name", "items__name", "conditions__name")
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -360,8 +370,13 @@ class ItemAdminViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     lookup_field = "item_id"
     http_method_names = ("get", "post", "delete", "put")
-    filter_backends = (DjangoFilterBackend, ItemsCustomOrderFilter)
-    filterset_fields = ("rarity_category",)
+    filter_backends = (
+        DjangoFilterBackend,
+        ItemsCustomOrderFilter,
+        filters.SearchFilter,
+    )
+    filterset_fields = ("rarity_category", "type")
+    search_fields = ("name",)
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -441,6 +456,8 @@ class AdminRarityCategoryViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     lookup_field = "rarity_id"
     http_method_names = ["get", "post", "put", "delete"]
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("name",)
 
 
 @extend_schema(tags=["admin/contest"])
@@ -448,7 +465,9 @@ class AdminContestViewSet(ModelViewSet):
     queryset = Contests.objects.filter(removed=False)
     lookup_field = "contest_id"
     permission_classes = [IsAdminUser]
-    http_method_names = ["get", "post", "put", "delete"]
+    http_method_names = ("get", "post", "put", "delete")
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("name", "current_award__name")
 
     def get_serializer_class(self):
         if self.action == "list":
