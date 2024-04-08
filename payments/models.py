@@ -595,7 +595,7 @@ class Output(models.Model):
         self.removed = True
         self.remove_user = user_remove
         self.active = False
-        self.withdrawal_price = self.cost_withdrawal_of_items
+        self.withdrawal_price = self.cost_withdrawal_of_items_in_rub
         self.save()
         return f"{self.output_id} удален пользователем {self.remove_user}", 200
 
