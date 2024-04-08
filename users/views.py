@@ -661,7 +661,7 @@ class AdminUserPaymentHistoryViewSet(GenericViewSet):
     permission_classes = [IsAdminUser]
     http_method_names = ["get"]
     filter_backends = (DjangoFilterBackend, OrderingFilter)
-    ordering_fields = (("id", "type_payments", "created_at", "sum", "status"),)
+    ordering_fields = ("id", "type_payments", "created_at", "sum", "status")
     filterset_fields = ("type_payments", "status")
 
     @extend_schema(
