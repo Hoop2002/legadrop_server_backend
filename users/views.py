@@ -49,6 +49,7 @@ from users.serializers import (
     UpgradeItemSerializer,
     MinimalValuesSerializer,
     UserVerifycationSerializer,
+    AdminUserItemSerializer,
 )
 from gateways.enka import get_genshin_account
 from utils.default_filters import CustomOrderFilter
@@ -512,7 +513,7 @@ class UsersFilter(FilterSet):
 class AdminUsersViewSet(ModelViewSet):
     queryset = UserProfile.objects.all()
     permission_classes = [IsAdminUser]
-    http_method_names = ["post", "get", "put"]
+    http_method_names = ("post", "get", "put")
     lookup_field = "user_id"
     filter_backends = (DjangoFilterBackend, UserCustomOrderFilter, SearchFilter)
     filterset_class = UsersFilter
@@ -560,6 +561,7 @@ class UserItemsOrdering(CustomOrderFilter):
         "open_date",
         "case_price",
         "item_price",
+        "item_price_sold",
         "item_name",
     )
     fields_related = {
@@ -567,6 +569,7 @@ class UserItemsOrdering(CustomOrderFilter):
         "open_date": "created_at",
         "case_price": "case__price",
         "item_price": "item__price",
+        "item_price_sold": "calc__balance",
         "item_name": "item__name",
     }
 
@@ -605,7 +608,7 @@ class AdminUserHistoryGamesViewSet(GenericViewSet):
             return GameHistorySerializer
         if self.action == "items_history":
             return HistoryItemSerializer
-        return UserItemSerializer
+        return AdminUserItemSerializer
 
     @extend_schema(
         responses={200: GameHistorySerializer(many=True)},
@@ -626,7 +629,7 @@ class AdminUserHistoryGamesViewSet(GenericViewSet):
         return self.get_paginated_response(serializer.data)
 
     @extend_schema(
-        responses={200: UserItemSerializer(many=True)},
+        responses={200: AdminUserItemSerializer(many=True)},
         description=(
             "Поля доступные для сортировки списка: `id`, `item_price`, `item_name`."
             " Сортировка от большего к меньшему "
@@ -644,7 +647,7 @@ class AdminUserHistoryGamesViewSet(GenericViewSet):
     @extend_schema(
         responses={200: HistoryItemSerializer(many=True)},
         description=(
-            "Поля доступные для сортировки списка: `id`, `item_price`, `item_name`."
+            "Поля доступные для сортировки списка: `id`, `item_price_sold`, `item_name`."
             " Сортировка от большего к меньшему "
             '"`-id`", от меньшего к большему "`id`", работает для всех полей'
         ),
