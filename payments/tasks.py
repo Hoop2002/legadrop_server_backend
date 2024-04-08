@@ -28,7 +28,12 @@ def deactivate_expired_promo():
 @shared_task
 @single_task(None)
 def withdrawal_price_output():
-    outputs_orders = Output.objects.all()
+    outputs_orders = Output.objects.filter(
+        removed=False,
+        withdrawal_price=False,
+        status=Output.PROCCESS,
+        active=True,
+    )
     for out in outputs_orders:
         out.withdrawal_price = out.cost_withdrawal_of_items_in_rub
         out.save()
