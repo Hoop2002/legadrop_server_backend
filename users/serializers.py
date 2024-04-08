@@ -188,6 +188,10 @@ class UserItemSerializer(serializers.ModelSerializer):
         )
 
 
+class AdminUserItemSerializer(UserItemSerializer):
+    price = serializers.FloatField(source="item.price")
+
+
 class HistoryItemSerializer(UserItemSerializer):
     status = serializers.SerializerMethodField(read_only=True)
     price = serializers.SerializerMethodField()

@@ -40,7 +40,9 @@ class PaymentOrder(models.Model):
         (APPROVAL, "Одобрен вручную"),
     )
 
-    order_id = models.CharField(max_length=128, default=payment_order_id_generator)
+    order_id = models.CharField(
+        max_length=128, default=payment_order_id_generator, db_index=True
+    )
     sum = models.DecimalField(default=0.0, decimal_places=2, max_digits=20)
     type_payments = models.CharField(max_length=64, choices=PAYMENT_TYPES_CHOICES)
 
@@ -159,7 +161,7 @@ class PromoCode(models.Model):
     code_data = models.CharField(
         default=id_generator, unique=True, max_length=128, db_index=True
     )
-    name = models.CharField(max_length=256, null=False)
+    name = models.CharField(max_length=256, null=False, db_index=True)
     type = models.CharField(max_length=64, choices=PROMO_TYPES, null=False)
     active = models.BooleanField(verbose_name="Активен", default=True)
     summ = models.FloatField(verbose_name="Баланс", null=True, blank=True)
@@ -364,16 +366,19 @@ class Output(models.Model):
     TECHNICAL_ERR = "technical-error"
     CANCELED = "canceled"
 
-
     OUTPUT_STATUS = (
         (COMPLETED, "Завершенный"),
         (PROCCESS, "В процессе"),
         (TECHNICAL_ERR, "Техническая ошибка"),
-        (CANCELED, "Отменен")
+        (CANCELED, "Отменен"),
     )
 
     output_id = models.CharField(
-        default=output_id_generator, unique=True, max_length=32, editable=False
+        default=output_id_generator,
+        unique=True,
+        max_length=32,
+        editable=False,
+        db_index=True,
     )
 
     type = models.CharField(
@@ -396,7 +401,9 @@ class Output(models.Model):
         related_name="user_outputs",
     )
 
-    comment = models.TextField(verbose_name="Комментарий", blank=True, null=True)
+    comment = models.TextField(
+        verbose_name="Комментарий", blank=True, null=True, db_index=True
+    )
 
     created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
@@ -588,7 +595,7 @@ class Output(models.Model):
         self.removed = True
         self.remove_user = user_remove
         self.active = False
-        #self.withdrawal_price = self.cost_withdrawal_of_items
+        self.withdrawal_price = self.cost_withdrawal_of_items
         self.save()
         return f"{self.output_id} удален пользователем {self.remove_user}", 200
 
@@ -599,7 +606,7 @@ class Output(models.Model):
         self.save()
 
         return f"{self.output_id} отменен пользователем {self.user_cancel}", 200
-        
+
     class Meta:
         ordering = ("-id",)
         verbose_name = "Вывод предмета"
@@ -773,7 +780,10 @@ class RefOutput(models.Model):
     )
 
     ref_output_id = models.CharField(
-        verbose_name="Идектификатор", max_length=72, default=ref_output_id_generator
+        verbose_name="Идектификатор",
+        max_length=72,
+        default=ref_output_id_generator,
+        db_index=True,
     )
 
     type = models.CharField(
@@ -792,7 +802,9 @@ class RefOutput(models.Model):
     sum = models.FloatField(
         verbose_name="Сумма вывода", validators=[MinValueValidator(0)]
     )
-    comment = models.TextField(verbose_name="Комментарий", max_length=1024, null=True)
+    comment = models.TextField(
+        verbose_name="Комментарий", max_length=1024, null=True, db_index=True
+    )
 
     card_number = models.CharField(verbose_name="Номер карты", max_length=32, null=True)
     phone = models.CharField(verbose_name="Номер телефона", max_length=13, null=True)

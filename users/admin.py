@@ -40,12 +40,15 @@ class UserItemsAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
 
     def user_link(self, instance):
-        return mark_safe(
-            '<a href="{}">{}</a>'.format(
-                reverse("admin:auth_user_change", args=(instance.user.pk,)),
-                instance.user.username,
+        try:
+            return mark_safe(
+                '<a href="{}">{}</a>'.format(
+                    reverse("admin:auth_user_change", args=(instance.user.pk,)),
+                    instance.user.username,
+                )
             )
-        )
+        except:
+            return None
 
     user_link.short_description = "Пользователь"
 
