@@ -13,7 +13,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.filters import OrderingFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework import status
 
 from rest_framework_simplejwt.tokens import AccessToken
@@ -514,8 +514,15 @@ class AdminUsersViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     http_method_names = ["post", "get", "put"]
     lookup_field = "user_id"
-    filter_backends = (DjangoFilterBackend, UserCustomOrderFilter)
+    filter_backends = (DjangoFilterBackend, UserCustomOrderFilter, SearchFilter)
     filterset_class = UsersFilter
+    search_fields = (
+        "user__username",
+        "user__first_name",
+        "user__last_name",
+        "user__email",
+        "telegram_username",
+    )
 
     def get_serializer_class(self):
         if self.action == "list":
