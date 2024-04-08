@@ -24,6 +24,7 @@ def deactivate_expired_promo():
         active=False
     )
 
+
 @shared_task
 @single_task(None)
 def withdrawal_price_output():

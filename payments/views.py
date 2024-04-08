@@ -321,10 +321,11 @@ class AdminOutputsViewSet(ModelViewSet):
             return Response(
                 {"message": "Вывод уже отменен"},
                 status=status.HTTP_400_BAD_REQUEST,
-            )    
+            )
 
         message, success = output.canceled(user_cancel=request.user)
-        return Response({"message": message}, status=success)           
+        return Response({"message": message}, status=success)
+
 
 class RefLinksCustomOrderFilter(CustomOrderFilter):
     allowed_custom_filters = (

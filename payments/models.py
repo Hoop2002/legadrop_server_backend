@@ -364,12 +364,11 @@ class Output(models.Model):
     TECHNICAL_ERR = "technical-error"
     CANCELED = "canceled"
 
-
     OUTPUT_STATUS = (
         (COMPLETED, "Завершенный"),
         (PROCCESS, "В процессе"),
         (TECHNICAL_ERR, "Техническая ошибка"),
-        (CANCELED, "Отменен")
+        (CANCELED, "Отменен"),
     )
 
     output_id = models.CharField(
@@ -588,7 +587,7 @@ class Output(models.Model):
         self.removed = True
         self.remove_user = user_remove
         self.active = False
-        #self.withdrawal_price = self.cost_withdrawal_of_items
+        self.withdrawal_price = self.cost_withdrawal_of_items
         self.save()
         return f"{self.output_id} удален пользователем {self.remove_user}", 200
 
@@ -599,7 +598,7 @@ class Output(models.Model):
         self.save()
 
         return f"{self.output_id} отменен пользователем {self.user_cancel}", 200
-        
+
     class Meta:
         ordering = ("-id",)
         verbose_name = "Вывод предмета"
