@@ -67,7 +67,11 @@ class AdminPaymentOrderViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     lookup_field = "order_id"
     http_method_names = ["get", "post"]
-    filter_backends = (filters.OrderingFilter, DjangoFilterBackend)
+    filter_backends = (
+        filters.OrderingFilter,
+        DjangoFilterBackend,
+        filters.SearchFilter,
+    )
     ordering_fields = (
         "order_id",
         "user",
@@ -77,6 +81,7 @@ class AdminPaymentOrderViewSet(ModelViewSet):
         "status",
     )
     filterset_fields = ("status", "type_payments")
+    search_fields = ("user__username", "order_id")
 
     @extend_schema(
         description=(
@@ -173,7 +178,12 @@ class AdminPromoCodeViewSet(ModelViewSet):
     queryset = PromoCode.objects.filter(removed=False)
     serializer_class = AdminPromoCodeSerializer
     permission_classes = [IsAdminUser]
-    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filter_backends = (
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
+    )
+    search_fields = ("name", "code_data")
     filterset_fields = ("active", "type")
     ordering_fields = (
         "created_at",
@@ -241,7 +251,7 @@ class AdminOutputsViewSet(ModelViewSet):
     queryset = Output.objects.filter(removed=False)
     serializer_class = AdminOutputSerializer
     permission_classes = [IsAdminUser]
-    http_method_names = ["get", "post", "delete"]
+    http_method_names = ("get", "post", "delete")
     lookup_field = "output_id"
     filter_backends = (
         filters.OrderingFilter,
@@ -256,7 +266,7 @@ class AdminOutputsViewSet(ModelViewSet):
         "active",
     )
     filterset_fields = ("status", "user")
-    # search_fields = ("output_id", )
+    search_fields = ("output_id", "user__username", "comment")
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -362,7 +372,12 @@ class AdminRefLinkViewSet(ModelViewSet):
     lookup_field = "code_data"
     http_method_names = ["get", "put", "delete"]
 
-    filter_backends = (DjangoFilterBackend, RefLinksCustomOrderFilter)
+    filter_backends = (
+        DjangoFilterBackend,
+        RefLinksCustomOrderFilter,
+        filters.SearchFilter,
+    )
+    search_fields = ("code_data", "from_user__user__username")
 
     @extend_schema(
         description=(
@@ -448,7 +463,11 @@ class AdminRefOutputViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     lookup_field = "ref_output_id"
 
-    filter_backends = (filters.OrderingFilter, DjangoFilterBackend)
+    filter_backends = (
+        filters.OrderingFilter,
+        DjangoFilterBackend,
+        filters.SearchFilter,
+    )
     ordering_fields = (
         "ref_output_id",
         "sum",
@@ -456,6 +475,7 @@ class AdminRefOutputViewSet(ModelViewSet):
         "created_at",
     )
     filterset_fields = ("status",)
+    search_fields = ("ref_output_id", "user__username", "comment")
 
     @extend_schema(
         description=(
