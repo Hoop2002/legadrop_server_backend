@@ -417,7 +417,9 @@ class ItemAdminViewSet(ModelViewSet):
     def bulk_destroy(self, request, *args, **kwargs):
         ids = request.data.get("ids")
         queryset = self.get_queryset().filter(item_id__in=ids)
-        count = queryset.update(removed=True, sale=False, upgrade=False, is_output=False)
+        count = queryset.update(
+            removed=True, sale=False, upgrade=False, is_output=False
+        )
         return Response(
             {"message": f"Удалено {count} объектов"}, status=status.HTTP_202_ACCEPTED
         )

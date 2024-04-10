@@ -205,12 +205,30 @@ class ListCasesSerializer(serializers.ModelSerializer):
         fields = ("translit_name", "name", "price", "case_free", "image", "category")
 
 
-class ListCaseItemsSerializer(ItemListSerializer):
+class ListCaseItemsSerializer(serializers.ModelSerializer):
+    item_id = serializers.CharField(max_length=9)
+    image = serializers.CharField()
+    rarity_category = RarityCategorySerializer(read_only=True)
     percent = serializers.FloatField()
 
     class Meta:
         model = Item
-        fields = ItemListSerializer.Meta.fields + ("percent",)
+        fields = (
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "rarity_category",
+            "percent",
+        )
+        read_only_fields = (
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "rarity_category",
+            "percent",
+        )
 
 
 class CaseSerializer(serializers.ModelSerializer):

@@ -503,6 +503,9 @@ class Case(models.Model):
         # высчитываем дефолтный процент для каждого айтема
         for item in items:
             item["percent"] = normalise_kof * items_kfs[item["item_id"]] * 100
+            item["rarity_category"] = RarityCategory.objects.filter(
+                rarity_id=item["rarity_category"]
+            ).first()
         return items
 
     def get_admin_items(self):
