@@ -488,6 +488,7 @@ class Case(models.Model):
 
     def get_items(self):
         """Возвращает json предметов с проставленными процентами"""
+        generic = GenericSettings.load()
         items = self.items.values(
             "item_id", "name", "price", "image", "rarity_category"
         )
@@ -503,6 +504,7 @@ class Case(models.Model):
         # высчитываем дефолтный процент для каждого айтема
         for item in items:
             item["percent"] = normalise_kof * items_kfs[item["item_id"]] * 100
+            item["image"] = f"https://{generic.domain_url}/media/" + item["image"]
             item["rarity_category"] = RarityCategory.objects.filter(
                 rarity_id=item["rarity_category"]
             ).first()
@@ -511,7 +513,7 @@ class Case(models.Model):
     def get_admin_items(self):
         from cases.serializers import RarityCategorySerializer
 
-        generic = GenericSettings.objects.first()
+        generic = GenericSettings.load()
 
         items = self.items.values(
             "id",
