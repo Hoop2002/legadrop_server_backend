@@ -233,6 +233,7 @@ class ListCaseItemsSerializer(serializers.ModelSerializer):
 
 class CaseSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()
+    category = CaseCategorySerializer()
 
     @staticmethod
     def get_items(instance) -> ListCaseItemsSerializer:
