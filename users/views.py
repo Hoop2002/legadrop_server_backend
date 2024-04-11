@@ -295,7 +295,7 @@ class UserItemsListView(ModelViewSet):
 
     @extend_schema(request=None)
     def items_history(self, request, *args, **kwargs):
-        queryset = self.get_queryset().filter(active=False)
+        queryset = self.get_queryset().filter(active=False, user=request.user)
         items = self.paginate_queryset(queryset)
         serializer = self.get_serializer(items, many=True)
         response = self.get_paginated_response(serializer.data)

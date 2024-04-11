@@ -185,6 +185,7 @@ class UserItemSerializer(serializers.ModelSerializer):
             "price",
             "image",
             "rarity_category",
+            "withdrawal_process",
         )
 
 
@@ -195,6 +196,17 @@ class AdminUserItemSerializer(UserItemSerializer):
 class HistoryItemSerializer(UserItemSerializer):
     status = serializers.SerializerMethodField(read_only=True)
     price = serializers.SerializerMethodField()
+    action_date = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_action_date(instance) -> serializers.DateTimeField(format="%d.%m.%y %H:%M"):
+        if instance.calc:
+            return instance.calc.created_at.strftime("%d.%m.%y %H:%M")
+        if instance.output:
+            return instance.output.created_at.strftime("%d.%m.%y %H:%M")
+        if not instance.active:
+            return instance.updated_at.strftime("%d.%m.%y %H:%M")
+        return None
 
     @staticmethod
     def get_price(instance) -> float:
@@ -221,6 +233,7 @@ class HistoryItemSerializer(UserItemSerializer):
             "image",
             "status",
             "rarity_category",
+            "action_date",
         )
 
 
