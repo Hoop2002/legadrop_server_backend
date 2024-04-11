@@ -23,6 +23,7 @@ from cases.serializers import (
     TestOpenCaseSerializer,
     AdminCategorySerializer,
     AdminItemListSerializer,
+    CaseCategorySerializer,
 )
 from cases.models import Case, Item, RarityCategory, ConditionCase, Contests, Category
 from utils.default_filters import CustomOrderFilter
@@ -65,13 +66,17 @@ class CasesViewSet(GenericViewSet):
     queryset = Case.objects.filter(active=True, removed=False)
     permission_classes = [AllowAny]
     lookup_field = "translit_name"
-    http_method_names = ["get", "post"]
+    http_method_names = ("get", "post")
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ("category",)
 
     def get_serializer_class(self):
         if self.action == "list":
             return ListCasesSerializer
         if self.action == "open_case":
             return ItemListSerializer
+        if self.action == "cases_category":
+            return CaseCategorySerializer
         return CaseSerializer
 
     def get_permissions(self):
@@ -82,8 +87,17 @@ class CasesViewSet(GenericViewSet):
         return super().get_permissions()
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
         paginate_queryset = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(paginate_queryset, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    @extend_schema(request=None, responses=CaseCategorySerializer(many=True))
+    @action(detail=False, methods=["get"])
+    def cases_category(self, request, *args, **kwargs):
+        queryset = self.get_queryset().values_list("category", flat=True)
+        categories = Category.objects.filter(category_id__in=queryset).distinct()
+        paginate_queryset = self.paginate_queryset(categories)
         serializer = self.get_serializer(paginate_queryset, many=True)
         return self.get_paginated_response(serializer.data)
 
@@ -143,7 +157,7 @@ class AdminConditionsViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     lookup_field = "condition_id"
     http_method_names = ("get", "post", "delete", "put")
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ("name", "description")
     filterset_fields = ("type_condition",)
 
