@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
 from core.models import GenericSettings
-from users.models import UserProfile, UserItems, UserVerify
+from users.models import UserProfile, UserItems, UserVerify, ActivatedLinks
 from social_django.models import UserSocialAuth
 from payments.models import PaymentOrder, Calc, RefLinks
 from cases.models import Item
@@ -100,19 +100,31 @@ class UserReferralSerializer(serializers.ModelSerializer):
         write_only=True,
         help_text="всё, что будет сюда вписано, будет подставлено после базового урл",
     )
+    partner_income = serializers.SerializerMethodField()
+    invited = serializers.SerializerMethodField()
 
-    def get_ref_link(self, instance) -> str:
-        ref = instance.ref_links.first()
+    @staticmethod
+    def get_ref_link(instance) -> str:
+        ref = instance.ref_links.filter(removed=False).first()
         if not ref:
             ref = RefLinks.objects.create(from_user=instance)
         generic = GenericSettings.load()
         domain = generic.domain_url
         return f"https://{domain}/ref/{ref.code_data}"
 
+    @staticmethod
+    def get_partner_income(instance) -> float:
+        return instance.partner_income * 100
+
+    @staticmethod
+    def get_invited(instance) -> int:
+        ref_links = instance.ref_links.all()
+        return ActivatedLinks.objects.filter(link__in=ref_links).count()
+
     def validate(self, attrs):
         code_data = attrs.get("code_data")
         if code_data is not None:
-            if RefLinks.objects.filter(code_data=code_data).exists():
+            if RefLinks.objects.filter(code_data=code_data, removed=False).exists():
                 raise serializers.ValidationError(
                     {"code_data": "Такой код уже существует!"}
                 )
@@ -133,6 +145,8 @@ class UserReferralSerializer(serializers.ModelSerializer):
             "total_withdrawal",
             "available_withdrawal",
             "code_data",
+            "partner_income",
+            "invited",
         )
 
 
