@@ -50,6 +50,7 @@ from users.serializers import (
     MinimalValuesSerializer,
     UserVerifycationSerializer,
     AdminUserItemSerializer,
+    UserReferralSerializer,
 )
 from gateways.enka import get_genshin_account
 from utils.default_filters import CustomOrderFilter
@@ -246,6 +247,21 @@ class UserProfileViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+
+class UserRefViewSet(GenericViewSet):
+    queryset = UserProfile.objects
+    serializer_class = UserReferralSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        serializer = self.get_serializer(request.user.profile)
+        return Response(serializer.data, status=200)
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(request.user.profile, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class UserItemsListView(ModelViewSet):

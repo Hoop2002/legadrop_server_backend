@@ -54,6 +54,11 @@ urlpatterns = [
         name="update_user",
     ),
     path(
+        "user/ref",
+        views.UserRefViewSet.as_view({"get": "retrieve", "post": "update"}),
+        name="user_referral_system",
+    ),
+    path(
         "user/items",
         views.UserItemsListView.as_view({"get": "list"}),
         name="user_items_list",
