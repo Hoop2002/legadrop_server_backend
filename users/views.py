@@ -51,6 +51,7 @@ from users.serializers import (
     UserVerifycationSerializer,
     AdminUserItemSerializer,
     UserReferralSerializer,
+    UpgradeHistorySerializer,
 )
 from gateways.enka import get_genshin_account
 from utils.default_filters import CustomOrderFilter
@@ -247,6 +248,13 @@ class UserProfileViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+
+@extend_schema(tags=["user"])
+class UpgradeHistoryViewSet(ModelViewSet):
+    queryset = UserUpgradeHistory.objects.all()
+    serializer_class = UpgradeHistorySerializer
+    http_method_names = ('get', )
 
 
 class UserRefViewSet(GenericViewSet):
