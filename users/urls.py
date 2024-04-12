@@ -69,6 +69,11 @@ urlpatterns = [
         name="user_items_history",
     ),
     path(
+        "user/items/upgrde_history",
+        views.UpgradeHistoryViewSet.as_view({"get": "list"}),
+        name="upgrade_history",
+    ),
+    path(
         "user/item/sale/<int:pk>",
         views.UserItemsListView.as_view({"delete": "destroy"}),
         name="sale_user_item",

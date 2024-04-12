@@ -5,12 +5,12 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
 from core.models import GenericSettings
-from users.models import UserProfile, UserItems, UserVerify, ActivatedLinks
+from users.models import UserProfile, UserItems, UserVerify, ActivatedLinks, UserUpgradeHistory
 from social_django.models import UserSocialAuth
 from payments.models import PaymentOrder, Calc, RefLinks
 from cases.models import Item
 
-from cases.serializers import RarityCategorySerializer
+from cases.serializers import RarityCategorySerializer, ItemListSerializer
 from utils.fields import Base64ImageField
 
 
@@ -597,3 +597,17 @@ class AdminUserVerifySerializer(serializers.ModelSerializer):
 
 class UserVerifycationSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+
+class UpgradeHistorySerializer(serializers.ModelSerializer):
+    upgraded = UserItemSerializer(many=True)
+    desired = ItemListSerializer(many=True)
+
+    class Meta:
+        model = UserUpgradeHistory
+        fields = (
+            'upgraded',
+            'balance',
+            'desired',
+            'success',
+        )
