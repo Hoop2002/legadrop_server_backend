@@ -93,15 +93,21 @@ class UserSignInSerializer(serializers.ModelSerializer):
         fields = ("username", "password")
 
 
-class UserProfileSerializer(serializers.ModelSerializer):
-    user = OtherUserSerializer(required=False)
-    image = Base64ImageField(required=False, max_length=None, use_url=True)
+class UserReferralSerializer(serializers.ModelSerializer):
     ref_link = serializers.SerializerMethodField()
     code_data = serializers.CharField(
         required=False,
         write_only=True,
         help_text="всё, что будет сюда вписано, будет подставлено после базового урл",
     )
+
+    def get_ref_link(self, instance) -> str:
+        ref = instance.ref_links.first()
+        if not ref:
+            ref = RefLinks.objects.create(from_user=instance)
+        generic = GenericSettings.load()
+        domain = generic.domain_url
+        return f"https://{domain}/ref/{ref.code_data}"
 
     def validate(self, attrs):
         code_data = attrs.get("code_data")
@@ -112,13 +118,27 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 )
         return super().validate(attrs)
 
-    def get_ref_link(self, instance) -> str:
-        ref = instance.ref_links.first()
-        if not ref:
-            ref = RefLinks.objects.create(from_user=instance)
-        generic = GenericSettings.load()
-        domain = generic.domain_url
-        return f"https://{domain}/ref/{ref.code_data}"
+    def update(self, instance, validated_data):
+        if "code_data" in validated_data:
+            code_data = validated_data.pop("code_data")
+            RefLinks.objects.create(from_user=instance, code_data=code_data)
+            instance.save()
+        return instance
+
+    class Meta:
+        model = UserProfile
+        fields = (
+            "ref_link",
+            "total_income",
+            "total_withdrawal",
+            "available_withdrawal",
+            "code_data",
+        )
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    user = OtherUserSerializer(required=False)
+    image = Base64ImageField(required=False, max_length=None, use_url=True)
 
     def update(self, instance, validated_data):
         user_data = {}
@@ -146,11 +166,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = (
             "user",
-            "ref_link",
-            "total_income",
-            "total_withdrawal",
-            "available_withdrawal",
-            "code_data",
             "image",
             "balance",
             "locale",
