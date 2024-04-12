@@ -342,9 +342,20 @@ class UpgradeItem(GenericViewSet):
             return MinimalValuesSerializer
         if self.action in ["items", "upgrade"]:
             return ItemListSerializer
+        if self.action == 'user_items':
+            return UserItemSerializer
         return UpgradeItemSerializer
 
-    @extend_schema(responses={200: GameHistorySerializer(many=True)})
+    @extend_schema(responses={200: UserItemSerializer(many=True)})
+    @action(detail=False, methods=("get", ), pagination_class=LimitOffsetPagination)
+    def user_items(self, request, *args, **kwargs):
+        items = self.paginate_queryset(
+            self.get_queryset().filter(withdrawal_process=False, active=True, user=request.user)
+        )
+        serializer = self.get_serializer(items, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    @extend_schema(responses={200: ItemListSerializer(many=True)})
     @action(detail=False, pagination_class=LimitOffsetPagination)
     def items(self, request, *args, **kwargs):
         items = Item.objects.filter(upgrade=True, removed=False).exclude(price=0)
