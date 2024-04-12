@@ -151,7 +151,7 @@ class UserReferralSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    user = OtherUserSerializer(required=False)
+    user = UserSerializer(required=False)
     image = Base64ImageField(required=False, max_length=None, use_url=True)
 
     def update(self, instance, validated_data):
