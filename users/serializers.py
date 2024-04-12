@@ -166,6 +166,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = (
             "user",
+            "player_id",
             "image",
             "balance",
             "locale",
@@ -428,7 +429,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(source="user.is_active")
     balance = serializers.FloatField(source="balance_save")
     winrate = serializers.FloatField(source="winrate_save")
-
+    player_id = serializers.CharField(source="user.player_id")
     @staticmethod
     def get_link_vk(instance):
         auth_vk = UserSocialAuth.objects.filter(
@@ -457,6 +458,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             "link_vk",
             "link_tg",
             "image",
+            "player_id",
             "username",
             "partner_percent",
             "partner_income",
@@ -539,6 +541,7 @@ class AdminUserSerializer(AdminUserListSerializer):
             "date_joined",
             "link_vk",
             "link_tg",
+            "player_id",
             "total_income",
             "total_withdrawal",
             "available_withdrawal",
