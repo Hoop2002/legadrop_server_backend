@@ -7,7 +7,7 @@ from rest_framework import viewsets, status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, AllowAny
 
 from core.models import GenericSettings
 from cases.models import OpenedCases, Case
@@ -470,6 +470,9 @@ class AdminAnalyticsViewSet(ModelViewSet):
 
 @extend_schema(tags=["footer"])
 class AnalyticsFooterView(APIView):
+
+    permission_classes = [AllowAny]
+
     @extend_schema(responses=FooterSerializer)
     def get(self, request, r=redis.from_url(REDIS_CONNECTION_STRING)):
         generic = GenericSettings.load()
