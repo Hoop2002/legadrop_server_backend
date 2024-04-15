@@ -25,6 +25,15 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from django.views.generic import TemplateView
+
+
+class TestView(TemplateView):
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
 
 urlpatterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
@@ -42,6 +51,7 @@ urlpatterns = [
     path("", include("payments.urls")),
     path("", include("core.urls")),
     path("", include("social_django.urls", namespace="social")),
+    path("test/telegram/", TestView.as_view(template_name="index.html"), name="chlen"),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
