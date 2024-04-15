@@ -254,7 +254,7 @@ class UserProfileViewSet(ModelViewSet):
 class UpgradeHistoryViewSet(ModelViewSet):
     queryset = UserUpgradeHistory.objects.all()
     serializer_class = UpgradeHistorySerializer
-    http_method_names = ('get', )
+    http_method_names = ("get",)
 
 
 class UserRefViewSet(GenericViewSet):
@@ -350,15 +350,17 @@ class UpgradeItem(GenericViewSet):
             return MinimalValuesSerializer
         if self.action in ["items", "upgrade"]:
             return ItemListSerializer
-        if self.action == 'user_items':
+        if self.action == "user_items":
             return UserItemSerializer
         return UpgradeItemSerializer
 
     @extend_schema(responses={200: UserItemSerializer(many=True)})
-    @action(detail=False, methods=("get", ), pagination_class=LimitOffsetPagination)
+    @action(detail=False, methods=("get",), pagination_class=LimitOffsetPagination)
     def user_items(self, request, *args, **kwargs):
         items = self.paginate_queryset(
-            self.get_queryset().filter(withdrawal_process=False, active=True, user=request.user)
+            self.get_queryset().filter(
+                withdrawal_process=False, active=True, user=request.user
+            )
         )
         serializer = self.get_serializer(items, many=True)
         return self.get_paginated_response(serializer.data)
