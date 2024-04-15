@@ -449,8 +449,11 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(source="user.is_active")
     balance = serializers.FloatField(source="balance_save")
     winrate = serializers.FloatField(source="winrate_save")
+<<<<<<< Updated upstream
     player_id = serializers.CharField(source="user.player_id")
 
+=======
+>>>>>>> Stashed changes
     @staticmethod
     def get_link_vk(instance):
         auth_vk = UserSocialAuth.objects.filter(
