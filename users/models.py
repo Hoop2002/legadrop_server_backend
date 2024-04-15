@@ -10,7 +10,7 @@ from utils.functions import generate_upload_name
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    player_id = models.CharField(verbose_name="Genshin UID",max_length=12, null=True)
+    player_id = models.CharField(verbose_name="Genshin UID", max_length=12, null=True)
     image = models.ImageField(
         upload_to=generate_upload_name,
         verbose_name="Фотография пользователя",

@@ -5,7 +5,13 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
 from core.models import GenericSettings
-from users.models import UserProfile, UserItems, UserVerify, ActivatedLinks, UserUpgradeHistory
+from users.models import (
+    UserProfile,
+    UserItems,
+    UserVerify,
+    ActivatedLinks,
+    UserUpgradeHistory,
+)
 from social_django.models import UserSocialAuth
 from payments.models import PaymentOrder, Calc, RefLinks
 from cases.models import Item
@@ -444,6 +450,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     balance = serializers.FloatField(source="balance_save")
     winrate = serializers.FloatField(source="winrate_save")
     player_id = serializers.CharField(source="user.player_id")
+
     @staticmethod
     def get_link_vk(instance):
         auth_vk = UserSocialAuth.objects.filter(
@@ -606,8 +613,8 @@ class UpgradeHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = UserUpgradeHistory
         fields = (
-            'upgraded',
-            'balance',
-            'desired',
-            'success',
+            "upgraded",
+            "balance",
+            "desired",
+            "success",
         )

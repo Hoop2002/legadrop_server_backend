@@ -406,6 +406,7 @@ class ContestsSerializer(serializers.ModelSerializer):
     count_participants = serializers.SerializerMethodField()
     last_winners = serializers.SerializerMethodField()
     conditions = serializers.SerializerMethodField()
+    participant = serializers.SerializerMethodField()
 
     @staticmethod
     def get_next_start(instance) -> timezone.datetime:
@@ -431,6 +432,12 @@ class ContestsSerializer(serializers.ModelSerializer):
     def get_conditions(instance) -> list[str]:
         return instance.conditions.values_list("name", flat=True)
 
+    def get_participant(self, instance) -> bool:
+        user = self.context["request"].user
+        if user.is_authenticated:
+            return user in instance.participants.all()
+        return False
+
     class Meta:
         model = Contests
         fields = (
@@ -443,6 +450,7 @@ class ContestsSerializer(serializers.ModelSerializer):
             "conditions",
             "one_time",
             "active",
+            "participant",
         )
 
 
