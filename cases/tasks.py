@@ -32,7 +32,6 @@ def get_winner_contest():
         active=True,
         removed=False,
         current_award__isnull=False,
-        participants__isnull=False,
     ).distinct()
 
     if not contests:
@@ -42,9 +41,10 @@ def get_winner_contest():
         ContestsWinners.objects.create(
             contest=contest, user=winner, item=contest.current_award
         )
-        UserItems.objects.create(
-            user=winner, item=contest.current_award, contest=contest
-        )
+        if winner is not None:
+            UserItems.objects.create(
+                user=winner, item=contest.current_award, contest=contest
+            )
         contest.participants.set([])
         contest.set_new_award()
         contest.set_next_start(force=True)

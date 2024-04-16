@@ -410,12 +410,14 @@ class ContestsSerializer(serializers.ModelSerializer):
     participant = serializers.SerializerMethodField()
 
     @staticmethod
-    def get_next_start(instance) -> timezone.datetime:
+    def get_next_start(instance) -> float:
         if instance.next_start:
-            return instance.next_start
+            next_start = instance.next_start - timezone.localtime()
+            return next_start
         if not instance.next_start:
             instance.set_next_start()
-            return instance.next_start
+            next_start = instance.next_start - timezone.localtime()
+            return next_start
 
     @staticmethod
     def get_count_participants(instance) -> int:
@@ -423,7 +425,7 @@ class ContestsSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_last_winners(instance) -> LastWinnerSerializer(many=True):
-        winners = instance.winners.order_by("-pk")[:5]
+        winners = instance.winners.filter(user__isnull=False).order_by("-pk")[:5]
         if not winners:
             return []
         serializer = LastWinnerSerializer(winners, many=True)

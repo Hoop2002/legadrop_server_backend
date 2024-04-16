@@ -375,8 +375,9 @@ class ContestsWinners(models.Model):
     user = models.ForeignKey(
         verbose_name="Победитель",
         to=User,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         related_name="contests_win",
+        null=True,
     )
     contest = models.ForeignKey(
         verbose_name="Конкурс",
