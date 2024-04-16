@@ -393,7 +393,7 @@ class UpgradeItem(GenericViewSet):
         return Response(
             {
                 "upgrade_ratio": round(upgrade_ratio, 4),
-                "upgrade_percent": round(upgrade_percent, 4),
+                "upgrade_percent": round(upgrade_percent * 100, 4),
             }
         )
 
