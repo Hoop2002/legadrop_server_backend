@@ -393,7 +393,7 @@ class AdminCasesSerializer(AdminCreateCaseSerializer):
 class LastWinnerSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username")
     photo = Base64ImageField(source="user.profile.image", use_url=True, max_length=None)
-    date = serializers.DateTimeField(source="created_at", format="%d-%m-%Y в %H:%M")
+    date = serializers.DateTimeField(source="created_at", format="%d.%m.%Y в %H:%M")
     item = ItemListSerializer()
 
     class Meta:
