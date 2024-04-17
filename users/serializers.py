@@ -225,6 +225,30 @@ class UserItemSerializer(serializers.ModelSerializer):
         )
 
 
+class OtherUserItemsSerializer(UserItemSerializer):
+    status = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_status(instance) -> str:
+        if not instance.active and not instance.withdrawn:
+            return "Продан"
+        elif instance.withdrawn:
+            return "Выведен"
+        else:
+            return "На аккаунте"
+
+    class Meta:
+        model = UserItems
+        fields = (
+            "item_id",
+            "status",
+            "name",
+            "price",
+            "image",
+            "rarity_category",
+        )
+
+
 class AdminUserItemSerializer(UserItemSerializer):
     price = serializers.FloatField(source="item.price")
 

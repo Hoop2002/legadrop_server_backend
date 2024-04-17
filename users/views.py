@@ -52,6 +52,7 @@ from users.serializers import (
     AdminUserItemSerializer,
     UserReferralSerializer,
     UpgradeHistorySerializer,
+    OtherUserItemsSerializer,
 )
 from gateways.enka import get_genshin_account
 from utils.default_filters import CustomOrderFilter
@@ -280,6 +281,8 @@ class UserItemsListView(ModelViewSet):
     def get_serializer_class(self):
         if self.action == "items_history":
             return HistoryItemSerializer
+        if self.action == "other_user_list":
+            return OtherUserItemsSerializer
         return UserItemSerializer
 
     def list(self, request, *args, **kwargs):
@@ -325,13 +328,15 @@ class UserItemsListView(ModelViewSet):
         response = self.get_paginated_response(serializer.data)
         return response
 
+    @extend_schema(request=None, responses={200: UserItemSerializer(many=True)})
+    @action(detail=True, methods=("get",), pagination_class=LimitOffsetPagination)
     def other_user_list(self, request, *args, **kwargs):
         user_id = kwargs.get("user_id")
-        user = User.objects.filter(profile__id=user_id)
+        user = User.objects.filter(profile__id=user_id).last()
         if not user:
             return Response({"message": "Пользователь не найден"}, status=404)
 
-        queryset = self.get_queryset().filter(active=True, user=user.get())
+        queryset = self.get_queryset().filter(user=user)
         items = self.paginate_queryset(queryset)
 
         serializer = self.get_serializer(items, many=True)
