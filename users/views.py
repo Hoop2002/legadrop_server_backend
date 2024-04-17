@@ -52,6 +52,7 @@ from users.serializers import (
     AdminUserItemSerializer,
     UserReferralSerializer,
     UpgradeHistorySerializer,
+    OtherUserItemsSerializer,
 )
 from gateways.enka import get_genshin_account
 from utils.default_filters import CustomOrderFilter
@@ -280,6 +281,8 @@ class UserItemsListView(ModelViewSet):
     def get_serializer_class(self):
         if self.action == "items_history":
             return HistoryItemSerializer
+        if self.action == "other_user_list":
+            return OtherUserItemsSerializer
         return UserItemSerializer
 
     def list(self, request, *args, **kwargs):
@@ -325,13 +328,15 @@ class UserItemsListView(ModelViewSet):
         response = self.get_paginated_response(serializer.data)
         return response
 
+    @extend_schema(request=None, responses={200: UserItemSerializer(many=True)})
+    @action(detail=True, methods=("get",), pagination_class=LimitOffsetPagination)
     def other_user_list(self, request, *args, **kwargs):
         user_id = kwargs.get("user_id")
-        user = User.objects.filter(profile__id=user_id)
+        user = User.objects.filter(profile__id=user_id).last()
         if not user:
             return Response({"message": "Пользователь не найден"}, status=404)
 
-        queryset = self.get_queryset().filter(active=True, user=user.get())
+        queryset = self.get_queryset().filter(user=user)
         items = self.paginate_queryset(queryset)
 
         serializer = self.get_serializer(items, many=True)
@@ -343,7 +348,10 @@ class UserItemsListView(ModelViewSet):
 class UpgradeItem(GenericViewSet):
     queryset = UserItems.objects
     serializer_class = UpgradeItemSerializer
-    http_method_names = ["get", "post"]
+    http_method_names = ("get", "post")
+    filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
+    ordering_fields = ("price",)
+    search_fields = ("name",)
 
     def get_serializer_class(self):
         if self.action == "get_minimal_values":
@@ -365,10 +373,15 @@ class UpgradeItem(GenericViewSet):
         serializer = self.get_serializer(items, many=True)
         return self.get_paginated_response(serializer.data)
 
-    @extend_schema(responses={200: ItemListSerializer(many=True)})
+    @extend_schema(
+        responses={200: ItemListSerializer(many=True)},
+        description="Поля доступные для сортировки списка: `price`. Сортировка от большего к меньшему `-price`",
+    )
     @action(detail=False, pagination_class=LimitOffsetPagination)
     def items(self, request, *args, **kwargs):
-        items = Item.objects.filter(upgrade=True, removed=False).exclude(price=0)
+        items = self.filter_queryset(
+            Item.objects.filter(upgrade=True, removed=False).exclude(price=0)
+        )
         paginated = self.paginate_queryset(items)
         serializer = self.get_serializer(paginated, many=True)
         return self.get_paginated_response(serializer.data)
