@@ -1,5 +1,6 @@
 from django.conf import settings
-from cases.serializers import ItemListSerializer
+from cases.serializers import ItemListSerializer, CaseLive
+from core.models import GenericSettings
 import redis
 import json
 import threading
@@ -10,28 +11,30 @@ def task(user, items, case):
     list_key = "live_tape"
     redis_client = redis.from_url(settings.REDIS_CONNECTION_STRING)
 
+    generic = GenericSettings.objects.first()
+
     new_items = []
 
     for i in items:
         item = ItemListSerializer(i[0]).data
+        item.update({"image": "https://" + generic.domain_url + item.get("image") if item.get("image", False) else None})
         item.update({"user_item_id": i[1].id})
         item.update(
             {
                 "user": {
                     "id": user.profile.id,
-                    "image": str(user.profile.image),
+                    "image": "https://" + generic.domain_url + "/media/" + str(user.profile.image),
                     "username": user.username,
                 }
             }
         )
         if case:
+
+            open_case = CaseLive(case).data
+            open_case.update({"image": "https://" + generic.domain_url + open_case.get("image") if open_case.get("image", False) else None})
             item.update(
                 {
-                    "open_case": {
-                        "name": case.name,
-                        "translit_name": case.translit_name,
-                        "image": str(case.image),
-                    }
+                    "open_case": open_case
                 }
             )
         else:

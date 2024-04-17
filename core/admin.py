@@ -32,6 +32,7 @@ class GenericSettingsAdmin(admin.ModelAdmin):
             "Базовые настройки",
             {
                 "fields": (
+                    "generic_url",
                     "domain_url",
                     "redirect_domain",
                     "notify_domain",

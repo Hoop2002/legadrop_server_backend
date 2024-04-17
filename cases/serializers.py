@@ -81,6 +81,16 @@ class ItemListSerializer(serializers.ModelSerializer):
             "rarity_category",
         )
 
+class CaseLive(serializers.ModelSerializer):
+    image = serializers.ImageField(use_url=True, read_only=True)
+
+    class Meta:
+        model = Case
+        fields = (
+            "name",
+            "translit_name",
+            "image"
+        )
 
 class AdminItemListSerializer(serializers.ModelSerializer):
     item_id = serializers.CharField(max_length=9)
