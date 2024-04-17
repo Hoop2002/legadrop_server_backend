@@ -137,7 +137,7 @@ class UserItemSerializer(serializers.ModelSerializer):
         Calc.objects.create(
             user_id=user_item.user_id,
             balance=-user_item.item.price,
-            demo=self.context['request'].user.profile.demo
+            demo=self.context["request"].user.profile.demo,
         )
         return user_item
 
