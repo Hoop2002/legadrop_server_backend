@@ -419,7 +419,10 @@ class UpgradeItem(GenericViewSet):
             )
             history.desired.set(data["upgraded_items"])
             Calc.objects.create(
-                balance=-data["balance"], user=request.user, comment="Апгрейд"
+                balance=-data["balance"],
+                user=request.user,
+                comment="Апгрейд",
+                demo=request.user.profile.demo,
             )
             if not _status:
                 if items == "Проигрыш":

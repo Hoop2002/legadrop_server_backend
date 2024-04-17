@@ -200,6 +200,7 @@ class UserItems(models.Model):
             user=self.user,
             balance=sale_price,
             comment=f"Продажа пользовательского предмета {self.id}",
+            demo=self.user.profile.demo,
         )
         self.calc = calc
         self.save()
