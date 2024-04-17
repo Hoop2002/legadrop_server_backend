@@ -612,11 +612,13 @@ class Case(models.Model):
                 user=user,
                 balance=-self.price,
                 comment=f"Открытие кейса {self.name}",
+                demo=user.profile.demo,
             )
         else:
             Calc.objects.create(
                 user=user,
                 comment=f"Открытие кейса {self.name}",
+                demo=user.profile.demo,
             )
         user_item = UserItems.objects.create(
             user=user, item=item, from_case=True, case=self
