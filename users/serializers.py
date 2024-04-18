@@ -1,6 +1,8 @@
 import typing
 from django.contrib.auth.models import User
-from django.db.models import Sum
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+from django.db.models import Sum, Q
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -25,32 +27,64 @@ class UserCreateSerializer(serializers.ModelSerializer):
     username = serializers.CharField()
     password1 = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
-    email = serializers.EmailField()
+    token = serializers.SerializerMethodField(read_only=True)
+
+    @staticmethod
+    def get_token(instance) -> str:
+        return str(AccessToken.for_user(instance))
 
     def validate(self, attrs):
         super().validate(attrs)
         password1 = attrs.get("password1")
         password2 = attrs.get("password2")
+        try:
+            validate_email(attrs["username"])
+            attrs["email"] = attrs["username"]
+            email = attrs["username"]
+        except ValidationError:
+            email = ""
         if password1 != password2:
             raise serializers.ValidationError({"password": "Пароли не совпадают"})
         _auth_user = None
         if self.context["request"]:
             _auth_user = self.context["request"].user
-        _user = (
-            User.objects.filter(username=attrs["username"])
-            .exclude(id=_auth_user.id if _auth_user else None)
-            .exists()
-        )
+
+        if email:
+            _user = (
+                User.objects.filter(Q(username=attrs["username"]) | Q(email=email))
+                .exclude(id=_auth_user.id if _auth_user else None)
+                .exists()
+            )
+        else:
+            _user = (
+                User.objects.filter(username=attrs["username"])
+                .exclude(id=_auth_user.id if _auth_user else None)
+                .exists()
+            )
 
         if _user:
             raise serializers.ValidationError(
-                {"username": "Пользователь с таким логином уже зарегистрирован"}
+                {
+                    "username": "Пользователь с таким логином или почтой уже зарегистрирован"
+                }
             )
         return attrs
 
+    def create(self, validated_data):
+        validated_data.pop("password1")
+        password = validated_data.pop("password2")
+        validated_data["password"] = password
+        user = User.objects.create(**validated_data)
+        user.set_password(password)
+        user.save()
+        validated_data["user"] = user
+
+        RefLinks.objects.create(from_user=user.profile)
+        return user
+
     class Meta:
         model = User
-        fields = ("id", "username", "password1", "password2", "email")
+        fields = ("id", "username", "password1", "password2", "token")
 
 
 class UserSerializer(UserCreateSerializer):
@@ -59,36 +93,15 @@ class UserSerializer(UserCreateSerializer):
     password2 = serializers.CharField(required=False, write_only=True)
     email = serializers.EmailField(required=False)
 
+    class Meta:
+        model = User
+        fields = ("id", "username", "password1", "password2", "email")
+
 
 class OtherUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("username",)
-
-
-class UserProfileCreateSerializer(serializers.ModelSerializer):
-    user = UserCreateSerializer()
-    token = serializers.SerializerMethodField(read_only=True)
-
-    @staticmethod
-    def get_token(instance) -> str:
-        return str(AccessToken.for_user(instance.user))
-
-    def create(self, validated_data):
-        validated_data["user"].pop("password1")
-        password = validated_data["user"].pop("password2")
-        validated_data["user"]["password"] = password
-        user = User.objects.create(**validated_data["user"])
-        user.set_password(password)
-        user.save()
-        validated_data["user"] = user
-        profile = UserProfile.objects.create(**validated_data)
-        RefLinks.objects.create(from_user=profile)
-        return profile
-
-    class Meta:
-        model = UserProfile
-        fields = ("user", "token", "locale")
 
 
 class UserSignInSerializer(serializers.ModelSerializer):
@@ -473,7 +486,6 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(source="user.is_active")
     balance = serializers.FloatField(source="balance_save")
     winrate = serializers.FloatField(source="winrate_save")
-    player_id = serializers.CharField(source="user.player_id")
 
     @staticmethod
     def get_link_vk(instance):

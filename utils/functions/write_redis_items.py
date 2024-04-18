@@ -17,13 +17,24 @@ def task(user, items, case):
 
     for i in items:
         item = ItemListSerializer(i[0]).data
-        item.update({"image": "https://" + generic.domain_url + item.get("image") if item.get("image", False) else None})
+        item.update(
+            {
+                "image": (
+                    "https://" + generic.domain_url + item.get("image")
+                    if item.get("image", False)
+                    else None
+                )
+            }
+        )
         item.update({"user_item_id": i[1].id})
         item.update(
             {
                 "user": {
                     "id": user.profile.id,
-                    "image": "https://" + generic.domain_url + "/media/" + str(user.profile.image),
+                    "image": "https://"
+                    + generic.domain_url
+                    + "/media/"
+                    + str(user.profile.image),
                     "username": user.username,
                 }
             }
@@ -31,12 +42,16 @@ def task(user, items, case):
         if case:
 
             open_case = CaseLive(case).data
-            open_case.update({"image": "https://" + generic.domain_url + open_case.get("image") if open_case.get("image", False) else None})
-            item.update(
+            open_case.update(
                 {
-                    "open_case": open_case
+                    "image": (
+                        "https://" + generic.domain_url + open_case.get("image")
+                        if open_case.get("image", False)
+                        else None
+                    )
                 }
             )
+            item.update({"open_case": open_case})
         else:
             item.update({"open_case": None})
 
