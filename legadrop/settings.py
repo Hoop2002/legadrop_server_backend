@@ -257,7 +257,7 @@ AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "social_core.backends.vk.VKOAuth2",
     "social_core.backends.telegram.TelegramAuth",
-    'users.auth.EmailBackend',
+    "users.auth.EmailBackend",
 )
 SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.social_auth.social_details",
