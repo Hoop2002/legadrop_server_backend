@@ -17,7 +17,7 @@ class GenericSettings(models.Model):
         "Основной домен сервиса",
         default="legadrop.org",
         max_length=256,
-        help_text="Вводим только домен, без протокола. По дефолту связывается по https",                
+        help_text="Вводим только домен, без протокола. По дефолту связывается по https",
     )
 
     domain_url = models.CharField(

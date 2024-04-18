@@ -81,20 +81,18 @@ class ItemListSerializer(serializers.ModelSerializer):
             "rarity_category",
         )
 
+
 class CaseLive(serializers.ModelSerializer):
     image = serializers.ImageField(use_url=True, read_only=True)
 
     class Meta:
         model = Case
-        fields = (
-            "name",
-            "translit_name",
-            "image"
-        )
+        fields = ("name", "translit_name", "image")
+
 
 class AdminItemListSerializer(serializers.ModelSerializer):
     item_id = serializers.CharField(max_length=9)
-    image = serializers.CharField()
+    image = serializers.ImageField(use_url=True, read_only=True)
     rarity_category = RarityCategorySerializer(read_only=True)
     purchase_price = serializers.FloatField(source="purchase_price_cached")
     percent = serializers.SerializerMethodField()

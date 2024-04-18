@@ -35,7 +35,7 @@ from legaemail.models import SendMail
 from payments.models import Calc
 from cases.serializers import ItemListSerializer
 from users.serializers import (
-    UserProfileCreateSerializer,
+    UserCreateSerializer,
     UserSignInSerializer,
     UserProfileSerializer,
     UserItemSerializer,
@@ -72,7 +72,7 @@ class AuthViewSet(GenericViewSet):
 
     def get_serializer_class(self):
         if self.action == "sign_up":
-            return UserProfileCreateSerializer
+            return UserCreateSerializer
         if self.action == "get_token":
             return SuccessSignUpSerializer
         return UserSignInSerializer
