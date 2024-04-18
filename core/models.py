@@ -13,6 +13,13 @@ class GenericSettings(models.Model):
         "Минимальная сумма вывода с реферальной программы", default=500.00
     )
 
+    generic_url = models.CharField(
+        "Основной домен сервиса",
+        default="legadrop.org",
+        max_length=256,
+        help_text="Вводим только домен, без протокола. По дефолту связывается по https",                
+    )
+
     domain_url = models.CharField(
         "Домен реферальной ссылки",
         default="legadrop.org",
