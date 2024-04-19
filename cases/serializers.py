@@ -327,6 +327,7 @@ class AdminCreateCaseSerializer(ListCasesSerializer):
             "category_id",
             "item_ids",
             "condition_ids",
+            "case_free",
         )
         read_only_fields = ("recommendation_price",)
 
