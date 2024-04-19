@@ -168,6 +168,7 @@ class UserReferralSerializer(serializers.ModelSerializer):
             "partner_percent",
             "invited",
         )
+        readonly_fields = ("partner_percent",)
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
