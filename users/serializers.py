@@ -165,6 +165,7 @@ class UserReferralSerializer(serializers.ModelSerializer):
             "available_withdrawal",
             "code_data",
             "partner_income",
+            "partner_percent",
             "invited",
         )
 
