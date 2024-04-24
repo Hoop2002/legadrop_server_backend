@@ -221,8 +221,6 @@ class UserItemSerializer(serializers.ModelSerializer):
     def get_price(instance) -> float:
         if instance.item.sale_price != 0:
             sale_price = instance.item.sale_price
-        elif instance.item.percent_price != 0:
-            sale_price = instance.item.price * instance.item.percent_price
         else:
             sale_price = instance.item.purchase_price
         return sale_price

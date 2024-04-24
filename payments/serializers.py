@@ -73,7 +73,7 @@ class AdminPaymentOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PaymentOrder
-        fields = "__all__"
+        exclude = ("removed",)
 
 
 class AdminListOutputSerializer(serializers.ModelSerializer):
@@ -102,7 +102,7 @@ class AdminPurchaseListSerializer(serializers.ModelSerializer):
 class AdminPurchaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseCompositeItems
-        fields = "__all__"
+        exclude = ("removed",)
 
 
 class AdminOutputSerializer(AdminListOutputSerializer):
@@ -114,7 +114,7 @@ class AdminOutputSerializer(AdminListOutputSerializer):
 
     class Meta:
         model = Output
-        fields = "__all__"
+        exclude = ("removed",)
 
 
 class UserListOutputSerializer(serializers.ModelSerializer):
@@ -314,7 +314,7 @@ class AdminRefOutputSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RefOutput
-        fields = "__all__"
+        exclude = ("removed",)
 
 
 class UserRefOutputListSerializer(serializers.ModelSerializer):

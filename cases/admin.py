@@ -83,7 +83,6 @@ class ItemAdmin(admin.ModelAdmin):
                     "type",
                     "service",
                     "image",
-                    "step_down_factor",
                     "rarity_category",
                     "crystals_quantity",
                     "is_output",
@@ -94,7 +93,7 @@ class ItemAdmin(admin.ModelAdmin):
         ),
         (
             "Цены",
-            {"fields": ("price", "sale_price", "percent_price")},
+            {"fields": ("price", "sale_price")},
         ),
     )
     #

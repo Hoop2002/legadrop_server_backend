@@ -78,6 +78,11 @@ urlpatterns = [
         views.UserItemsListView.as_view({"delete": "destroy"}),
         name="sale_user_item",
     ),
+    path(
+        "user/item/sale_all",
+        views.UserItemsListView.as_view({"delete": "bulk_destroy"}),
+        name="sale_all_user_item",
+    ),
     path("user/genshin_uid/", views.GetGenshinAccountView.as_view({"post": "get_uid"})),
     path(
         "6383d341-4d14-4868-81ba-3c6382f2128e/user/<int:user_id>/payments/",

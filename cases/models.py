@@ -206,17 +206,12 @@ class Item(models.Model):
         verbose_name="Выводимый предмет с сервиса", null=False, default=True
     )
     sale_price = models.FloatField(verbose_name="Цена продажи", default=0)
-    percent_price = models.FloatField(
-        verbose_name="Процент от начальной цены при продаже",
-        default=0,
-        validators=[MinValueValidator(0)],
-    )
+
     sale = models.BooleanField(verbose_name="Продаётся в магазине", default=False)
     upgrade = models.BooleanField(verbose_name="Доступно в апгрейде", default=True)
     image = models.ImageField(upload_to=generate_upload_name, verbose_name="Картинка")
     created_at = models.DateTimeField(verbose_name="Создан", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Обновлён", auto_now=True)
-    step_down_factor = models.FloatField(verbose_name="Понижающий фактор", default=1)
     rarity_category = models.ForeignKey(
         verbose_name="Категория уникальности",
         to="RarityCategory",

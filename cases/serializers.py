@@ -163,7 +163,6 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
     )
     rarity_category = RarityCategorySerializer(read_only=True)
     rarity_category_id = serializers.CharField(max_length=9, write_only=True)
-    step_down_factor = serializers.FloatField(default=1, required=False)
 
     def get_fields(self):
         fields = super().get_fields()
@@ -186,12 +185,10 @@ class ItemsAdminSerializer(serializers.ModelSerializer):
             "is_output",
             "purchase_price",
             "sale_price",
-            "percent_price",
             "sale",
             "image",
             "created_at",
             "updated_at",
-            "step_down_factor",
             "rarity_category",
             "rarity_category_id",
         )
