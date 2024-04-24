@@ -208,11 +208,13 @@ class UserItems(models.Model):
     def bulk_sale(cls, user: User):
         from payments.models import Calc
 
-        items = user.items.filter(active=True, withdrawal_process=False, withdrawn=False)
+        items = user.items.filter(
+            active=True, withdrawal_process=False, withdrawn=False
+        )
         other = items.filter(item__sale_price=0)
-        sale = items.exclude(id__in=other.values_list('id', flat=True))
-        other_price = other.aggregate(summ=models.Sum('item__price'))['summ']
-        sale_price = sale.aggregate(summ=models.Sum('item__sale_price'))['summ']
+        sale = items.exclude(id__in=other.values_list("id", flat=True))
+        other_price = other.aggregate(summ=models.Sum("item__price"))["summ"]
+        sale_price = sale.aggregate(summ=models.Sum("item__sale_price"))["summ"]
         end_price = other_price + sale_price
         calc = Calc.objects.create(
             user=user,
