@@ -192,8 +192,6 @@ class UserItems(models.Model):
         self.active = False
         if item.sale_price != 0:
             sale_price = item.sale_price
-        elif item.percent_price != 0:
-            sale_price = item.price * item.percent_price
         else:
             sale_price = item.purchase_price
         calc = Calc.objects.create(
