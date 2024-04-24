@@ -320,6 +320,13 @@ class UserItemsListView(ModelViewSet):
         user_item.sale_item()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=False, methods=('delete',))
+    def bulk_destroy(self, request, *args, **kwargs):
+        count = self.queryset.model.bulk_sale(request.user)
+        if not count:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @extend_schema(request=None)
     def items_history(self, request, *args, **kwargs):
         queryset = self.get_queryset().filter(active=False, user=request.user)

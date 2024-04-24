@@ -205,6 +205,25 @@ class UserItems(models.Model):
         return
 
     @classmethod
+    def bulk_sale(cls, user: User):
+        from payments.models import Calc
+
+        items = user.items.filter(active=True, withdrawal_process=False, withdrawn=False)
+        other = items.filter(item__sale_price=0)
+        sale = items.exclude(id__in=other.values_list('id', flat=True))
+        other_price = other.aggregate(summ=models.Sum('item__price'))['summ']
+        sale_price = sale.aggregate(summ=models.Sum('item__sale_price'))['summ']
+        end_price = other_price + sale_price
+        calc = Calc.objects.create(
+            user=user,
+            balance=end_price,
+            comment=f"Продажа всех предметов пользователя в количестве {items.count()}",
+            demo=user.profile.demo,
+        )
+        items.update(calc_id=calc.id, active=False)
+        return items.count()
+
+    @classmethod
     def upgrade_item(
         cls,
         user: User,
