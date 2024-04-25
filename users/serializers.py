@@ -310,29 +310,7 @@ class HistoryItemSerializer(UserItemSerializer):
         )
 
 
-class MinimalValuesSerializer(serializers.Serializer):
-    upgraded_items = serializers.ListSerializer(
-        child=serializers.CharField(), help_text="Желаемые предметы", write_only=True
-    )
-    min_bet = serializers.FloatField(read_only=True)
-    max_bet = serializers.FloatField(read_only=True)
-    min_ratio = serializers.FloatField(read_only=True)
-    max_ratio = serializers.FloatField(read_only=True)
-
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
-        upgraded = Item.objects.filter(
-            item_id__in=attrs["upgraded_items"], upgrade=True
-        )
-        if len(attrs["upgraded_items"]) > upgraded.count():
-            raise serializers.ValidationError(
-                {"upgraded_items": "Не все выбранные предметы доступны для апгрейда"}
-            )
-        attrs["upgraded_items"] = upgraded
-        return attrs
-
-
-class UpgradeItemSerializer(MinimalValuesSerializer, serializers.ModelSerializer):
+class RequestItemsForUpgradeSerializer(serializers.Serializer):
     upgrade_items = serializers.ListSerializer(
         child=serializers.IntegerField(),
         help_text="Предметы для обновления",
@@ -340,18 +318,8 @@ class UpgradeItemSerializer(MinimalValuesSerializer, serializers.ModelSerializer
         write_only=True,
     )
     balance = serializers.FloatField(write_only=True, required=False)
-    upgrade_percent = serializers.SerializerMethodField(read_only=True)
-    upgrade_ratio = serializers.SerializerMethodField(read_only=True)
 
-    @staticmethod
-    def get_upgrade_percent(instance) -> float:
-        return 0
-
-    @staticmethod
-    def get_upgrade_ratio(instance) -> float:
-        return 0
-
-    def validate(self, attrs: dict) -> dict:
+    def validate(self, attrs):
         attrs = super().validate(attrs)
         generic = GenericSettings.load()
 
@@ -369,7 +337,7 @@ class UpgradeItemSerializer(MinimalValuesSerializer, serializers.ModelSerializer
             if len(attrs["upgrade_items"]) > user_items.count():
                 raise serializers.ValidationError(
                     {
-                        "upgrade_items": "Выберите только те пердметы, которые вам принадлежат"
+                        "upgrade_items": "Выберите только те предметы, которые вам принадлежат"
                     }
                 )
             sum_items = user_items.aggregate(sum=Sum("item__price"))["sum"]
@@ -392,14 +360,48 @@ class UpgradeItemSerializer(MinimalValuesSerializer, serializers.ModelSerializer
                 raise serializers.ValidationError(
                     {"balance": "Ставка меньше минимальной"}
                 )
-
         return attrs
+
+
+class MinimalValuesSerializer(serializers.Serializer):
+    upgraded_item = serializers.CharField(help_text="Желаемый предмет", write_only=True)
+    min_bet = serializers.FloatField(read_only=True)
+    max_bet = serializers.FloatField(read_only=True)
+    min_ratio = serializers.FloatField(read_only=True)
+    max_ratio = serializers.FloatField(read_only=True)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        upgraded = Item.objects.filter(item_id=attrs["upgraded_item"], upgrade=True)
+        if not upgraded.exists():
+            raise serializers.ValidationError(
+                {"upgraded_item": "Выбранный предмет не доступен для апгрейда"}
+            )
+        attrs["upgraded_item"] = upgraded.last()
+        return attrs
+
+
+class UpgradeItemSerializer(
+    MinimalValuesSerializer,
+    RequestItemsForUpgradeSerializer,
+    serializers.ModelSerializer,
+):
+    upgrade_percent = serializers.SerializerMethodField(read_only=True)
+    upgrade_ratio = serializers.SerializerMethodField(read_only=True)
+
+    @staticmethod
+    def get_upgrade_percent(instance) -> float:
+        return 0
+
+    @staticmethod
+    def get_upgrade_ratio(instance) -> float:
+        return 0
 
     class Meta:
         model = UserItems
         fields = (
             "upgrade_items",
-            "upgraded_items",
+            "upgraded_item",
             "balance",
             "upgrade_percent",
             "upgrade_ratio",

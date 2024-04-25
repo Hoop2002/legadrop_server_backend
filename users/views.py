@@ -53,6 +53,7 @@ from users.serializers import (
     UserReferralSerializer,
     UpgradeHistorySerializer,
     OtherUserItemsSerializer,
+    RequestItemsForUpgradeSerializer,
 )
 from gateways.enka import get_genshin_account
 from utils.default_filters import CustomOrderFilter
@@ -363,8 +364,10 @@ class UpgradeItem(GenericViewSet):
     def get_serializer_class(self):
         if self.action == "get_minimal_values":
             return MinimalValuesSerializer
-        if self.action in ["items", "upgrade"]:
+        if self.action == "upgrade":
             return ItemListSerializer
+        if self.action == "items":
+            return RequestItemsForUpgradeSerializer
         if self.action == "user_items":
             return UserItemSerializer
         return UpgradeItemSerializer
@@ -381,23 +384,47 @@ class UpgradeItem(GenericViewSet):
         return self.get_paginated_response(serializer.data)
 
     @extend_schema(
+        request=RequestItemsForUpgradeSerializer,
         responses={200: ItemListSerializer(many=True)},
         description="Поля доступные для сортировки списка: `price`. Сортировка от большего к меньшему `-price`",
     )
-    @action(detail=False, pagination_class=LimitOffsetPagination)
+    @action(detail=False, pagination_class=LimitOffsetPagination, methods=("post",))
     def items(self, request, *args, **kwargs):
+        generic = GenericSettings.load()
+
+        data_serializer = self.get_serializer(data=request.data)
+        data_serializer.is_valid(raise_exception=True)
+
+        if data_serializer.validated_data.get("upgrade_items"):
+            current_price = (
+                data_serializer.validated_data.get("upgrade_items").aggregate(
+                    sum=Sum("item__price")
+                )["sum"]
+                or 0
+            )
+        else:
+            current_price = data_serializer.validated_data.get("balance")
+
+        max_update = current_price * (generic.base_upgrade_percent * 100)
+        min_update = current_price * generic.base_upper_ratio
+
         items = self.filter_queryset(
-            Item.objects.filter(upgrade=True, removed=False).exclude(price=0)
+            Item.objects.filter(
+                upgrade=True,
+                removed=False,
+                price__gte=min_update,
+                price__lte=max_update,
+            ).exclude(price=0)
         )
         paginated = self.paginate_queryset(items)
-        serializer = self.get_serializer(paginated, many=True)
+        serializer = ItemListSerializer(paginated, many=True)
         return self.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=["post"])
     def get_minimal_values(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = self._get_min_values(serializer.validated_data["upgraded_items"])
+        data = self._get_min_values(serializer.validated_data["upgraded_item"])
         return Response(data)
 
     @action(detail=False, methods=["post"])
@@ -428,16 +455,16 @@ class UpgradeItem(GenericViewSet):
             return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
 
         if "balance" in data:
-            _status, items = UserItems.upgrade_item(
+            _status, item = UserItems.upgrade_item(
                 user=request.user,
                 balance=data["balance"],
-                upgraded=data["upgraded_items"],
+                upgraded=data["upgraded_item"],
             )
             history = UserUpgradeHistory.objects.create(
                 user=request.user,
                 balance=data["balance"],
             )
-            history.desired.set(data["upgraded_items"])
+            history.desired.add(data["upgraded_item"])
             Calc.objects.create(
                 balance=-data["balance"],
                 user=request.user,
@@ -445,38 +472,34 @@ class UpgradeItem(GenericViewSet):
                 demo=request.user.profile.demo,
             )
             if not _status:
-                if items == "Проигрыш":
+                if item == "Проигрыш":
                     return Response(status=status.HTTP_204_NO_CONTENT)
                 return Response(status=status.HTTP_400_BAD_REQUEST)
             history.success = True
             history.save()
-            UserItems.objects.bulk_create(
-                UserItems(item=item, user=request.user) for item in items
-            )
-            return Response(ItemListSerializer(items, many=True).data)
+            UserItems.objects.create(item=item, user=request.user)
+            return Response(ItemListSerializer(item).data)
         else:
-            _status, items = UserItems.upgrade_item(
+            _status, item = UserItems.upgrade_item(
                 user=request.user,
                 upgrade=data["upgrade_items"],
-                upgraded=data["upgraded_items"],
+                upgraded=data["upgraded_item"],
             )
             history = UserUpgradeHistory.objects.create(
                 user=request.user,
             )
             history.upgraded.set(data["upgrade_items"])
-            history.desired.set(data["upgraded_items"])
+            history.desired.add(data["upgraded_item"])
             data["upgrade_items"].update(active=False)
             if not _status:
-                if items == "Проигрыш":
+                if item == "Проигрыш":
                     return Response(status=status.HTTP_204_NO_CONTENT)
                 return Response(status=status.HTTP_400_BAD_REQUEST)
 
             history.success = True
             history.save()
-            UserItems.objects.bulk_create(
-                UserItems(item=item, user=request.user) for item in items
-            )
-            return Response(ItemListSerializer(items, many=True).data)
+            UserItems.objects.create(item=item, user=request.user)
+            return Response(ItemListSerializer(item).data)
 
     def _check_conditions(self, data) -> (str, bool) or ((float, float), bool):
         generic = GenericSettings.load()
@@ -484,8 +507,8 @@ class UpgradeItem(GenericViewSet):
             cost = data.get("upgrade_items").aggregate(sum=Sum("item__price"))["sum"]
         else:
             cost = data.get("balance")
-        upgraded_cost = data.get("upgraded_items").aggregate(sum=Sum("price"))["sum"]
-        default_data = self._get_min_values(data.get("upgraded_items"))
+        upgraded_cost = data.get("upgraded_item").price
+        default_data = self._get_min_values(data.get("upgraded_item"))
 
         upgrade_ratio = upgraded_cost / cost
         upgrade_percent = generic.base_upgrade_percent / upgrade_ratio
@@ -497,9 +520,9 @@ class UpgradeItem(GenericViewSet):
         return (upgrade_ratio, upgrade_percent), True
 
     @staticmethod
-    def _get_min_values(items) -> dict[str:float]:
+    def _get_min_values(item) -> dict[str:float]:
         generic = GenericSettings.load()
-        upgraded_cost = items.aggregate(sum=Sum("price"))["sum"]
+        upgraded_cost = item.price
         min_bet = upgraded_cost / (generic.base_upgrade_percent * 100)
         if generic.minimal_price_upgrade > min_bet:
             min_bet = generic.minimal_price_upgrade
