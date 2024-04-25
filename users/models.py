@@ -230,7 +230,7 @@ class UserItems(models.Model):
         cls,
         user: User,
         upgrade: models.QuerySet["UserItems"] = None,
-        upgraded: models.QuerySet[Item] = None,
+        upgraded: Item = None,
         balance: float = None,
     ) -> models.QuerySet[Item] or None:
         from core.models import GenericSettings
@@ -239,16 +239,14 @@ class UserItems(models.Model):
 
         if not upgrade and not balance:
             return False, "Неверные параметры"
-        if upgraded and upgraded.count() == 0:
-            return False, "Неверные параметры"
-        if upgraded and upgraded.filter(price=0).exists():
+        if upgraded and not upgraded.price:
             return False, "Неверные параметры"
         if upgrade and upgrade.count() == 0 and not balance:
             return False, "Неверные параметры"
         if upgrade and upgrade.filter(item__price=0).exists():
             return False, "Неверные параметры"
 
-        price_items = upgraded.aggregate(sum=models.Sum("price"))["sum"]
+        price_items = upgraded.price
 
         if upgrade:
             cost = upgrade.aggregate(sum=models.Sum("item__price"))["sum"]
