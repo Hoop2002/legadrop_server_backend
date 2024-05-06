@@ -213,9 +213,11 @@ class UserItems(models.Model):
         )
         other = items.filter(item__sale_price=0)
         sale = items.exclude(id__in=other.values_list("id", flat=True))
-        other_price = other.aggregate(summ=models.Sum("item__price"))["summ"]
-        sale_price = sale.aggregate(summ=models.Sum("item__sale_price"))["summ"]
+        other_price = other.aggregate(summ=models.Sum("item__price"))["summ"] or 0
+        sale_price = sale.aggregate(summ=models.Sum("item__sale_price"))["summ"] or 0
         end_price = other_price + sale_price
+        if end_price == 0:
+            return 0
         calc = Calc.objects.create(
             user=user,
             balance=end_price,
