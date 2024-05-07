@@ -82,6 +82,40 @@ class ItemListSerializer(serializers.ModelSerializer):
         )
 
 
+class WinItemSerializer(serializers.ModelSerializer):
+    item_id = serializers.CharField(source="item.item_id", max_length=9)
+    image = serializers.ImageField(source="item.image", use_url=True, read_only=True)
+    rarity_category = RarityCategorySerializer(
+        source="item.rarity_category", read_only=True
+    )
+    name = serializers.CharField(source="item.name")
+    price = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_price(instance):
+        if instance.item.sale_price:
+            return instance.item.sale_price
+        return instance.item.price
+
+    class Meta:
+        model = UserItems
+        fields = (
+            "id",
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "rarity_category",
+        )
+        read_only_fields = (
+            "item_id",
+            "name",
+            "price",
+            "image",
+            "rarity_category",
+        )
+
+
 class CaseLive(serializers.ModelSerializer):
     image = serializers.ImageField(use_url=True, read_only=True)
 

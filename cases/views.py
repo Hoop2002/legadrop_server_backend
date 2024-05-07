@@ -24,6 +24,7 @@ from cases.serializers import (
     AdminCategorySerializer,
     AdminItemListSerializer,
     CaseCategorySerializer,
+    WinItemSerializer,
 )
 from cases.models import Case, Item, RarityCategory, ConditionCase, Contests, Category
 from utils.default_filters import CustomOrderFilter
@@ -74,7 +75,7 @@ class CasesViewSet(GenericViewSet):
         if self.action == "list":
             return ListCasesSerializer
         if self.action == "open_case":
-            return ItemListSerializer
+            return WinItemSerializer
         if self.action == "cases_category":
             return CaseCategorySerializer
         return CaseSerializer
@@ -140,7 +141,7 @@ class CasesViewSet(GenericViewSet):
 
         for _ in range(count):
             item, user_item = case.open_case(request.user)
-            items.append(item)
+            items.append(user_item)
             r_items.append((item, user_item))
 
         serializer = self.get_serializer(items, many=True)
