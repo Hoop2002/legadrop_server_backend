@@ -80,7 +80,9 @@ urlpatterns = [
     ),
     path(
         "user/item/sale_all",
-        views.UserItemsListView.as_view({"delete": "bulk_destroy"}),
+        views.UserItemsListView.as_view(
+            {"delete": "bulk_destroy", "post": "bulk_destroy"}
+        ),
         name="sale_all_user_item",
     ),
     path("user/genshin_uid/", views.GetGenshinAccountView.as_view({"post": "get_uid"})),
