@@ -57,6 +57,7 @@ from users.serializers import (
 )
 from gateways.enka import get_genshin_account
 from utils.default_filters import CustomOrderFilter
+from utils.serializers import BulkDestroyIntSerializer
 from utils.functions.sort_dict import SortDict
 
 
@@ -276,7 +277,7 @@ class UserRefViewSet(GenericViewSet):
 
 class UserItemsListView(ModelViewSet):
     queryset = UserItems.objects
-    http_method_names = ["get", "delete"]
+    http_method_names = ("get", "delete", "post")
     pagination_class = LimitOffsetPagination
 
     def get_serializer_class(self):
@@ -321,9 +322,11 @@ class UserItemsListView(ModelViewSet):
         user_item.sale_item()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=("delete",))
+    @extend_schema(request=BulkDestroyIntSerializer, responses=None)
+    @action(detail=False, methods=("delete", "post"))
     def bulk_destroy(self, request, *args, **kwargs):
-        count = self.queryset.model.bulk_sale(request.user)
+        ids = request.data.get("ids", [])
+        count = self.queryset.model.bulk_sale(request.user, ids)
         if not count:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_204_NO_CONTENT)

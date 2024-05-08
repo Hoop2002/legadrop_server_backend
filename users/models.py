@@ -205,12 +205,13 @@ class UserItems(models.Model):
         return
 
     @classmethod
-    def bulk_sale(cls, user: User):
+    def bulk_sale(cls, user: User, ids: list[int] = []):
         from payments.models import Calc
 
-        items = user.items.filter(
-            active=True, withdrawal_process=False, withdrawn=False
-        )
+        filters = dict(active=True, withdrawal_process=False, withdrawn=False)
+        if ids:
+            filters["id__in"] = ids
+        items = user.items.filter(**filters)
         other = items.filter(item__sale_price=0)
         sale = items.exclude(id__in=other.values_list("id", flat=True))
         other_price = other.aggregate(summ=models.Sum("item__price"))["summ"] or 0
@@ -224,8 +225,8 @@ class UserItems(models.Model):
             comment=f"Продажа всех предметов пользователя в количестве {items.count()}",
             demo=user.profile.demo,
         )
-        items.update(calc_id=calc.id, active=False)
-        return items.count()
+        count = items.update(calc_id=calc.id, active=False)
+        return count
 
     @classmethod
     def upgrade_item(
